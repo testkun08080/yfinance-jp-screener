@@ -1,0 +1,171 @@
+name: 📋 Stock List Update
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Update reason (optional)"
+        required: false
+        default: "Manual stock list update"
+        type: string
+
+jobs:
+  update-stock-list:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stock_list/requirements.txt
+
+      - name: 📋 Show input parameters
+        run: |
+          echo "Update reason: ${{ github.event.inputs.reason }}"
+          echo "Timestamp: $(date)"
+          echo "Working directory: $(pwd)"
+          ls -la stock_list/
+
+      - name: 🌐 Fetch latest stock list (stocks_all.json)
+        working-directory: ./stock_list
+        run: |
+          echo "🚀 Starting stock list download..."
+          echo "Timestamp: $(date)"
+
+          # Run the Python script to fetch all stocks
+          python get_jp_stocklist.py
+
+          echo "✅ Stock list download completed"
+
+          # Check if stocks_all.json was created
+          if [ -f "stocks_all.json" ]; then
+            echo "📊 stocks_all.json created successfully"
+            echo "File size: $(ls -lh stocks_all.json | awk '{print $5}')"
+            echo "Total companies: $(cat stocks_all.json | jq length)"
+          else
+            echo "❌ Error: stocks_all.json not found"
+            exit 1
+          fi
+
+      - name: ✂️ Split stocks_all.json into chunks
+        working-directory: ./stock_list
+        run: |
+          echo "🔀 Starting stock list splitting..."
+          echo "Timestamp: $(date)"
+
+          # Use the improved split_stocks.py script
+          python split_stocks.py --input stocks_all.json --size 1000
+
+          echo "✅ Stock list splitting completed"
+
+          # List all generated files
+          echo "📄 Generated files:"
+          ls -la stocks_*.json
+
+          # Verify each split file contains valid JSON data
+          echo "🔍 Verifying split files..."
+          for file in stocks_[0-9]*.json; do
+            if [ -f "$file" ]; then
+              companies=$(cat "$file" | jq length 2>/dev/null)
+              if [ $? -eq 0 ]; then
+                echo "✅ $file: $companies companies (Valid JSON)"
+              else
+                echo "❌ $file: Invalid JSON format"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: 📊 Generate update summary
+        run: |
+          cd stock_list
+          echo "# 📋 Stock List Update Report" > stock_list_update_report.md
+          echo "" >> stock_list_update_report.md
+          echo "**Generated:** $(date)" >> stock_list_update_report.md
+          echo "**Reason:** ${{ github.event.inputs.reason }}" >> stock_list_update_report.md
+          echo "**Workflow:** ${{ github.workflow }}" >> stock_list_update_report.md
+          echo "" >> stock_list_update_report.md
+
+          if [ -f "stocks_all.json" ]; then
+            total_companies=$(cat stocks_all.json | jq length)
+            size=$(ls -lh stocks_all.json | awk '{print $5}')
+            echo "## 📊 Master Stock List" >> stock_list_update_report.md
+            echo "- **File:** stocks_all.json" >> stock_list_update_report.md
+            echo "- **Size:** $size" >> stock_list_update_report.md
+            echo "- **Total Companies:** $total_companies" >> stock_list_update_report.md
+            echo "" >> stock_list_update_report.md
+          fi
+
+          echo "## 📂 Split Files" >> stock_list_update_report.md
+          echo "" >> stock_list_update_report.md
+
+          for file in stocks_[0-9]*.json; do
+            if [ -f "$file" ]; then
+              size=$(ls -lh "$file" | awk '{print $5}')
+              count=$(cat "$file" | jq length)
+              echo "- **$file** - Size: $size, Companies: $count" >> stock_list_update_report.md
+            fi
+          done
+
+          echo "" >> stock_list_update_report.md
+          echo "## 🤖 Automation Info" >> stock_list_update_report.md
+          echo "- **GitHub Action:** [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> stock_list_update_report.md
+          echo "- **Commit SHA:** ${{ github.sha }}" >> stock_list_update_report.md
+          echo "- **Repository:** ${{ github.repository }}" >> stock_list_update_report.md
+
+      - name: 🔧 Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: 💾 Commit and push changes
+        run: |
+          # Add all updated JSON files
+          git add stock_list/stocks_*.json
+          git add stock_list/stock_list_update_report.md
+
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
+            echo "ℹ️ No changes to commit"
+          else
+            # Get current date for commit message
+            CURRENT_DATE=$(date '+%Y年%m月%d日')
+
+            # Commit with descriptive message
+            git commit -m "📋 日本株式のリストを更新($CURRENT_DATE)
+
+            - 更新理由: ${{ github.event.inputs.reason }}
+            - 実行日時: $(date)
+            - ワークフロー: ${{ github.workflow }}
+
+            🤖 Generated by GitHub Action"
+
+            # Push changes
+            git push
+
+            echo "✅ Changes committed and pushed successfully"
+          fi
+
+      - name: 📈 Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stock-list-update-$(date +%Y%m%d-%H%M%S)
+          path: |
+            stock_list/stocks_*.json
+            stock_list/stock_list_update_report.md
+          retention-days: 30

@@ -1,0 +1,35 @@
+repos:
+  # Ruff (lint / format)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.3
+    hooks:
+      - id: ruff-check
+      # - id: ruff-format
+
+  # Python pip licenses
+  - repo: local
+    hooks:
+      - id: pip-licenses-backend
+        name: Python License report (backend)
+        entry: bash -c "cd stock_list && uv run pip-licenses"
+        language: system
+        pass_filenames: false
+
+  # Node.js prettier
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier (JS/TS)
+        entry: bash -c "cd stock_search && npx prettier --check ."
+        language: system
+
+      - id: eslint
+        name: ESLint
+        entry: npx eslint stock_search
+        language: system
+        types: [javascript, ts, tsx, jsx]
+
+      - id: license-check-node
+        name: Node.js License check
+        entry: bash -c "cd stock_search && npx license-checker --summary --failOn 'GPL,AGPL,LGPL'"
+        language: system

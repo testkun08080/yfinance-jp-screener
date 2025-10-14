@@ -1,0 +1,30 @@
+[project]
+name = "stock-list"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "yfinance>=0.2.65",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+    "pip-licenses>=5.0.0",
+]
+
+
+[tool.pip-licenses]
+# 出力形式
+format = "markdown"
+
+
+# 無視するパッケージ
+ignore-packages = [
+  "scipy",
+  "numpy"
+]
+
+# 許可されないライセンスでエラー
+fail-on = "MIT;AGPL;LGPL"

@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  # Pythonデータ収集サービス
+  python-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetch
+    container_name: stock-data-collector
+    env_file:
+      - .env
+    volumes:
+      # 株式データディレクトリをマウント
+      - ./stock_list:/app:rw
+      # Exportディレクトリを共有
+      - stock-data:/app/Export
+    environment:
+      - PYTHONUNBUFFERED=1
+      - STOCK_FILE=${STOCK_FILE:-stocks_1.json}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+    networks:
+      - stock-network
+    # データ収集完了後に終了
+    restart: "no"
+
+  # React フロントエンドサービス
+  frontend-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: stock-frontend
+    env_file:
+      - .env
+    ports:
+      - "8080:80"
+    volumes:
+      # CSVデータディレクトリをマウント（読み取り専用）
+      - stock-data:/usr/share/nginx/html/csv:ro
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    networks:
+      - stock-network
+    depends_on:
+      python-service:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  stock-network:
+    driver: bridge
+
+volumes:
+  stock-data:
+    driver: local

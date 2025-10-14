@@ -1,0 +1,73 @@
+name: 📊 Stock Data Fetch
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock_file:
+        description: "Stock JSON file to process"
+        required: true
+        default: "stocks_1.json"
+        type: choice
+        options:
+          - "stocks_1.json"
+          - "stocks_2.json"
+          - "stocks_3.json"
+          - "stocks_4.json"
+          - "stocks_sample.json"
+
+jobs:
+  fetch-stock-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stock_list/requirements.txt
+
+      - name: 📋 Show input parameters
+        run: |
+          echo "Processing file: ${{ github.event.inputs.stock_file }}"
+          echo "Working directory: $(pwd)"
+          ls -la stock_list/
+
+      - name: 🏃 Run stock data collection
+        working-directory: ./stock_list
+        run: |
+          echo "🚀 Starting stock data collection..."
+          echo "File: ${{ github.event.inputs.stock_file }}"
+          echo "Timestamp: $(date)"
+
+          python sumalize.py "${{ github.event.inputs.stock_file }}"
+
+          echo "✅ Stock data collection completed"
+          echo "📄 Generated files in Export directory:"
+          ls -la Export/ 2>/dev/null || echo "No files in Export directory"
+
+      - name: Git config and pull
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
+
+      - name: 💾 Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ファイル更新！"
+          push_options: --force

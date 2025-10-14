@@ -1,0 +1,66 @@
+# Git関連
+.git
+.gitignore
+.github
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Node.js関連
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ビルド成果物
+stock_search/dist/
+stock_search/build/
+
+# IDE設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# テスト関連
+coverage/
+.pytest_cache/
+
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# データファイル（必要に応じて調整）
+*.csv
+*.xlsx
+*.xls
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# ドキュメント
+README.md
+CLAUDE.md
+LICENSE

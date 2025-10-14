@@ -193,8 +193,5 @@ Export/
 ---
 
 ## 🧭 ライセンス
-- **yfinance:** Apache License 2.0
-- **データ:** Yahoo! Japan 利用規約に従うこと
-
 © 2025 testkun08080
 Released under the [MIT License](./LICENSE)

@@ -1,13 +1,13 @@
-# 📊 yfinance × 日本株式スクリーニング  **（with わが投資術）**
+# 📊 yfinance × 日本株式スクリーニング **（with わが投資術）**
 
 ## ⚠️ 注意事項
 
 このプロジェクトは **Yahoo Finance のデータを取得・可視化するためのツール**です。  
 本ツールの利用により生じたいかなる損害についても、作者は一切の責任を負いません。
 
-- **データの利用は Yahoo の利用規約に従ってください**  
-- **本リポジトリはデータそのものを配布しません**  
-- **個人利用・研究・教育目的のみ使用可**    
+- **データの利用は Yahoo の利用規約に従ってください**
+- **本リポジトリはデータそのものを配布しません**
+- **個人利用・研究・教育目的のみ使用可**
 - **プライベートリポジトリでの使用を推奨します**
 
 > 💡 取得したデータは、**ご自身の環境でのみ利用**してください。
@@ -17,9 +17,9 @@
 [わが投資術](https://amzn.to/3IEVRkq) の考え方をもとに、  
 **日本株をシンプルに分析・可視化**するためのツールです。
 
-- 📈 GitHub Actions による自動データ収集  
-- 🔍 Web上でのスクリーニング・可視化  
-- ⚙️ JPX公式データ対応・簡易データ分割機能  
+- 📈 GitHub Actions による自動データ収集
+- 🔍 Web 上でのスクリーニング・可視化
+- ⚙️ JPX 公式データ対応・簡易データ分割機能
 
 ---
 
@@ -40,33 +40,33 @@
 
 ## 🛠️ 技術概要
 
-| 項目 | 内容 |
-|------|------|
-| **Backend** | Python 3.11+, pandas, yfinance |
-| **Frontend** | React 19 + TypeScript + Vite |
-| **CI/CD** | GitHub Actions + Docker |
-| **スタイル** | Tailwind CSS, DaisyUI |
-| **データ形式** | CSV, JSON |
+| 項目           | 内容                           |
+| -------------- | ------------------------------ |
+| **Backend**    | Python 3.11+, pandas, yfinance |
+| **Frontend**   | React 19 + TypeScript + Vite   |
+| **CI/CD**      | GitHub Actions + Docker        |
+| **スタイル**   | Tailwind CSS, DaisyUI          |
+| **データ形式** | CSV, JSON                      |
 
 ---
 
 ## 🚀 セットアップガイド
 
-### 方法1: Docker Compose（推奨・最速）データ収集とインターフェイス
+### 方法 1: Docker Compose（推奨・最速）データ収集とインターフェイス
 
-一つのコマンドでデータ収集からWebアプリ起動まで完結
+一つのコマンドでデータ収集から Web アプリ起動まで完結
 
 **データ収集時間:**
-約3700社のデータをダウンロードするにはおよそ3~４時間ほどかかります
+約 3700 社のデータをダウンロードするにはおよそ 3~４時間ほどかかります
 
 ```bash
 # 1. リポジトリをクローン
 git clone https://github.com/yourusername/yfinance-jp-screener.git
 cd yfinance-jp-screener
 
-# 2. 環境変数を設定（オプション）
+# 2. 環境変数を設定
 cp .env.example .env
-# .envを編集して処理対象ファイルを変更可能
+# STOCK_FILEはデフォルトでは"stocks_sample.json"になっています。 必ず全て取得したい場合は"stocks_all.json"へ変えて下さい
 
 # 3. Docker起動（データ収集 → ビルド → プレビュー）
 ./scripts/start.sh --build
@@ -74,9 +74,10 @@ cp .env.example .env
 # 4. ブラウザでアクセス
 # http://localhost:4173
 ```
+
 ---
 
-### 方法2: ローカル環境
+### 方法 2: ローカル環境
 
 #### データ取得環境のセットアップ
 
@@ -92,7 +93,7 @@ uv venv -p 3.11
 uv pip install -r requirements.txt
 
 # 4. 株式リスト取得（初回のみ）
-uv run get_jp_stocklist.py 
+uv run get_jp_stocklist.py
 
 # 5. データ取得を実行
 uv run sumalize.py stocks_sample.json   #ダウンロードテスト用
@@ -130,13 +131,13 @@ npm run preview
 
 ---
 
-## 📋 データ取得方法を Github Actionsで行う
+## 📋 データ取得方法を Github Actions で行う
 
 ⚠️ **重要**: **プライベートリポジトリでの使用を強く推奨します**
 
 ### 🔧 事前設定（必須）
 
-GitHub Actionsでワークフローを使用する前に、以下の設定変更が**必ず必要**です：
+GitHub Actions でワークフローを使用する前に、以下の設定変更が**必ず必要**です：
 
 1. **リポジトリ設定の変更**
    - リポジトリの **Settings** → **Actions** → **General** に移動
@@ -145,7 +146,7 @@ GitHub Actionsでワークフローを使用する前に、以下の設定変更
      - ✅ **"Allow GitHub Actions to create and approve pull requests"** にチェック
    - **Save** ボタンをクリック
 
-この設定により、ワークフローが生成したCSVファイルをリポジトリにコミットできるようになります。
+この設定により、ワークフローが生成した CSV ファイルをリポジトリにコミットできるようになります。
 設定しない場合、ワークフローは正常に実行されますが、データファイルのコミットに失敗します。
 
 ### 📊 データ取得手順
@@ -154,11 +155,11 @@ GitHub Actionsでワークフローを使用する前に、以下の設定変更
    - パブリックリポジトリで使用すると、データの二次配布に当たる可能性があると考えられます
 2. フォークしたプライベートリポジトリの **Actions** タブに移動
 3. **""Stock List Update"** を実行して、リストを取得
-4. **" Sequential Stock Fetch - Part 1"** を実行しデータのダウンロード（自動的に終われば次のワークフローが起動するはずです...3~4時間ほどかかります）
+4. **" Sequential Stock Fetch - Part 1"** を実行しデータのダウンロード（自動的に終われば次のワークフローが起動するはずです...3~4 時間ほどかかります）
 5. 実行完了後、`stock_list/Export/` ディレクトリにデータファイルが生成されます
 
-
 ---
+
 ## 📁 生成されるファイル
 
 実行後、`stock_list/Export/` ディレクトリに以下のファイルが生成されます：
@@ -174,7 +175,6 @@ Export/
 
 ---
 
-
 ## 📚 参考/出典 / 🙏 お礼
 
 - [yfinance GitHub Repository](https://github.com/ranaroussi/yfinance)
@@ -182,7 +182,7 @@ Export/
 - [日本取引所グループ（JPX）](https://www.jpx.co.jp/)
 - [わが投資術](https://amzn.to/3IEVRkq)
 
-※使わせていただいているJPXのデータやyfinanceの作成者に感謝申し上げます。
+※使わせていただいている JPX のデータや yfinance の作成者に感謝申し上げます。
 
 ---
 
@@ -194,5 +194,6 @@ Export/
 ---
 
 ## 🧭 ライセンス
+
 © 2025 testkun08080
 Released under the [MIT License](./LICENSE)

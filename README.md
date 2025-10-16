@@ -87,15 +87,12 @@ git clone https://github.com/yourusername/yfinance-jp-screener.git
 cd yfinance-jp-screener/stock_list
 
 # 2. Python環境のセットアップ（uvを使用）
-uv venv -p 3.11
+uv sync
 
-# 3. 依存関係をインストール
-uv pip install -r requirements.txt
-
-# 4. 株式リスト取得（初回のみ）
+# 3. 株式リスト取得（初回のみ）
 uv run get_jp_stocklist.py
 
-# 5. データ取得を実行
+# 4. データ取得を実行
 uv run sumalize.py stocks_sample.json   #ダウンロードテスト用
 
 #===約1000社ずつダウンロード(推奨)===
@@ -115,7 +112,7 @@ uv run combine_latest_csv.py
 
 ```bash
 # 1. フロントエンドディレクトリへ移動
-cd stock_search
+cd ../stock_search
 
 # 2. 依存関係をインストール
 npm install

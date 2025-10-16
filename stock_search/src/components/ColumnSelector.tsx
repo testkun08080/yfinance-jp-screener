@@ -64,8 +64,8 @@ export const getDefaultColumns = (
 
   return availableColumns.map((col) => ({
     key: col,
-    visible: !["都道府県"].includes(col), // 都道府県はデフォルトで非表示、他はデフォルトで表示
     ...(columnDefinitions[col] || { label: col, category: "basic" }),
+    visible: true, // 全項目をデフォルトで表示（最後に設定して上書きされないようにする）
   }));
 };
 

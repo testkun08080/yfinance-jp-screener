@@ -10,7 +10,7 @@ import {
   type ColumnConfig,
 } from "./ColumnSelector";
 import { DownloadButton } from "./DownloadButton";
-import { ShareButton } from "./ShareButton";
+// import { ShareButton } from "./ShareButton"; // コメントアウト: 共有機能は不要
 import type { PaginationConfig } from "../types/stock";
 
 interface CSVFile {
@@ -37,7 +37,7 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
     updateFilter,
     clearFilters,
     handleSort,
-    shareFilters,
+    // shareFilters, // コメントアウト: 共有機能は不要
   } = useFilters(data);
   const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
     currentPage: 1,
@@ -50,7 +50,7 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
   useEffect(() => {
     if (data.length > 0) {
       const availableColumns = Object.keys(data[0]).filter(
-        (key) => !key.startsWith("_"), // 内部フィールドを除外
+        (key) => !key.startsWith("_") // 内部フィールドを除外
       );
       setColumns(getDefaultColumns(availableColumns));
     }
@@ -82,29 +82,30 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
 
   const handleColumnChange = (key: string, visible: boolean) => {
     setColumns((prev) =>
-      prev.map((col) => (col.key === key ? { ...col, visible } : col)),
+      prev.map((col) => (col.key === key ? { ...col, visible } : col))
     );
   };
 
   const handleCategoryToggle = (category: string, visible: boolean) => {
     setColumns((prev) =>
       prev.map((col) =>
-        col.category === category && !col.essential ? { ...col, visible } : col,
-      ),
-    );
-  };
-
-  const hasActiveFilters = () => {
-    return (
-      filters.companyName ||
-      filters.industries.length > 0 ||
-      filters.market ||
-      filters.prefecture ||
-      Object.entries(filters).some(([key, value]) =>
-        key.includes("Min") || key.includes("Max") ? value !== null : false,
+        col.category === category && !col.essential ? { ...col, visible } : col
       )
     );
   };
+
+  // コメントアウト: 共有機能は不要
+  // const hasActiveFilters = () => {
+  //   return (
+  //     filters.companyName ||
+  //     filters.industries.length > 0 ||
+  //     filters.market ||
+  //     filters.prefecture ||
+  //     Object.entries(filters).some(([key, value]) =>
+  //       key.includes("Min") || key.includes("Max") ? value !== null : false,
+  //     )
+  //   );
+  // };
 
   const getDataSummary = () => {
     if (data.length === 0) return null;
@@ -240,9 +241,6 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
           <h3 className="text-lg font-semibold text-base-content flex items-center gap-2">
             ⚙️ データ操作
           </h3>
-          <div className="text-sm text-base-content/60">
-            {filteredData.length}件のデータを操作できます
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 items-center">
@@ -273,8 +271,8 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
             </div>
           )}
 
-          {/* シェアボタン */}
-          {hasActiveFilters() && (
+          {/* シェアボタン - コメントアウト: 共有機能は不要 */}
+          {/* {hasActiveFilters() && (
             <div className="flex flex-col items-start">
               <ShareButton
                 shareUrl={shareFilters()}
@@ -285,7 +283,7 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
                 URLをコピー・SNSで共有
               </span>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 

@@ -7,13 +7,16 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Paths
-const PROJECT_ROOT = join(__dirname, "../../");
-const EXPORT_DIR = join(PROJECT_ROOT, "stock_list/Export");
-const PUBLIC_CSV_DIR = join(__dirname, "../public/csv");
-
 // Environment detection
 const IS_DOCKER = process.env.DOCKER_ENV === "true";
+
+// Paths
+const PROJECT_ROOT = join(__dirname, "../../");
+// Docker環境では Export/ を直接使用、ローカルでは stock_list/Export を使用
+const EXPORT_DIR = IS_DOCKER
+  ? join(PROJECT_ROOT, "Export")
+  : join(PROJECT_ROOT, "stock_list/Export");
+const PUBLIC_CSV_DIR = join(__dirname, "../public/csv");
 
 function copyCSVFiles() {
   console.log("📁 CSVファイルコピースクリプト開始");
@@ -97,41 +100,6 @@ function copyCSVFiles() {
       console.error(`❌ コピー失敗: ${file}`, error.message);
     }
   });
-
-  // CSV ファイル一覧をJSONファイルとして出力
-  const csvFileList = csvFiles.map((file) => {
-    const filePath = join(EXPORT_DIR, file);
-    const stats = statSync(filePath);
-
-    return {
-      name: file,
-      displayName: file.replace(/\.csv$/, "").replace(/_/g, " "),
-      size: stats.size,
-      lastModified: stats.mtime.toISOString(),
-      url: `/csv/${file}`,
-    };
-  });
-
-  const manifestPath = join(PUBLIC_CSV_DIR, "files.json");
-  try {
-    import("fs").then((fs) => {
-      fs.writeFileSync(
-        manifestPath,
-        JSON.stringify(
-          {
-            files: csvFileList,
-            lastUpdated: new Date().toISOString(),
-            totalFiles: csvFileList.length,
-          },
-          null,
-          2,
-        ),
-      );
-      console.log("📋 CSVファイル一覧 (files.json) を作成しました");
-    });
-  } catch (error) {
-    console.error("❌ files.json の作成に失敗:", error.message);
-  }
 
   console.log(`✨ ${copiedCount}個のCSVファイルのコピーが完了しました`);
 }

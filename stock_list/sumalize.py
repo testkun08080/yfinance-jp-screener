@@ -35,13 +35,7 @@ def get_prefecture_from_zip(zip_code):
             return None
 
         # 郵便番号の前処理（ハイフンや空白を除去）
-        clean_zip = (
-            str(zip_code)
-            .replace("-", "")
-            .replace("−", "")
-            .replace(" ", "")
-            .replace("　", "")
-        )
+        clean_zip = str(zip_code).replace("-", "").replace("−", "").replace(" ", "").replace("　", "")
 
         if len(clean_zip) < 7:  # 郵便番号として短すぎる場合
             return None
@@ -222,13 +216,9 @@ def get_stock_data(stock_info):
 
         # データ収集
         result = {
-            "会社名": stock_info["銘柄名"]
-            or safe_get_value(info, "longName")
-            or safe_get_value(info, "shortName"),
+            "会社名": stock_info["銘柄名"] or safe_get_value(info, "longName") or safe_get_value(info, "shortName"),
             "銘柄コード": code,
-            "業種": stock_info.get("33業種区分")
-            or safe_get_value(info, "industry")
-            or safe_get_value(info, "sector"),
+            "業種": stock_info.get("33業種区分") or safe_get_value(info, "industry") or safe_get_value(info, "sector"),
             "優先市場": stock_info.get("市場・商品区分", ""),
             "決算月": settlement_period,
             # "会計基準": None,  # yfinanceでは詳細不明 - コメントアウト
@@ -243,15 +233,9 @@ def get_stock_data(stock_info):
 
         # 財務諸表からのデータ取得
         if not financials.empty:
-            result["売上高"] = safe_get_financial_data(
-                ticker, "financials", "Total Revenue"
-            )
-            result["営業利益"] = safe_get_financial_data(
-                ticker, "financials", "Operating Income"
-            )
-            result["当期純利益"] = safe_get_financial_data(
-                ticker, "financials", "Net Income"
-            )
+            result["売上高"] = safe_get_financial_data(ticker, "financials", "Total Revenue")
+            result["営業利益"] = safe_get_financial_data(ticker, "financials", "Operating Income")
+            result["当期純利益"] = safe_get_financial_data(ticker, "financials", "Net Income")
         else:
             result.update({"売上高": None, "営業利益": None, "当期純利益": None})
 
@@ -281,9 +265,7 @@ def get_stock_data(stock_info):
                 "Stockholders Equity",
                 fallback_items=["Total Stockholder Equity"],
             )
-            total_assets = safe_get_financial_data(
-                ticker, "balance_sheet", "Total Assets"
-            )
+            total_assets = safe_get_financial_data(ticker, "balance_sheet", "Total Assets")
             total_debt = safe_get_financial_data(ticker, "balance_sheet", "Total Debt")
             cash_and_equivalents = safe_get_financial_data(
                 ticker,
@@ -301,16 +283,14 @@ def get_stock_data(stock_info):
                 ],
             )
 
-            result.update(
-                {
-                    "負債": total_liabilities,
-                    "流動負債": current_liabilities,
-                    "流動資産": current_assets,
-                    "総負債": total_debt,
-                    "現金及び現金同等物": cash_and_equivalents,
-                    "投資有価証券": investments,
-                }
-            )
+            result.update({
+                "負債": total_liabilities,
+                "流動負債": current_liabilities,
+                "流動資産": current_assets,
+                "総負債": total_debt,
+                "現金及び現金同等物": cash_and_equivalents,
+                "投資有価証券": investments,
+            })
 
             # 自己資本比率の計算
             if total_equity and total_assets:
@@ -319,15 +299,11 @@ def get_stock_data(stock_info):
                 result["自己資本比率"] = None
 
             # ネットキャッシュの計算（流動資産 + 投資有価証券×70% - 負債）
-            net_cash = calculate_net_cash(
-                current_assets, investments, total_liabilities
-            )
+            net_cash = calculate_net_cash(current_assets, investments, total_liabilities)
             result["ネットキャッシュ"] = net_cash
 
             # デバッグ用: ネットキャッシュ計算の詳細を表示
-            if any(
-                x is not None for x in [current_assets, investments, total_liabilities]
-            ):
+            if any(x is not None for x in [current_assets, investments, total_liabilities]):
                 inv_70 = (investments * 0.7) if investments is not None else 0
                 logger.debug(
                     f"  📊 ネットキャッシュ計算: {current_assets} + {inv_70:.0f} - {total_liabilities} = {net_cash}"
@@ -339,19 +315,17 @@ def get_stock_data(stock_info):
             else:
                 result["ネットキャッシュ比率"] = None
         else:
-            result.update(
-                {
-                    "負債": None,
-                    "流動負債": None,
-                    "流動資産": None,
-                    "総負債": None,
-                    "現金及び現金同等物": None,
-                    "投資有価証券": None,
-                    "自己資本比率": None,
-                    "ネットキャッシュ": None,
-                    "ネットキャッシュ比率": None,
-                }
-            )
+            result.update({
+                "負債": None,
+                "流動負債": None,
+                "流動資産": None,
+                "総負債": None,
+                "現金及び現金同等物": None,
+                "投資有価証券": None,
+                "自己資本比率": None,
+                "ネットキャッシュ": None,
+                "ネットキャッシュ比率": None,
+            })
 
         end_time = time.time()
         end_datetime = datetime.now()
@@ -385,9 +359,7 @@ def main(json_filename="stocks_sample.json"):
     overall_start_datetime = datetime.now()
 
     logger.info("=" * 80)
-    logger.info(
-        f"日本株財務データ取得プロセス開始 - 開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
-    )
+    logger.info(f"日本株財務データ取得プロセス開始 - 開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"処理対象ファイル: {json_filename}")
     logger.info("=" * 80)
 
@@ -395,9 +367,7 @@ def main(json_filename="stocks_sample.json"):
     try:
         with open(json_filename, "r", encoding="utf-8") as f:
             stock_list = json.load(f)
-        logger.info(
-            f"{json_filename}から{len(stock_list)}社の銘柄データを読み込みました"
-        )
+        logger.info(f"{json_filename}から{len(stock_list)}社の銘柄データを読み込みました")
     except FileNotFoundError:
         logger.error(f"❌ {json_filename}ファイルが見つかりません")
         return None
@@ -478,9 +448,7 @@ def main(json_filename="stocks_sample.json"):
 
         # データの一部を表示
         logger.info("\n取得データ（最初の3列）:")
-        logger.info(
-            f"\n{df[['会社名', '銘柄コード', '時価総額', 'PBR', 'ROE']].head()}"
-        )
+        logger.info(f"\n{df[['会社名', '銘柄コード', '時価総額', 'PBR', 'ROE']].head()}")
 
         # 全体の実行時間をログ出力
         logger.info("=" * 80)
@@ -491,9 +459,7 @@ def main(json_filename="stocks_sample.json"):
         logger.info(
             f"処理結果: 成功 {len(results)}社 / 失敗 {len(stock_list) - len(results)}社 / 合計 {len(stock_list)}社"
         )
-        logger.info(
-            f"平均処理時間: {format_duration(overall_duration / len(stock_list))}（1社あたり）"
-        )
+        logger.info(f"平均処理時間: {format_duration(overall_duration / len(stock_list))}（1社あたり）")
         logger.info(f"保存ファイル: {filename}")
         logger.info("=" * 80)
 
@@ -506,9 +472,7 @@ def main(json_filename="stocks_sample.json"):
         logger.error("\n❌ データが取得できませんでした")
         logger.error("=" * 80)
         logger.error("日本株財務データ取得プロセス失敗")
-        logger.error(
-            f"開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+        logger.error(f"開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.error(f"終了時刻: {overall_end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.error(f"総実行時間: {format_duration(overall_duration)}")
         logger.error("すべてのデータ取得に失敗しました")

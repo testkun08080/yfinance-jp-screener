@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 株式データ処理スクリプトをコピー
 COPY stock_list/*.py ./
+COPY stock_list/stocks_sample.json ./
 
 # データディレクトリを作成
 RUN mkdir -p Export
@@ -29,9 +30,9 @@ RUN useradd -m -u 1000 stockuser && \
 USER stockuser
 
 # 環境変数のデフォルト値を設定
-ENV STOCK_FILE=stocks_1.json
+ENV STOCK_FILE=stocks_sample.json
 ENV CHUNK_SIZE=1000
 
 # デフォルトコマンド（株式リスト取得 → 分割 → データ収集）
 # 環境変数を使用して動的に設定
-CMD sh -c "python get_jp_stocklist.py && python split_stocks.py --input stocks_all.json --size ${CHUNK_SIZE} && python sumalize.py ${STOCK_FILE} && python combine_latest_csv.py"
+CMD ["sh", "-c", "python get_jp_stocklist.py && python split_stocks.py --input stocks_all.json --size ${CHUNK_SIZE} && python sumalize.py ${STOCK_FILE} && python combine_latest_csv.py"]

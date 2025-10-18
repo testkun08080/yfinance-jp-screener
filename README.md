@@ -69,10 +69,17 @@ cp .env.example .env
 # STOCK_FILEはデフォルトでは"stocks_sample.json"になっています。 必ず全て取得したい場合は"stocks_all.json"へ変えて下さい
 
 # 3. Docker起動（データ収集 → ビルド → プレビュー）
-./scripts/start.sh --build
+
+# 📦 Python データ収集ビルド・実行
+docker-compose build python-service
+docker-compose run --rm python-service
+
+# 🌐 フロントエンドビルド・起動
+docker-compose build frontend-service
+docker-compose up frontend-service
 
 # 4. ブラウザでアクセス
-# http://localhost:4173
+# http://localhost:{PORT}
 ```
 
 ---
@@ -122,7 +129,7 @@ npm run build
 
 # 4. プレビュー
 npm run preview
-# http://localhost:4173/ にアクセス
+# http://localhost:8000/ にアクセス(.envに依存)
 
 ```
 

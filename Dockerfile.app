@@ -16,13 +16,11 @@ FROM base AS builder
 COPY stock_search/package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY stock_search/ .
+COPY stock_list/Export Export
 
-# データディレクトリを準備
-RUN mkdir -p public/csv
-
-# TypeScriptコンパイルとViteビルド (Docker環境: CSV copy skipped)
+# TypeScriptコンパイルとViteビルド
 ENV DOCKER_ENV=true
-RUN npm run build
+RUN npm run build --loglevel=info
 
 # 本番環境ステージ（nginx使用）
 FROM nginx:alpine AS runner

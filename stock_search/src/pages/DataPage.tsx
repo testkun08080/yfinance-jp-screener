@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { CSVViewer } from "../components/CSVViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FileUpload } from "../components/FileUpload";
+import { useCSVFileDetector } from "../hooks/useCSVFileDetector";
 
 interface CSVFile {
   name: string;
@@ -11,89 +12,26 @@ interface CSVFile {
   url: string;
 }
 
-interface CSVManifest {
-  files: CSVFile[];
-  lastUpdated: string;
-  totalFiles: number;
-}
-
 export const DataPage = () => {
-  const [csvFiles, setCsvFiles] = useState<CSVFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // 新しいフックを使用してCSVファイルを自動検出
+  const {
+    files: csvFiles,
+    loading,
+    error,
+    refetch: loadCSVManifest,
+  } = useCSVFileDetector();
+
+  // ファイルが検出されたら最新のファイルを自動選択
   useEffect(() => {
-    loadCSVManifest();
-  }, []);
-
-  const loadCSVManifest = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch("/csv/files.json");
-
-      if (!response.ok) {
-        // 404エラーの場合は、csvフォルダが存在しないと判断
-        if (response.status === 404) {
-          console.info(
-            "CSV directory or files.json not found - showing upload interface",
-          );
-          setCsvFiles([]);
-          setError(null); // エラーではなく正常な状態として扱う
-          return;
-        }
-        throw new Error(
-          `CSVファイル一覧の読み込みに失敗しました (${response.status})`,
-        );
-      }
-
-      // レスポンスのContent-Typeをチェック
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        console.info(
-          "files.json not found (got HTML instead) - showing upload interface",
-        );
-        setCsvFiles([]);
-        setError(null);
-        return;
-      }
-
-      const manifest: CSVManifest = await response.json();
-      setCsvFiles(manifest.files || []);
-
-      // 最新のファイルを自動選択
-      if (manifest.files && manifest.files.length > 0) {
-        // 最新のファイル（最初のアイテム）を選択
-        setSelectedFile(manifest.files[0]);
-      }
-    } catch (err) {
-      console.error("CSV manifest loading error:", err);
-
-      // JSONパースエラーの場合（HTMLページが返ってきた場合など）
-      if (err instanceof SyntaxError && err.message.includes("JSON")) {
-        console.info("Invalid JSON response - showing upload interface");
-        setCsvFiles([]);
-        setError(null);
-      } else if (
-        err instanceof TypeError &&
-        err.message.includes("Failed to fetch")
-      ) {
-        console.info("Network error - CSV directory may not exist");
-        setCsvFiles([]);
-        setError(null);
-      } else {
-        setError(
-          err instanceof Error ? err.message : "データの読み込みに失敗しました",
-        );
-      }
-    } finally {
-      setLoading(false);
+    if (csvFiles.length > 0 && !selectedFile) {
+      setSelectedFile(csvFiles[0]);
+      console.log(`📊 最新ファイルを自動選択: ${csvFiles[0].name}`);
     }
-  };
+  }, [csvFiles, selectedFile]);
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);

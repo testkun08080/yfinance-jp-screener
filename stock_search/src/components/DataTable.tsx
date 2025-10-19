@@ -1,4 +1,4 @@
-import React from "react";
+import type { FC } from "react";
 import type { StockData, SortConfig } from "../types/stock";
 import {
   formatNumber,
@@ -16,7 +16,7 @@ interface DataTableProps {
   visibleColumns: ColumnConfig[];
 }
 
-export const DataTable: React.FC<DataTableProps> = ({
+export const DataTable: FC<DataTableProps> = ({
   data,
   sortConfig,
   onSort,
@@ -35,7 +35,7 @@ export const DataTable: React.FC<DataTableProps> = ({
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
-  const SortableHeader: React.FC<{
+  const SortableHeader: FC<{
     label: string;
     sortKey: keyof StockData;
     className?: string;
@@ -106,18 +106,22 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   const columns = getDisplayColumns();
 
-  const formatValue = (value: any, format: string) => {
+  const formatValue = (value: unknown, format: string) => {
     if (value === null || value === undefined) return "-";
+
+    // Type guard for number values
+    const numValue = typeof value === "number" ? value : Number(value);
+    if (isNaN(numValue)) return String(value);
 
     switch (format) {
       case "currency":
-        return formatCurrency(value);
+        return formatCurrency(numValue);
       case "percentage":
-        return formatPercentage(value);
+        return formatPercentage(numValue);
       case "decimal":
-        return formatNumber(value, 2);
+        return formatNumber(numValue, 2);
       case "number":
-        return formatNumber(value, 0);
+        return formatNumber(numValue, 0);
       default:
         return String(value);
     }

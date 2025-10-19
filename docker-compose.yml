@@ -30,9 +30,6 @@ services:
       - .env
     ports:
       - "${PORT}:80"
-    volumes:
-      # CSVデータディレクトリをマウント（読み取り専用）
-      - ./stock_list/Export:/usr/share/nginx/html/csv:ro
     environment:
       - NODE_ENV=${NODE_ENV:-production}
     networks:

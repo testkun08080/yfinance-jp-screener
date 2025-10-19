@@ -27,7 +27,7 @@ export interface StockData {
   ネットキャッシュ比率?: number | null;
   _source_file?: string;
   _row_index?: number;
-  [key: string]: any; // Allow any additional dynamic properties
+  [key: string]: string | number | null | undefined; // Allow additional dynamic properties
 }
 
 export interface SearchFilters {

@@ -4,13 +4,9 @@ import { useFilters } from "../hooks/useFilters";
 import { SearchFilters } from "./SearchFilters";
 import { DataTable } from "./DataTable";
 import { Pagination } from "./Pagination";
-import {
-  ColumnSelector,
-  getDefaultColumns,
-  type ColumnConfig,
-} from "./ColumnSelector";
+import { ColumnSelector, type ColumnConfig } from "./ColumnSelector";
+import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "./DownloadButton";
-// import { ShareButton } from "./ShareButton"; // コメントアウト: 共有機能は不要
 import type { PaginationConfig } from "../types/stock";
 
 interface CSVFile {

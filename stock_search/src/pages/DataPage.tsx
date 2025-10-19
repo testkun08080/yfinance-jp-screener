@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CSVViewer } from "../components/CSVViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FileUpload } from "../components/FileUpload";
-import { useCSVFileDetector } from "../hooks/useCSVFileDetector";
 
 interface CSVFile {
   name: string;
@@ -14,39 +13,10 @@ interface CSVFile {
 
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-
-  // 新しいフックを使用してCSVファイルを自動検出
-  const {
-    files: csvFiles,
-    loading,
-    error,
-    refetch: loadCSVManifest,
-  } = useCSVFileDetector();
-
-  // ファイルが検出されたら最新のファイルを自動選択
-  useEffect(() => {
-    if (csvFiles.length > 0 && !selectedFile) {
-      setSelectedFile(csvFiles[0]);
-      console.log(`📊 最新ファイルを自動選択: ${csvFiles[0].name}`);
-    }
-  }, [csvFiles, selectedFile]);
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   const handleFileUpload = (file: File) => {
     setUploadError(null);
-    setUploadedFile(file);
 
     // アップロードされたファイルをCSVFile形式に変換
     const uploadedCSVFile: CSVFile = {
@@ -60,41 +30,22 @@ export const DataPage = () => {
     setSelectedFile(uploadedCSVFile);
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg"></div>
-          <p className="mt-4">CSVファイル一覧を読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="alert alert-error">
-          <svg
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{error}</span>
-          <button className="btn btn-sm btn-outline" onClick={loadCSVManifest}>
-            再試行
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -104,7 +55,7 @@ export const DataPage = () => {
           📊 データビューア
         </h1>
         <p className="text-base-content/70">
-          データをフィルタリングしてCSV形式でダウンロード可能
+          CSVファイルをドラッグ&ドロップして分析開始
         </p>
       </div>
 
@@ -134,109 +85,94 @@ export const DataPage = () => {
         </div>
       </div>
 
-      {csvFiles.length === 0 ? (
-        <div className="space-y-6">
-          <FileUpload
-            onFileSelect={handleFileUpload}
-            loading={false}
-            error={uploadError}
-          />
+      <div className="space-y-6">
+        {/* ファイルアップロード領域 */}
+        <FileUpload
+          onFileSelect={handleFileUpload}
+          loading={false}
+          error={uploadError}
+        />
 
-          {!uploadedFile && (
-            <div className="text-center py-8">
+        {/* 読み込み済みファイル情報 */}
+        {selectedFile && (
+          <div className="card bg-base-100 shadow-sm">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="card-title text-lg">📄 {selectedFile.name}</h2>
+                  <div className="text-sm text-base-content/70 mt-1">
+                    サイズ: {formatFileSize(selectedFile.size)} | 更新日:{" "}
+                    {formatDate(selectedFile.lastModified)}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setSelectedFile(null)}
+                  aria-label="ファイルを閉じる"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CSVビューア */}
+        {selectedFile ? (
+          <CSVViewer file={selectedFile} />
+        ) : (
+          <div className="card bg-base-100 shadow-sm">
+            <div className="card-body text-center py-12">
               <div className="text-6xl mb-4">📊</div>
               <h3 className="text-2xl font-bold mb-2">
                 CSVファイルを読み込んでください
               </h3>
               <p className="text-base-content/70 mb-4">
                 上のエリアにCSVファイルをドラッグ&ドロップ
+                <br />
+                またはクリックしてファイルを選択
               </p>
 
-              <div className="divider">または</div>
+              <div className="divider my-8">使い方</div>
 
-              <div className="alert alert-warning max-w-2xl mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="stroke-current shrink-0 h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <div className="text-sm">
-                  <div className="font-semibold">
-                    <a
-                      href="https://github.com/testkun08080/yfinance-jp-screener#readme"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link link-primary mx-1"
-                    >
-                      README
-                    </a>
-                    をご確認ください
-                  </div>
-                </div>
-              </div>
-
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={loadCSVManifest}
-              >
-                🔄 サーバーデータを再確認
-              </button>
-            </div>
-          )}
-
-          {uploadedFile && selectedFile && <CSVViewer file={selectedFile} />}
-        </div>
-      ) : (
-        /* 自動ファイル情報とCSVビューア */
-        <div className="space-y-6">
-          {/* 現在のファイル情報 */}
-          {selectedFile && (
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="card-title">
-                      📊 現在のデータファイル更新日
-                    </h2>
-                    <div className="text-sm text-base-content/70 mt-1">
-                      更新日: {formatDate(selectedFile.lastModified)}
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={loadCSVManifest}
+              <div className="max-w-2xl mx-auto text-left">
+                <div className="alert alert-info">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="stroke-current shrink-0 h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    🔄 更新確認
-                  </button>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="text-sm">
+                    <div className="font-semibold mb-2">
+                      データの取得方法について
+                    </div>
+                    <p>
+                      CSVデータの取得方法は{" "}
+                      <a
+                        href="https://github.com/testkun08080/yfinance-jp-screener#readme"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-primary"
+                      >
+                        README
+                      </a>{" "}
+                      をご確認ください
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* CSVビューア */}
-          {selectedFile ? (
-            <CSVViewer file={selectedFile} />
-          ) : (
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body text-center">
-                <div className="text-4xl mb-4">📊</div>
-                <h3 className="text-xl font-bold mb-2">ファイルを準備中</h3>
-                <p className="text-base-content/70">
-                  CSVファイルを読み込んでいます。しばらくお待ちください...
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

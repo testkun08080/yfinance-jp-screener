@@ -139,7 +139,7 @@ export const urlParamsToFilters = (
     if (value) {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
-        (filters as any)[key] = numValue;
+        (filters as Record<string, string | number>)[key] = numValue;
       }
     }
   });

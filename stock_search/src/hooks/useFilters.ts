@@ -113,6 +113,7 @@ export const useFilters = (data: StockData[]) => {
         filters.pbrMin !== null &&
         stock.PBR !== null &&
         stock.PBR !== undefined &&
+        typeof stock.PBR === "number" &&
         stock.PBR < filters.pbrMin
       ) {
         return false;
@@ -121,6 +122,7 @@ export const useFilters = (data: StockData[]) => {
         filters.pbrMax !== null &&
         stock.PBR !== null &&
         stock.PBR !== undefined &&
+        typeof stock.PBR === "number" &&
         stock.PBR > filters.pbrMax
       ) {
         return false;
@@ -131,6 +133,7 @@ export const useFilters = (data: StockData[]) => {
         filters.roeMin !== null &&
         stock.ROE !== null &&
         stock.ROE !== undefined &&
+        typeof stock.ROE === "number" &&
         stock.ROE < filters.roeMin / 100
       ) {
         return false;
@@ -139,6 +142,7 @@ export const useFilters = (data: StockData[]) => {
         filters.roeMax !== null &&
         stock.ROE !== null &&
         stock.ROE !== undefined &&
+        typeof stock.ROE === "number" &&
         stock.ROE > filters.roeMax / 100
       ) {
         return false;
@@ -149,6 +153,7 @@ export const useFilters = (data: StockData[]) => {
         filters.marketCapMin !== null &&
         stock.時価総額 !== null &&
         stock.時価総額 !== undefined &&
+        typeof stock.時価総額 === "number" &&
         stock.時価総額 < filters.marketCapMin * 1000000
       ) {
         return false;
@@ -157,6 +162,7 @@ export const useFilters = (data: StockData[]) => {
         filters.marketCapMax !== null &&
         stock.時価総額 !== null &&
         stock.時価総額 !== undefined &&
+        typeof stock.時価総額 === "number" &&
         stock.時価総額 > filters.marketCapMax * 1000000
       ) {
         return false;
@@ -167,6 +173,7 @@ export const useFilters = (data: StockData[]) => {
         filters.revenueMin !== null &&
         stock.売上高 !== null &&
         stock.売上高 !== undefined &&
+        typeof stock.売上高 === "number" &&
         stock.売上高 < filters.revenueMin * 1000000
       ) {
         return false;
@@ -175,6 +182,7 @@ export const useFilters = (data: StockData[]) => {
         filters.revenueMax !== null &&
         stock.売上高 !== null &&
         stock.売上高 !== undefined &&
+        typeof stock.売上高 === "number" &&
         stock.売上高 > filters.revenueMax * 1000000
       ) {
         return false;
@@ -185,6 +193,7 @@ export const useFilters = (data: StockData[]) => {
         filters.operatingProfitMin !== null &&
         stock.営業利益 !== null &&
         stock.営業利益 !== undefined &&
+        typeof stock.営業利益 === "number" &&
         stock.営業利益 < filters.operatingProfitMin * 1000000
       ) {
         return false;
@@ -193,6 +202,7 @@ export const useFilters = (data: StockData[]) => {
         filters.operatingProfitMax !== null &&
         stock.営業利益 !== null &&
         stock.営業利益 !== undefined &&
+        typeof stock.営業利益 === "number" &&
         stock.営業利益 > filters.operatingProfitMax * 1000000
       ) {
         return false;
@@ -203,6 +213,7 @@ export const useFilters = (data: StockData[]) => {
         filters.operatingMarginMin !== null &&
         stock.営業利益率 !== null &&
         stock.営業利益率 !== undefined &&
+        typeof stock.営業利益率 === "number" &&
         stock.営業利益率 < filters.operatingMarginMin / 100
       ) {
         return false;
@@ -211,6 +222,7 @@ export const useFilters = (data: StockData[]) => {
         filters.operatingMarginMax !== null &&
         stock.営業利益率 !== null &&
         stock.営業利益率 !== undefined &&
+        typeof stock.営業利益率 === "number" &&
         stock.営業利益率 > filters.operatingMarginMax / 100
       ) {
         return false;
@@ -221,6 +233,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netProfitMin !== null &&
         stock.当期純利益 !== null &&
         stock.当期純利益 !== undefined &&
+        typeof stock.当期純利益 === "number" &&
         stock.当期純利益 < filters.netProfitMin * 1000000
       ) {
         return false;
@@ -229,6 +242,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netProfitMax !== null &&
         stock.当期純利益 !== null &&
         stock.当期純利益 !== undefined &&
+        typeof stock.当期純利益 === "number" &&
         stock.当期純利益 > filters.netProfitMax * 1000000
       ) {
         return false;
@@ -239,6 +253,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netMarginMin !== null &&
         stock.純利益率 !== null &&
         stock.純利益率 !== undefined &&
+        typeof stock.純利益率 === "number" &&
         stock.純利益率 < filters.netMarginMin / 100
       ) {
         return false;
@@ -247,6 +262,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netMarginMax !== null &&
         stock.純利益率 !== null &&
         stock.純利益率 !== undefined &&
+        typeof stock.純利益率 === "number" &&
         stock.純利益率 > filters.netMarginMax / 100
       ) {
         return false;
@@ -257,6 +273,7 @@ export const useFilters = (data: StockData[]) => {
         filters.equityRatioMin !== null &&
         stock.自己資本比率 !== null &&
         stock.自己資本比率 !== undefined &&
+        typeof stock.自己資本比率 === "number" &&
         stock.自己資本比率 < filters.equityRatioMin / 100
       ) {
         return false;
@@ -265,6 +282,7 @@ export const useFilters = (data: StockData[]) => {
         filters.equityRatioMax !== null &&
         stock.自己資本比率 !== null &&
         stock.自己資本比率 !== undefined &&
+        typeof stock.自己資本比率 === "number" &&
         stock.自己資本比率 > filters.equityRatioMax / 100
       ) {
         return false;
@@ -275,6 +293,7 @@ export const useFilters = (data: StockData[]) => {
         filters.forwardPEMin !== null &&
         stock["PER(会予)"] !== null &&
         stock["PER(会予)"] !== undefined &&
+        typeof stock["PER(会予)"] === "number" &&
         stock["PER(会予)"] < filters.forwardPEMin
       ) {
         return false;
@@ -283,6 +302,7 @@ export const useFilters = (data: StockData[]) => {
         filters.forwardPEMax !== null &&
         stock["PER(会予)"] !== null &&
         stock["PER(会予)"] !== undefined &&
+        typeof stock["PER(会予)"] === "number" &&
         stock["PER(会予)"] > filters.forwardPEMax
       ) {
         return false;
@@ -293,6 +313,7 @@ export const useFilters = (data: StockData[]) => {
         filters.totalLiabilitiesMin !== null &&
         stock.負債 !== null &&
         stock.負債 !== undefined &&
+        typeof stock.負債 === "number" &&
         stock.負債 < filters.totalLiabilitiesMin * 1000000
       ) {
         return false;
@@ -301,6 +322,7 @@ export const useFilters = (data: StockData[]) => {
         filters.totalLiabilitiesMax !== null &&
         stock.負債 !== null &&
         stock.負債 !== undefined &&
+        typeof stock.負債 === "number" &&
         stock.負債 > filters.totalLiabilitiesMax * 1000000
       ) {
         return false;
@@ -311,6 +333,7 @@ export const useFilters = (data: StockData[]) => {
         filters.currentLiabilitiesMin !== null &&
         stock.流動負債 !== null &&
         stock.流動負債 !== undefined &&
+        typeof stock.流動負債 === "number" &&
         stock.流動負債 < filters.currentLiabilitiesMin * 1000000
       ) {
         return false;
@@ -319,6 +342,7 @@ export const useFilters = (data: StockData[]) => {
         filters.currentLiabilitiesMax !== null &&
         stock.流動負債 !== null &&
         stock.流動負債 !== undefined &&
+        typeof stock.流動負債 === "number" &&
         stock.流動負債 > filters.currentLiabilitiesMax * 1000000
       ) {
         return false;
@@ -329,6 +353,7 @@ export const useFilters = (data: StockData[]) => {
         filters.currentAssetsMin !== null &&
         stock.流動資産 !== null &&
         stock.流動資産 !== undefined &&
+        typeof stock.流動資産 === "number" &&
         stock.流動資産 < filters.currentAssetsMin * 1000000
       ) {
         return false;
@@ -337,6 +362,7 @@ export const useFilters = (data: StockData[]) => {
         filters.currentAssetsMax !== null &&
         stock.流動資産 !== null &&
         stock.流動資産 !== undefined &&
+        typeof stock.流動資産 === "number" &&
         stock.流動資産 > filters.currentAssetsMax * 1000000
       ) {
         return false;
@@ -347,6 +373,7 @@ export const useFilters = (data: StockData[]) => {
         filters.totalDebtMin !== null &&
         stock.総負債 !== null &&
         stock.総負債 !== undefined &&
+        typeof stock.総負債 === "number" &&
         stock.総負債 < filters.totalDebtMin * 1000000
       ) {
         return false;
@@ -355,6 +382,7 @@ export const useFilters = (data: StockData[]) => {
         filters.totalDebtMax !== null &&
         stock.総負債 !== null &&
         stock.総負債 !== undefined &&
+        typeof stock.総負債 === "number" &&
         stock.総負債 > filters.totalDebtMax * 1000000
       ) {
         return false;
@@ -365,6 +393,7 @@ export const useFilters = (data: StockData[]) => {
         filters.cashMin !== null &&
         stock["現金及び現金同等物"] !== null &&
         stock["現金及び現金同等物"] !== undefined &&
+        typeof stock["現金及び現金同等物"] === "number" &&
         stock["現金及び現金同等物"] < filters.cashMin * 1000000
       ) {
         return false;
@@ -373,6 +402,7 @@ export const useFilters = (data: StockData[]) => {
         filters.cashMax !== null &&
         stock["現金及び現金同等物"] !== null &&
         stock["現金及び現金同等物"] !== undefined &&
+        typeof stock["現金及び現金同等物"] === "number" &&
         stock["現金及び現金同等物"] > filters.cashMax * 1000000
       ) {
         return false;
@@ -383,6 +413,7 @@ export const useFilters = (data: StockData[]) => {
         filters.investmentsMin !== null &&
         stock.投資有価証券 !== null &&
         stock.投資有価証券 !== undefined &&
+        typeof stock.投資有価証券 === "number" &&
         stock.投資有価証券 < filters.investmentsMin * 1000000
       ) {
         return false;
@@ -391,6 +422,7 @@ export const useFilters = (data: StockData[]) => {
         filters.investmentsMax !== null &&
         stock.投資有価証券 !== null &&
         stock.投資有価証券 !== undefined &&
+        typeof stock.投資有価証券 === "number" &&
         stock.投資有価証券 > filters.investmentsMax * 1000000
       ) {
         return false;
@@ -401,6 +433,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netCashMin !== null &&
         stock.ネットキャッシュ !== null &&
         stock.ネットキャッシュ !== undefined &&
+        typeof stock.ネットキャッシュ === "number" &&
         stock.ネットキャッシュ < filters.netCashMin * 1000000
       ) {
         return false;
@@ -409,6 +442,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netCashMax !== null &&
         stock.ネットキャッシュ !== null &&
         stock.ネットキャッシュ !== undefined &&
+        typeof stock.ネットキャッシュ === "number" &&
         stock.ネットキャッシュ > filters.netCashMax * 1000000
       ) {
         return false;
@@ -419,6 +453,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netCashRatioMin !== null &&
         stock.ネットキャッシュ比率 !== null &&
         stock.ネットキャッシュ比率 !== undefined &&
+        typeof stock.ネットキャッシュ比率 === "number" &&
         stock.ネットキャッシュ比率 < filters.netCashRatioMin / 100
       ) {
         return false;
@@ -427,6 +462,7 @@ export const useFilters = (data: StockData[]) => {
         filters.netCashRatioMax !== null &&
         stock.ネットキャッシュ比率 !== null &&
         stock.ネットキャッシュ比率 !== undefined &&
+        typeof stock.ネットキャッシュ比率 === "number" &&
         stock.ネットキャッシュ比率 > filters.netCashRatioMax / 100
       ) {
         return false;

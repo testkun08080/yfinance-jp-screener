@@ -36,7 +36,7 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
 
         if (numericFields.includes(header)) {
           // 単位表記を除去（倍、%、円など）
-          let cleanValue = value
+          const cleanValue = value
             .replace(/,/g, "")
             .replace(/倍$/, "")
             .replace(/%$/, "")
@@ -63,7 +63,7 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
           reject(new Error("データの変換中にエラーが発生しました"));
         }
       },
-      error: (error) => {
+      error: (error: Error) => {
         reject(
           new Error(`CSVファイルの読み込みに失敗しました: ${error.message}`),
         );

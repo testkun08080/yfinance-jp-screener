@@ -25,32 +25,31 @@ CSVファイルから読み込んだ日本株データをリアルタイムで�
 ```
 stock_search/
 ├── public/
-│   ├── csv/                         # CSVファイル配置先（ビルド時）
 │   └── favicon.ico                  # ファビコン
-├── scripts/
-│   └── copy-csv-files.js            # Prebuildスクリプト
 ├── src/
 │   ├── components/                  # Reactコンポーネント
 │   │   ├── Breadcrumb.tsx          # パンくずナビゲーション
+│   │   ├── ColumnSelector.tsx      # カラム表示選択
 │   │   ├── CSVViewer.tsx           # CSVデータビューア
 │   │   ├── DataTable.tsx           # 動的データテーブル
-│   │   ├── FileUpload.tsx          # ファイルアップロード
+│   │   ├── FileUpload.tsx          # ドラッグ&ドロップファイルアップロード
 │   │   ├── Layout.tsx              # レイアウトコンポーネント
 │   │   ├── Pagination.tsx          # ページネーション
 │   │   └── SearchFilters.tsx       # 検索フィルター
 │   ├── hooks/                       # カスタムフック
-│   │   ├── useCSVData.ts           # CSVデータ管理
 │   │   ├── useCSVParser.ts         # CSVパース処理
 │   │   └── useFilters.ts           # フィルター状態管理
 │   ├── pages/                       # ページコンポーネント
 │   │   ├── AboutPage.tsx           # アプリについて
-│   │   ├── DataPage.tsx            # データビューア
+│   │   ├── DataPage.tsx            # データビューア（D&D専用）
 │   │   └── HomePage.tsx            # ホームページ
 │   ├── types/                       # TypeScript型定義
 │   │   └── stock.ts                # 株式データ型
 │   ├── utils/                       # ユーティリティ関数
+│   │   ├── columnConfig.ts         # カラム設定
 │   │   ├── csvDownload.ts          # CSVダウンロード
-│   │   └── csvParser.ts            # CSVパース処理
+│   │   ├── csvParser.ts            # CSVパース処理
+│   │   └── urlParams.ts            # URLパラメータ処理
 │   ├── App.tsx                      # メインアプリ
 │   ├── index.css                    # グローバルスタイル
 │   └── main.tsx                     # エントリーポイント
@@ -117,10 +116,13 @@ stock_search/
 - 合計件数表示
 - ページ番号ナビゲーション
 
-#### ファイルアップロード
-- ドラッグ&ドロップ対応
-- ローカルCSVファイル読み込み
-- エラーハンドリング
+#### ファイルアップロード（D&D専用）
+- **ドラッグ&ドロップ**: CSVファイルを簡単アップロード
+- **クリック選択**: ファイル選択ダイアログも利用可能
+- **完全クライアントサイド**: データはブラウザ内のみで処理
+- **プライバシー保護**: サーバーに送信されない
+- **任意のCSV構造**: 自動カラム検出で任意のCSVに対応
+- **エラーハンドリング**: 不正なファイル形式の検出
 
 ---
 
@@ -170,16 +172,17 @@ npm run build
 ```
 
 **ビルドプロセス**:
-1. **Prebuild**: `copy-csv-files.js`がCSVファイルをコピー
-2. **TypeScriptコンパイル**: `tsc -b`
-3. **Viteビルド**: 最適化されたバンドル生成
-4. **出力**: `dist/`ディレクトリに静的ファイル生成
+1. **TypeScriptコンパイル**: `tsc -b`
+2. **Viteビルド**: 最適化されたバンドル生成
+3. **出力**: `dist/`ディレクトリに静的ファイル生成
 
 **最適化**:
 - ベンダーチャンク分離（効率的キャッシング）
 - Tree shaking
 - コード分割
 - 圧縮・最小化
+
+**Note**: CSVファイルはアプリケーション内に含まれません。ユーザーがドラッグ&ドロップでアップロードします。
 
 ---
 
@@ -208,29 +211,38 @@ npm run type-check
 
 ---
 
-## CSVデータフロー
+## CSVファイル処理フロー
 
-### ローカル開発
+### ユーザーアップロードフロー
 ```
-../stock_list/Export/*_combined.csv
-    ↓ (prebuild: copy-csv-files.js)
-public/csv/*_combined.csv
-    ↓ (npm run build)
-dist/csv/*_combined.csv
-    ↓ (npm run preview)
-http://localhost:4173/csv/*_combined.csv
+ユーザー操作
+    ↓
+CSVファイルをドラッグ&ドロップ
+または
+クリックしてファイル選択
+    ↓
+FileUpload コンポーネント
+    ↓
+Papa Parse（ブラウザ内解析）
+    ↓
+DataTable コンポーネントで表示
 ```
 
-### Docker環境
-```
-Python Container: /app/Export/*_combined.csv
-    ↓ (volume mount)
-stock-data volume
-    ↓ (volume mount - read only)
-Frontend Container: /usr/share/nginx/html/csv/
-    ↓ (nginx serving)
-http://localhost:8080/csv/*_combined.csv
-```
+### 完全クライアントサイド処理
+
+- **サーバー不要**: すべての処理がブラウザ内で完結
+- **プライバシー保護**: データはサーバーに送信されない
+- **高速処理**: ローカルファイルを直接読み込み
+- **柔軟性**: 任意のCSV構造に対応
+
+### デプロイメントの簡素化
+
+**静的ホスティングのみ**:
+- GitHub Pages
+- Netlify
+- Vercel
+- AWS S3 + CloudFront
+- 任意のWebサーバー（nginx, Apache）
 
 ---
 
@@ -327,31 +339,30 @@ rm -rf node_modules package-lock.json
 npm install
 
 # TypeScriptエラー確認
-npm run type-check
+npx tsc -b
 ```
 
-### CSVファイルが表示されない
+### CSVファイルがアップロードできない
 
+**確認ポイント**:
+- ファイル形式がCSVであることを確認
+- ファイルサイズが大きすぎないか確認（推奨: 50MB以下）
+- ブラウザのJavaScriptが有効になっているか確認
+- ブラウザコンソール（F12）でエラーメッセージを確認
+
+**対処方法**:
 ```bash
-# CSVファイルの存在確認
-ls -la ../stock_list/Export/
-
-# Prebuildスクリプト手動実行
-npm run copy-csv
-
-# ビルド後の確認
-ls -la dist/csv/
+# 開発サーバーを再起動
+npm run dev
 ```
 
-### Docker内でCSVが見つからない
+### データが表示されない
 
-```bash
-# ボリュームマウント確認
-docker-compose exec frontend-service ls -la /usr/share/nginx/html/csv/
-
-# Python側のExportディレクトリ確認
-docker-compose exec python-service ls -la /app/Export/
-```
+**確認ポイント**:
+- CSVファイルのエンコーディング（UTF-8推奨）
+- CSVファイルのヘッダー行が存在するか
+- データに特殊文字が含まれていないか
+- ブラウザコンソールでパースエラーを確認
 
 ---
 

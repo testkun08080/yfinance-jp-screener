@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
         <nav>
           <div className="grid grid-flow-col gap-4">
             <a
-              href="https://github.com/testkun08080/kanpo-rss"
+              href="https://x.com/testkun08080"
               className="btn btn-ghost btn-circle btn-sm"
               target="_blank"
               rel="noopener noreferrer"
@@ -27,7 +27,7 @@ export const Footer: React.FC = () => {
               </svg>
             </a>
             <a
-              href="https://github.com/testkun08080/kanpo-rss"
+              href="https://github.com/testkun08080/yfinance-jp-screener"
               className="btn btn-ghost btn-circle btn-sm"
               target="_blank"
               rel="noopener noreferrer"

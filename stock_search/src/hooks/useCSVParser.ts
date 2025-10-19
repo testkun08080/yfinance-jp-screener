@@ -47,14 +47,14 @@ export const useCSVParser = (file: CSVFile | null) => {
             console.warn("CSV parsing warnings:", results.errors);
           }
 
-          const parsedData = results.data as any[];
+          const parsedData = results.data as Record<string, unknown>[];
           if (parsedData.length === 0) {
             throw new Error("CSVファイルにデータがありません");
           }
 
           // データを StockData 形式に変換
           const stockData: StockData[] = parsedData.map((row) => {
-            const processedRow: any = {};
+            const processedRow: Record<string, string | number | null> = {};
 
             Object.keys(row).forEach((key) => {
               const value = row[key];
@@ -81,7 +81,7 @@ export const useCSVParser = (file: CSVFile | null) => {
 
           setData(stockData);
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           throw new Error(`CSV解析エラー: ${error.message}`);
         },
       });

@@ -78,8 +78,8 @@ docker-compose run --rm python-service
 docker-compose build frontend-service
 docker-compose up frontend-service
 
-# 4. ブラウザでアクセス
-# http://localhost:{PORT}
+# 4. ブラウザでアクセス(環境変数のPORT番号によります)
+# http://localhost:8000
 ```
 
 ---

@@ -103,23 +103,18 @@ yfinance-jp-screener/
 │   │   │   ├── SearchFilters.tsx
 │   │   │   └── Pagination.tsx
 │   │   ├── hooks/                       # Custom React hooks
-│   │   │   ├── useCSVData.ts
 │   │   │   ├── useCSVParser.ts
-│   │   │   ├── useCSVFileDetector.ts   # NEW: Automatic CSV file detection (files.json不要)
 │   │   │   └── useFilters.ts
 │   │   ├── utils/                       # Utility functions
 │   │   │   ├── csvParser.ts            # CSV parsing and formatting
-│   │   │   └── csvDownload.ts          # CSV download utilities
+│   │   │   ├── csvDownload.ts          # CSV download utilities
+│   │   │   └── columnConfig.ts         # Column configuration utilities
 │   │   ├── types/                       # TypeScript definitions
 │   │   │   └── stock.ts
 │   │   └── App.tsx                      # Main application
 │   ├── public/                          # Public assets
-│   │   ├── csv/                         # CSV files (YYYYMMDD_combined.csv pattern, auto-detected)
 │   │   └── favicon.ico                  # Favicon
-│   ├── scripts/
-│   │   └── copy-csv-files.js            # Prebuild: CSV copy only (files.json generation removed)
 │   ├── dist/                            # Built application
-│   │   └── csv/                         # CSV files included in build
 │   ├── nginx.conf                       # Nginx configuration for Docker production
 │   ├── package.json                     # Node.js dependencies
 │   ├── vite.config.ts                   # Vite configuration
@@ -188,21 +183,20 @@ python combine_latest_csv.py --date 20251006
 - Real-time search and filtering capabilities
 - Responsive design with sticky columns for mobile compatibility
 - Pagination and sorting capabilities
-- File upload with drag-and-drop support
+- **Drag & Drop File Upload** - CSVファイルを簡単にアップロード
 - Optimized bundle splitting for performance
-- **🆕 Automatic CSV file detection (files.json不要)** - 日付パターンベースの自動検出
+- Client-side CSV processing with zero server dependency
 
-**CSV File Detection System (New):**
-- **Pattern**: `YYYYMMDD_combined.csv` ファイルを自動検出
-- **Range**: 直近30日分を検索（HEADリクエスト）
-- **Hook**: `useCSVFileDetector.ts` による完全自動化
-- **Benefits**: files.json不要、メンテナンスフリー、リアルタイム検出
+**File Upload System:**
+- **Method**: Drag & Drop または クリック選択
+- **Format**: CSV files (any structure supported)
+- **Processing**: Client-side with Papa Parse library
+- **Benefits**: シンプル、高速、サーバー不要
 
 **Build Process:**
-1. **Prebuild**: `node scripts/copy-csv-files.js` copies latest combined CSV from `stock_list/Export/` to `public/csv/` (files.json generation removed)
-2. **Build**: Vite builds application with optimized vendor chunks
-3. **Output**: `dist/` directory with CSV files included at `dist/csv/`
-4. **Runtime**: Automatic CSV file detection via `useCSVFileDetector` hook
+1. **Build**: `tsc -b && vite build` - TypeScript compilation + Vite bundling
+2. **Output**: `dist/` directory with optimized vendor chunks
+3. **Runtime**: Client-side CSV file upload and processing
 
 **Docker Deployment:**
 - **Container**: nginx:alpine serving static build
@@ -369,55 +363,54 @@ CSV Data Ready for Local/Docker Use
 - **Docker Environment**: Uses `Export/` directly (simplified with named volumes)
 - **Python Scripts**: Use relative path `Export/` which works in both contexts
 
-**🆕 CSV File Detection (files.json不要):**
-- **Runtime**: `useCSVFileDetector` hook が直近30日分の `YYYYMMDD_combined.csv` を自動検出
-- **Method**: HEAD リクエストでファイル存在確認
-- **Benefits**: メンテナンスフリー、リアルタイム検出、サーバー変更不要
+**CSV File Upload System (Drag & Drop):**
+- **Method**: Client-side file upload only (no server required)
+- **Processing**: Papa Parse library for CSV parsing
+- **Benefits**: シンプル、高速、メンテナンスフリー、完全クライアントサイド
 
-**Two Deployment Contexts:**
+**Application Flow:**
 
-#### **A. Local Development**
+#### **Local Development**
 ```
-Run python scripts locally → stock_list/Export/
+npm run dev → http://localhost:5173
     ↓
-cd stock_search && npm run build
+User drags & drops CSV file
     ↓
-prebuild: copy-csv-files.js (files.json generation removed)
+FileUpload component receives file
     ↓
-Copy ../stock_list/Export/*_combined.csv → public/csv/
+Papa Parse processes CSV client-side
     ↓
-Vite build → dist/csv/
-    ↓
-npm run dev → http://localhost:5173 (Development with auto CSV detection)
-or
-npm run preview → http://localhost:4173 (Vite preview)
-or
-docker-compose up → http://localhost:8080 (nginx production)
+DataTable displays results
 ```
 
-#### **B. Docker Environment**
+#### **Production Build**
 ```
-Python Container:
-  sumalize.py → /app/Export/japanese_stocks_data_*.csv
-  combine_latest_csv.py → /app/Export/YYYYMMDD_combined.csv
+npm run build
     ↓
-  stock-data volume (/app/Export)
+Vite build → dist/ directory
     ↓
-Frontend Container:
-  nginx serves /usr/share/nginx/html (dist/ copied during build)
-  stock-data volume mounted at /usr/share/nginx/html/csv (read-only)
+Static files ready for deployment
     ↓
-  Browser: http://localhost:8080/csv/YYYYMMDD_combined.csv
+User uploads CSV via browser (D&D or click)
 ```
 
-**Key Insights**:
-- **🆕 Automatic CSV Detection**: files.json不要、日付パターンベースの自動検出（直近30日）
-- Local development: CSV files included in build via prebuild script
-- Docker deployment: Volume mounting for dynamic CSV access
-- Vite dev server: Port 5173 (development with HMR)
-- Vite preview server: Port 4173 (production build testing)
-- nginx production server: Port 8080 (Docker environment)
-- Consistent `/csv/` path across all deployment contexts
+#### **Docker Deployment**
+```
+docker-compose up → nginx serves static files
+    ↓
+Browser: http://localhost:8080
+    ↓
+User uploads CSV file via drag & drop
+    ↓
+Client-side processing and display
+```
+
+**Key Features**:
+- **Zero Server Dependency**: 完全クライアントサイド処理
+- **Any CSV Structure**: 任意のCSV構造に対応
+- **Fast Processing**: ブラウザ上で高速解析
+- **Simple Deployment**: 静的ファイルのみ（nginx, GitHub Pages, S3など）
+- **Privacy**: データはブラウザ内のみで処理（サーバーに送信されない）
 
 ## Data Architecture
 
@@ -759,80 +752,78 @@ ls -lh stocks_*.json
 
 詳細は[DOCKER.md](DOCKER.md)を参照してください。
 
-## 🆕 Recent Updates (2025-10-18)
+## 🆕 Recent Updates (2025-10-19)
 
-### Automatic CSV File Detection System
+### Drag & Drop File Upload System
 
-**変更概要**: files.json依存を排除し、日付パターンベースの自動CSVファイル検出システムを実装しました。
+**変更概要**: CSV自動検出システムを削除し、シンプルなドラッグ&ドロップファイルアップロード専用に変更しました。
 
 #### 主要な変更点
 
-**1. 新しいHook: `useCSVFileDetector.ts`**
-- **場所**: `stock_search/src/hooks/useCSVFileDetector.ts`
-- **機能**:
-  - 直近30日分の日付パターン（`YYYYMMDD_combined.csv`）でファイルを自動検出
-  - HEAD リクエストでファイル存在確認
-  - ファイルメタデータ（サイズ、最終更新日時）を自動取得
-- **メソッド**:
-  - `generateDateRange(days)` - 日付配列生成
-  - `checkFileExists(url)` - HEADリクエストでファイル存在確認
-  - `getFileMetadata(filename)` - ファイルメタデータ取得
-  - `detectCSVFiles()` - CSVファイル自動検出
+**1. 削除されたファイル:**
+- `stock_search/src/hooks/useCSVFileDetector.ts` - 自動検出フックの削除
+- `stock_search/scripts/copy-csv-files.js` - prebuildスクリプトの削除
+- `package.json` - `prebuild`および`copy-csv`スクリプトの削除
 
-**2. DataPage.tsx の更新**
-- `useCSVFileDetector`フック統合
-- files.json読み込みコードを削除
-- 検出されたファイルリストから最新ファイルを自動選択
+**2. DataPage.tsx の簡素化**
+- **場所**: `stock_search/src/pages/DataPage.tsx`
+- **変更内容**:
+  - `useCSVFileDetector`フックの使用を削除
+  - ファイル自動検出ロジックの削除
+  - D&D専用UIに変更
+  - ファイル情報表示の追加（ファイル名、サイズ、更新日）
+  - ファイル閉じるボタンの追加
 
-**3. copy-csv-files.js の簡素化**
-- files.json生成ロジック完全削除
-- CSVファイルコピーのみを実行
+**3. 新しいユーザーフロー**
+```
+アプリケーション起動
+    ↓
+D&Dエリアを表示
+    ↓
+ユーザーがCSVファイルをドラッグ&ドロップ
+または
+クリックしてファイルを選択
+    ↓
+FileUpload コンポーネントがファイルを受信
+    ↓
+handleFileUpload でCSVFile形式に変換
+    ↓
+CSVViewer でデータを表示
+```
 
 #### メリット
 
-✅ **メンテナンスフリー**: files.json不要、CSVファイルを置くだけで自動検出
-✅ **リアルタイム検出**: 再読み込みで最新状態を取得
-✅ **サーバー変更不要**: nginx設定そのまま
-✅ **後方互換性**: ファイルアップロード機能も動作
-✅ **デバッグ対応**: 詳細なコンソールログ出力
+✅ **シンプル**: サーバー設定不要、完全クライアントサイド
+✅ **プライバシー**: データはブラウザ内のみで処理（サーバー送信なし）
+✅ **柔軟性**: 任意のCSV構造に対応
+✅ **高速**: 即座にファイル処理開始
+✅ **デプロイ簡単**: 静的ファイルのみ（GitHub Pages, S3, netlifyなど）
+✅ **メンテナンスフリー**: prebuildスクリプト不要
 
-#### 動作フロー
+#### ビルドプロセスの簡素化
 
-```
-アプリ起動
-    ↓
-useCSVFileDetector実行
-    ↓
-直近30日分の日付パターン生成
-(例: 20251018, 20251017, 20251016...)
-    ↓
-各パターンでHEADリクエスト
-HEAD /csv/20251018_combined.csv → 200 OK ✅
-HEAD /csv/20251017_combined.csv → 200 OK ✅
-HEAD /csv/20251016_combined.csv → 200 OK ✅
-HEAD /csv/20251015_combined.csv → 404 Not Found ❌
-    ↓
-検出されたファイルリスト作成
-[20251018_combined.csv, 20251017_combined.csv, 20251016_combined.csv]
-    ↓
-最新ファイル(20251018_combined.csv)を自動選択
+**Before (自動検出時):**
+```bash
+npm run build
+  ↓
+prebuild: node scripts/copy-csv-files.js
+  ↓
+tsc -b && vite build
 ```
 
-#### パフォーマンス
+**After (D&D専用):**
+```bash
+npm run build
+  ↓
+tsc -b && vite build
+```
 
-- **初回読み込み**: 最大30回のHEADリクエスト（存在するファイルのみ処理）
-- **ブラウザキャッシュ**: 2回目以降は高速化
-- **実用性**: 通常3-5ファイル程度の検出で高速動作
+#### UI改善
 
-#### デバッグ
-
-ブラウザコンソール（F12 → Console）で以下のログを確認可能:
-- 🔍 CSVファイル検出開始
-- 📅 検索対象日付リスト
-- 🔎 各ファイルチェック状況
-- ✅ ファイル検出成功
-- 📊 メタデータ取得結果
-- ⚠️ 検出失敗時の詳細情報
+- **初回表示**: D&D案内と使い方ガイド
+- **ファイル選択後**: ファイル情報カード表示
+- **ファイル操作**: 閉じるボタンで別ファイルに切り替え可能
+- **エラーハンドリング**: 不正なファイル形式のエラー表示
 
 ## Support / 寄付
 

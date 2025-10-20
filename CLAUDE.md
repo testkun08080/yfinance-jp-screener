@@ -4,32 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-**個人向け日本株式分析プラットフォーム** - yfinance APIを活用した3795+銘柄の小型株分析ツール
+**個人向け日本株式分析プラットフォーム** - yfinance API を活用した 3795+銘柄の小型株分析ツール
 
 このリポジトリは個人開発・個人環境での使用を想定した、シンプルで効率的な株式分析システムです。
 
 ### システム構成
 
 **1. データ収集パイプライン** (Python 3.11)
-- JPX公式データから最新株式リスト自動取得
-- yfinance APIによる財務データ収集
-- 4段階Sequential実行でAPI制限・タイムアウト回避
-- 自動CSV結合機能
 
-**2. Webアプリケーション** (React 19 + TypeScript + Vite)
-- シンプルなローカルアプリケーション（SEO・PWA削除済み）
+- JPX 公式データから最新株式リスト自動取得
+- yfinance API による財務データ収集
+- 4 段階 Sequential 実行で API 制限・タイムアウト回避
+- 自動 CSV 結合機能
+
+**2. Web アプリケーション** (React 19 + TypeScript + Vite)
+
+- シンプルなローカルアプリケーション（SEO・PWA 削除済み）
 - 動的カラム検出・日本語金融データ対応
 - リアルタイム検索・フィルタリング
 - レスポンシブデザイン（Tailwind CSS + DaisyUI）
 
-**3. Docker環境** (nginx + Python)
+**3. Docker 環境** (nginx + Python)
+
 - 本番同等の実行環境
 - マルチステージビルド最適化
 - ボリューム共有によるデータ連携
-- nginxによる高速静的ファイル配信
+- nginx による高速静的ファイル配信
 
-**4. GitHub Actions CI** (7ワークフロー)
-- Sequential Stock Fetch (Part 1-4): 各120分実行
+**4. GitHub Actions CI** (7 ワークフロー)
+
+- Sequential Stock Fetch (Part 1-4): 各 120 分実行
 - CSV Combine & Export
 - Stock List Update
 - Stock Data Fetch (単体テスト用)
@@ -37,27 +41,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 重要な設計方針
 
 ✅ **個人環境特化**
-- SEO最適化不要（削除済み）
-- PWA機能不要（削除済み）
-- GitHub Pages不要（削除済み）
-- シンプルなローカル/Docker実行
+
+- SEO 最適化不要（削除済み）
+- PWA 機能不要（削除済み）
+- GitHub Pages 不要（削除済み）
+- シンプルなローカル/Docker 実行
 
 ✅ **自動化重視**
+
 - データ収集の完全自動化
 - エラーハンドリング・リトライ機能
 - ワークフロー連鎖実行
 
 ✅ **パフォーマンス最適化**
+
 - ベンダーチャンク分離
-- nginx静的配信
-- Docker build cache活用
+- nginx 静的配信
+- Docker build cache 活用
 
 ### 📚 詳細ドキュメント
 
-各モジュールの詳細な説明は、それぞれのREADMEを参照してください：
+各モジュールの詳細な説明は、それぞれの README を参照してください：
 
 - **[stock_list/README.md](stock_list/README.md)** - データ収集パイプラインの詳細（Python scripts, CSV processing）
-- **[stock_search/README.md](stock_search/README.md)** - React Webアプリケーションの詳細（Frontend, build process）
+- **[stock_search/README.md](stock_search/README.md)** - React Web アプリケーションの詳細（Frontend, build process）
 - **[README.md](README.md)** - プロジェクト全体の概要とクイックスタート
 
 ## Repository Structure
@@ -133,12 +140,14 @@ yfinance-jp-screener/
 ### 1. Data Collection Pipeline (`stock_list/`)
 
 **Core Scripts:**
+
 - `sumalize.py` - Main data collection script with yfinance API integration
 - `split_stocks.py` - Enhanced utility with command-line arguments for flexible file splitting
 - `get_jp_stocklist.py` - Stock list acquisition from JPX official data sources
 - `combine_latest_csv.py` - Combines multiple CSV exports into single dated file
 
 **Data Processing Features:**
+
 - **Enhanced CLI**: `split_stocks.py` supports `--input`, `--size`, and `--verbose` flags
 - Flexible input file specification (default: `stocks_all.json`)
 - Customizable chunk sizes for different use cases
@@ -149,6 +158,7 @@ yfinance-jp-screener/
 - Master stock list management (`stocks_all.json`)
 
 **Usage Examples:**
+
 ```bash
 # Process default file
 python sumalize.py
@@ -171,110 +181,730 @@ python combine_latest_csv.py --date 20251006
 ### 2. Web Application (`stock_search/`)
 
 **Technology Stack:**
-- **Frontend**: React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS + DaisyUI
-- **State Management**: Custom hooks with local state
-- **CSV Processing**: Papa Parse with Japanese character support
-- **Deployment**: Docker with nginx
 
-**Key Features:**
-- Dynamic column detection and display for any CSV structure
-- Japanese financial data formatting (円, %, 倍)
-- Real-time search and filtering capabilities
-- Responsive design with sticky columns for mobile compatibility
-- Pagination and sorting capabilities
-- **Drag & Drop File Upload** - CSVファイルを簡単にアップロード
-- Optimized bundle splitting for performance
-- Client-side CSV processing with zero server dependency
+- **Frontend Framework**: React 19.1.1 + TypeScript 5.8.3
+- **Build Tool**: Vite 7.1.2 (高速 HMR、最適化されたビルド)
+- **Routing**: React Router DOM 7.9.2 (SPA ルーティング)
+- **Styling**: Tailwind CSS 4.1.13 + DaisyUI 5.1.9
+- **CSV Processing**: PapaParse 5.5.3 (完全クライアントサイド処理)
+- **State Management**: Custom Hooks (useState, useEffect)
+- **Deployment**: Docker with nginx:alpine
 
-**File Upload System:**
-- **Method**: Drag & Drop または クリック選択
-- **Format**: CSV files (any structure supported)
-- **Processing**: Client-side with Papa Parse library
-- **Benefits**: シンプル、高速、サーバー不要
+---
 
-**Build Process:**
-1. **Build**: `tsc -b && vite build` - TypeScript compilation + Vite bundling
-2. **Output**: `dist/` directory with optimized vendor chunks
-3. **Runtime**: Client-side CSV file upload and processing
+#### **アーキテクチャ概要**
 
-**Docker Deployment:**
-- **Container**: nginx:alpine serving static build
-- **Volume**: CSV files mounted from shared volume
-- **Performance**: Vendor chunks separated for efficient caching
-- **Access**: http://localhost:8080
+**プロジェクト構造:**
+
+```
+stock_search/
+├── src/
+│   ├── components/          # 再利用可能UIコンポーネント
+│   │   ├── Breadcrumb.tsx          # パンくずリスト
+│   │   ├── ColumnSelector.tsx      # カラム表示制御
+│   │   ├── CSVViewer.tsx           # メインCSVビューア
+│   │   ├── DataTable.tsx           # データテーブル表示
+│   │   ├── DonationModal.tsx       # 寄付モーダル
+│   │   ├── DownloadButton.tsx      # CSV download
+│   │   ├── FileUpload.tsx          # D&Dファイルアップロード
+│   │   ├── Footer.tsx              # フッター
+│   │   ├── Navigation.tsx          # ナビゲーションバー
+│   │   ├── Pagination.tsx          # ページネーション
+│   │   ├── SearchFilters.tsx       # 検索・フィルター
+│   │   ├── ShareButton.tsx         # SNSシェア
+│   │   └── SponsorshipButtons.tsx  # スポンサーシップ
+│   ├── pages/               # ページコンポーネント
+│   │   ├── AboutPage.tsx           # About ページ
+│   │   ├── DataPage.tsx            # メインデータページ
+│   │   ├── NotFound.tsx            # 404 ページ
+│   │   └── index.ts                # ページエクスポート
+│   ├── hooks/               # カスタムReact Hooks
+│   │   ├── useCSVParser.ts         # CSV解析ロジック
+│   │   └── useFilters.ts           # フィルタリング状態管理
+│   ├── utils/               # ユーティリティ関数
+│   │   ├── columnConfig.ts         # カラム設定
+│   │   ├── csvDownload.ts          # CSVダウンロード
+│   │   ├── csvParser.ts            # CSV解析
+│   │   └── urlParams.ts            # URLパラメータ処理
+│   ├── types/               # TypeScript型定義
+│   │   └── stock.ts                # 株式データ型
+│   ├── App.tsx              # ルートアプリケーション
+│   └── main.tsx             # エントリーポイント
+├── public/
+│   └── favicon.ico          # ファビコン
+├── nginx.conf               # nginx設定（Docker用）
+├── package.json             # 依存関係管理
+├── vite.config.ts           # Vite設定
+├── tsconfig.json            # TypeScript設定
+├── tailwind.config.js       # Tailwind CSS設定
+└── postcss.config.js        # PostCSS設定
+```
+
+**総行数**: ~2,771 行 (TypeScript/TSX)
+
+---
+
+#### **Key Features**
+
+##### **1. Drag & Drop File Upload System**
+
+- **実装**: [FileUpload.tsx](stock_search/src/components/FileUpload.tsx)
+- **特徴**:
+  - ドラッグ&ドロップ対応
+  - クリック選択対応
+  - リアルタイムファイル検証
+  - エラーハンドリング
+  - ファイルサイズ・更新日表示
+
+**データフロー:**
+
+```
+User drops CSV file
+    ↓
+FileUpload component
+    ↓
+createObjectURL (Browser API)
+    ↓
+CSVFile object creation
+    ↓
+Parent state update (setSelectedFile)
+    ↓
+CSVViewer component receives file
+    ↓
+useCSVParser hook processes file
+    ↓
+PapaParse library parses CSV
+    ↓
+DataTable displays results
+```
+
+##### **2. CSV Processing Pipeline**
+
+**useCSVParser Hook ([useCSVParser.ts](stock_search/src/hooks/useCSVParser.ts)):**
+
+```typescript
+// 主要機能:
+- PapaParseによる高速CSV解析
+- 動的カラム検出 (任意のCSV構造に対応)
+- 日本語文字列対応 (UTF-8, Shift-JIS)
+- 数値・日付型の自動変換
+- エラーハンドリングとローディング状態管理
+```
+
+**カラム設定 ([columnConfig.ts](stock_search/src/utils/columnConfig.ts)):**
+
+```typescript
+// 日本語金融データフォーマット:
+- 通貨: "¥1,234,567" (円表示)
+- パーセント: "12.34%" (比率)
+- 倍率: "1.23倍" (PER, PBR等)
+- 大数: "1.23億円" (時価総額等)
+```
+
+##### **3. Dynamic Data Table**
+
+**[DataTable.tsx](stock_search/src/components/DataTable.tsx) 特徴:**
+
+- **動的カラム検出**: CSV ヘッダーから自動生成
+- **ソート機能**: 全カラムでソート可能（昇順・降順）
+- **レスポンシブデザイン**:
+  - モバイル: カード表示
+  - タブレット/PC: テーブル表示
+  - Sticky columns: 横スクロール時も固定
+- **仮想化**: 大規模データセット対応 (Pagination)
+
+##### **4. 検索・フィルタリングシステム**
+
+**[SearchFilters.tsx](stock_search/src/components/SearchFilters.tsx):**
+
+```typescript
+// フィルタリング機能:
+- 全カラムテキスト検索
+- 範囲フィルタ (数値・日付)
+- 複数条件AND検索
+- URLパラメータ連携 (共有可能なフィルタ状態)
+```
+
+**[useFilters.ts](stock_search/src/hooks/useFilters.ts):**
+
+```typescript
+// 状態管理:
+-フィルタ条件の永続化 -
+  デバウンス処理(パフォーマンス最適化) -
+  フィルタリセット機能;
+```
+
+##### **5. ページネーション**
+
+**[Pagination.tsx](stock_search/src/components/Pagination.tsx):**
+
+- **ページサイズ**: 10, 25, 50, 100 rows
+- **ナビゲーション**: 前/次ページ、直接ページ指定
+- **状態永続化**: URL パラメータで共有可能
+
+---
+
+#### **Build Configuration**
+
+**Vite 設定 ([vite.config.ts](stock_search/vite.config.ts)):**
+
+```typescript
+export default defineConfig({
+  plugins: [
+    react(), // React Fast Refresh
+    tailwindcss(), // Tailwind CSS統合
+  ],
+  base: "/", // ベースURL
+  build: {
+    outDir: "dist",
+    assetsDir: "assets",
+    sourcemap: false, // 本番環境: ソースマップ無効
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"], // ~150KB
+          papaparse: ["papaparse"], // ~110KB
+        },
+      },
+    },
+  },
+});
+```
+
+**Code Splitting 効果:**
+
+- **vendor.js**: 150KB (React ecosystem)
+- **papaparse.js**: 110KB (CSV parsing)
+- **main.js**: ~50KB (アプリケーションコード)
+- **Total**: ~310KB (gzip: ~100KB)
+
+**TypeScript 設定 ([tsconfig.json](stock_search/tsconfig.json)):**
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  }
+}
+```
+
+---
+
+#### **Performance Optimization**
+
+**Vite HMR (Hot Module Replacement):**
+
+- **起動時間**: ~300ms (超高速)
+- **HMR 更新**: ~50ms (インスタント)
+- **ビルド時間**: ~3-5 秒 (最適化済み)
+
+**Bundle Optimization:**
+
+```
+Initial Load:
+├─ vendor.js (150KB) → gzip: 50KB
+├─ papaparse.js (110KB) → gzip: 35KB
+└─ main.js (50KB) → gzip: 15KB
+Total: ~100KB (gzip)
+```
+
+**Lazy Loading Strategy:**
+
+```typescript
+// ルートベースの遅延読み込み
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const DataPage = lazy(() => import("./pages/DataPage"));
+```
+
+**Caching Strategy:**
+
+- **静的アセット**: Cache-Control: public, immutable (1 年)
+- **HTML**: Cache-Control: no-cache, no-store
+- **CSV**: Cache-Control: public, must-revalidate (1 時間)
+
+---
+
+#### **Development Workflow**
+
+**ローカル開発:**
+
+```bash
+cd stock_search
+
+# 依存関係インストール
+npm install
+
+# 開発サーバー起動 (HMR有効)
+npm run dev
+# → http://localhost:5173
+
+# TypeScript型チェック
+npm run build  # tsc -b && vite build
+
+# ESLint
+npm run lint
+
+# プレビュー (本番ビルド確認)
+npm run preview
+# → http://localhost:4173
+```
+
+**環境変数:**
+
+```bash
+# .env.local (開発環境)
+VITE_API_BASE_URL=http://localhost:3000
+VITE_CSV_DIR=./public/csv
+
+# .env.production (本番環境)
+VITE_API_BASE_URL=https://api.example.com
+VITE_CSV_DIR=/csv
+```
+
+**Docker Build Process:**
+
+```dockerfile
+# Stage 1: deps - 依存関係キャッシング
+npm ci  # package-lock.json厳密に従う
+
+# Stage 2: builder - ビルド実行
+npm run build  # tsc -b && vite build
+└─ dist/
+   ├── index.html
+   ├── assets/
+   │   ├── vendor-*.js
+   │   ├── papaparse-*.js
+   │   ├── main-*.js
+   │   └── *.css
+   └── favicon.ico
+
+# Stage 3: runner - nginx配信
+COPY dist/ /usr/share/nginx/html/
+```
+
+---
+
+#### **Key Dependencies**
+
+**Production Dependencies:**
+
+```json
+{
+  "@tailwindcss/vite": "^4.1.13", // Tailwind Vite統合
+  "autoprefixer": "^10.4.21", // CSSベンダープレフィックス
+  "daisyui": "^5.1.9", // UIコンポーネントライブラリ
+  "papaparse": "^5.5.3", // CSV parsing
+  "postcss": "^8.5.6", // CSS処理
+  "react": "^19.1.1", // Reactコア
+  "react-dom": "^19.1.1", // React DOM
+  "react-icons": "^5.5.0", // アイコンライブラリ
+  "react-router-dom": "^7.9.2", // SPAルーティング
+  "tailwindcss": "^4.1.13" // ユーティリティCSSフレームワーク
+}
+```
+
+**Development Dependencies:**
+
+```json
+{
+  "@types/papaparse": "^5.3.16",
+  "@types/react": "^19.1.10",
+  "@types/react-dom": "^19.1.7",
+  "@vitejs/plugin-react": "^5.0.0",
+  "eslint": "^9.33.0",
+  "typescript": "~5.8.3",
+  "vite": "^7.1.2"
+}
+```
+
+---
+
+#### **Client-Side Architecture Benefits**
+
+**完全クライアントサイド処理:**
+
+- ✅ **サーバーレス**: API 不要、静的ファイルのみ
+- ✅ **プライバシー**: データはブラウザ内のみで処理
+- ✅ **高速**: ネットワークレイテンシー無し
+- ✅ **スケーラビリティ**: CDN 配信可能
+- ✅ **オフライン対応**: Service Worker 統合可能
+
+**デプロイメントオプション:**
+
+- Docker + nginx (本番環境、推奨)
+- GitHub Pages (静的ホスティング)
+- Netlify / Vercel (サーバーレスプラットフォーム)
+- S3 + CloudFront (AWS)
+
+**セキュリティ:**
+
+- **XSS 対策**: React 自動エスケープ + nginx ヘッダー
+- **CSRF 対策**: API なし（不要）
+- **CSP**: Content Security Policy 設定可能
+- **HTTPS**: nginx reverse proxy 経由
 
 ### 3. Docker Environment
 
-**Two-Service Architecture:**
+**アーキテクチャ概要:**
+
+- **2 サービス構成**: Python データ収集 + React フロントエンド
+- **マルチステージビルド**: 最適化されたイメージサイズとセキュリティ
+- **ボリューム共有**: 効率的なデータ連携
+- **本番グレード**: nginx + 非 root ユーザー実行
+
+---
 
 #### **Python Service** (`Dockerfile.fetch`)
-- **Base Image**: python:3.11-slim
-- **Purpose**: Data collection and processing
-- **Working Directory**: `/app`
-- **Volumes**:
-  - `./stock_list:/app:rw` - Scripts and stock list files
-  - `stock-data:/app/Export:rw` - Named volume for CSV exports (simplified)
-- **Default Command**: Sequential execution of:
-  1. `get_jp_stocklist.py` - Fetch latest stock list
-  2. `split_stocks.py` - Split into chunks
-  3. `sumalize.py` - Collect financial data
-  4. `combine_latest_csv.py` - Combine CSV files
-- **Environment Variables**:
-  - `STOCK_FILE` - Stock file to process (default: stocks_1.json)
-  - `CHUNK_SIZE` - Split chunk size (default: 1000)
-- **Export Directory**: Uses `Export/` directly (not `stock_list/Export/`)
+
+**基本構成:**
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+USER stockuser (UID 1000)
+```
+
+**特徴:**
+
+- **ベースイメージ**: `python:3.11-slim` - 軽量・セキュアな Python 環境
+- **システム依存関係**: gcc, g++ (コンパイル時のみ、後片付け実施)
+- **Python パッケージ**: requirements.txt から一括インストール、キャッシュ無効化
+- **セキュリティ**: 非 root ユーザー`stockuser`で実行 (UID 1000)
+
+**ディレクトリ構成:**
+
+```
+/app/
+├── *.py                     # Python scripts (sumalize, split_stocks, etc.)
+├── stocks_sample.json       # Default stock list
+├── Export/                  # CSV output directory (created at runtime)
+└── requirements.txt         # Python dependencies
+```
+
+**ボリュームマウント:**
+
+```yaml
+volumes:
+  - ./stock_list:/app:rw # Scripts and stock list files (read-write)
+  - ./stock_list/Export:/app/Export:rw # CSV output (read-write, ホストと同期)
+```
+
+**環境変数:**
+| 変数名 | デフォルト | 説明 |
+|--------|-----------|------|
+| `STOCK_FILE` | `stocks_sample.json` | 処理対象の株式リストファイル |
+| `CHUNK_SIZE` | `1000` | split_stocks.py のチャンクサイズ |
+| `PYTHONUNBUFFERED` | `1` | ログの即時出力を有効化 |
+
+**実行コマンド（CMD）:**
+
+```bash
+sh -c "python get_jp_stocklist.py && \
+       python split_stocks.py --input stocks_all.json --size ${CHUNK_SIZE} && \
+       python sumalize.py ${STOCK_FILE} && \
+       python combine_latest_csv.py"
+```
+
+**処理フロー:**
+
+1. **JPX 株式リスト取得** (`get_jp_stocklist.py`) → `stocks_all.json`生成
+2. **株式リスト分割** (`split_stocks.py`) → `stocks_1-4.json`生成
+3. **財務データ収集** (`sumalize.py`) → `Export/japanese_stocks_data_*.csv`生成
+4. **CSV 結合** (`combine_latest_csv.py`) → `Export/YYYYMMDD_combined.csv`生成
+
+**ビルド最適化:**
+
+- **レイヤーキャッシング**: requirements.txt 変更時のみパッケージ再インストール
+- **マルチステージ不使用**: シンプルな単一ステージ構成
+- **不要ファイル削除**: apt-get clean up 実施でイメージサイズ削減
+
+---
 
 #### **Frontend Service** (`Dockerfile.app`)
-- **Base Image**: nginx:alpine (production)
-- **Multi-stage Build**:
-  1. **Builder Stage**: Node.js 20 - builds React application
-  2. **Runner Stage**: nginx - serves static files
-- **Working Directory**: `/usr/share/nginx/html`
-- **Volumes**: `stock-data:/usr/share/nginx/html/csv:ro` - Named volume (read-only)
-- **Port**: 80 (exposed as 8080 on host)
-- **Configuration**: Custom nginx.conf with:
-  - SPA routing support
-  - Gzip compression
-  - Static asset caching
-  - CSV file CORS headers
-  - Security headers
 
-**Data Flow (Simplified with Named Volume):**
-```
-Python Container → /app/Export (combine_latest_csv.py writes CSV)
-       ↓
-  stock-data volume (named Docker volume)
-       ↓
-Frontend Container → /usr/share/nginx/html/csv (nginx serves from volume)
-       ↓
-  Browser access: http://localhost:8080/csv/YYYYMMDD_combined.csv
+**マルチステージビルド構成:**
+
+##### **Stage 1: base** - ベース環境
+
+```dockerfile
+FROM node:20-alpine AS base
+WORKDIR /app
 ```
 
-**Docker Compose Configuration:**
-- **Network**: `stock-network` (bridge driver)
-- **Volume**: `stock-data` (named volume, local driver) - shared between services
-- **Dependencies**: Frontend depends on Python service completion
-- **Health Checks**: Frontend HTTP health check on port 80
-- **Restart Policy**: Python service runs once, Frontend always available
-- **Directory Structure**: Uses `Export/` directly instead of `stock_list/Export/`
+##### **Stage 2: deps** - 依存関係インストール
 
-**Usage:**
+```dockerfile
+FROM base AS deps
+COPY stock_search/package*.json ./
+RUN npm ci  # 本番環境向け依存関係の厳密インストール
+```
+
+##### **Stage 3: builder** - アプリケーションビルド
+
+```dockerfile
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY stock_search/ .
+COPY stock_list/Export Export  # CSV files for build process
+
+ENV DOCKER_ENV=true
+RUN npm run build --loglevel=info
+```
+
+**ビルドプロセス:**
+
+1. **TypeScript コンパイル**: `tsc -b` - 型チェックと JS 変換
+2. **Vite バンドリング**:
+   - コード分割 (vendor, papaparse chunks)
+   - アセット最適化 (圧縮、minify)
+   - ソースマップ無効化 (本番環境)
+3. **出力**: `dist/` ディレクトリに最適化された SPA
+
+##### **Stage 4: runner** - 本番環境
+
+```dockerfile
+FROM nginx:alpine AS runner
+
+# nginx設定コピー
+COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
+
+# ビルド成果物のみコピー（最小限）
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# CSVディレクトリ作成（ボリュームマウント用）
+RUN mkdir -p /usr/share/nginx/html/csv && \
+    chown -R nginx:nginx /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**nginx 設定 (`stock_search/nginx.conf`):**
+
+```nginx
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    # Gzip圧縮 (テキストベースアセット)
+    gzip on;
+    gzip_types text/plain text/css text/javascript application/javascript application/json;
+
+    # 静的アセットキャッシュ (1年)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # CSVファイルキャッシュ (1時間、CORS有効)
+    location /csv/ {
+        expires 1h;
+        add_header Cache-Control "public, must-revalidate";
+        add_header Access-Control-Allow-Origin "*";
+    }
+
+    # SPA routing (全てのルートを index.html にフォールバック)
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # セキュリティヘッダー
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+}
+```
+
+**パフォーマンス最適化:**
+
+- **Code Splitting**: vendor (React, React Router) と papaparse を分離
+- **Lazy Loading**: ルートベースの遅延読み込み
+- **Gzip 圧縮**: テキストアセットの自動圧縮
+- **ブラウザキャッシュ**: 静的ファイル 1 年、HTML 無キャッシュ
+
+**セキュリティ対策:**
+
+- **非 root ユーザー実行**: nginx:nginx ユーザーで実行
+- **セキュリティヘッダー**: XSS, Clickjacking 対策
+- **CORS 制御**: CSV API のみ許可
+
+---
+
+#### **Docker Compose オーケストレーション**
+
+**docker-compose.yml 構成:**
+
+```yaml
+services:
+  # Python データ収集サービス
+  python-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetch
+    container_name: stock-data-collector
+    env_file: .env
+    volumes:
+      - ./stock_list:/app:rw
+      - ./stock_list/Export:/app/Export:rw
+    environment:
+      - PYTHONUNBUFFERED=1
+      - STOCK_FILE=${STOCK_FILE:-stocks_sample.json}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+    restart: "no" # 一回のみ実行
+
+  # React フロントエンドサービス
+  frontend-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: stock-frontend
+    env_file: .env
+    ports:
+      - "${PORT:-8080}:80"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    command: >
+      sh -c "echo 'Frontend running on http://localhost:${PORT:-8080}' && nginx -g 'daemon off;'"
+```
+
+**データフロー:**
+
+### 重要な設計: 2 つの独立した使用パターン
+
+```
+パターン1: データ収集パイプライン (Docker Python Service)
+┌─────────────────────────────────────────────────────────────┐
+│ Python Service (stock-data-collector)                       │
+│ ├─ get_jp_stocklist.py → stocks_all.json                   │
+│ ├─ split_stocks.py → stocks_1-4.json                       │
+│ ├─ sumalize.py → Export/japanese_stocks_data_*.csv         │
+│ └─ combine_latest_csv.py → Export/YYYYMMDD_combined.csv    │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ↓ (ホストマシンに保存: ./stock_list/Export/)
+                 │
+        ユーザーがローカルで使用
+
+
+パターン2: フロントエンドでのCSV分析 (完全クライアントサイド)
+┌─────────────────────────────────────────────────────────────┐
+│ Frontend Service (stock-frontend)                           │
+│ ├─ nginx serves /usr/share/nginx/html (React SPA)          │
+│ └─ Browser: http://localhost:8080                          │
+└─────────────────────────────────────────────────────────────┘
+                 │
+                 ↓
+┌─────────────────────────────────────────────────────────────┐
+│ ブラウザ (完全クライアントサイド処理)                        │
+│                                                             │
+│  ユーザー操作:                                               │
+│  1. CSVファイルをDrag & Drop / クリック選択                  │
+│  2. ブラウザ内でPapaParseがCSV解析                          │
+│  3. React コンポーネントでデータ表示                         │
+│  4. 検索・フィルタリング・ソート (全てブラウザ内)            │
+│                                                             │
+│  データの流れ:                                               │
+│  ローカルCSVファイル → FileReader API → PapaParse          │
+│  → State管理 → DataTable表示                               │
+│                                                             │
+│  ⚠️ 重要: サーバーにデータは送信されません                   │
+│  ⚠️ CSVファイルはブラウザ内のみで処理                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**アーキテクチャの特徴:**
+
+1. **Python Service (データ収集)**:
+
+   - 目的: yfinance API から財務データを収集して CSV を生成
+   - 出力: ホストマシンの `./stock_list/Export/` ディレクトリ
+   - 使用タイミング: 定期的なデータ更新時（GitHub Actions またはローカル Docker 実行）
+
+2. **Frontend Service (CSV ビューア)**:
+
+   - 目的: ユーザーが持っている任意の CSV ファイルを分析
+   - 入力: ユーザーが Drag & Drop するローカルファイル
+   - 処理: 100%ブラウザ内（サーバー送信なし）
+   - データソース: **制限なし** - Python Service で生成した CSV でも、他の任意の CSV でも OK
+
+3. **独立性**:
+   - 2 つのサービスは **直接連携していません**
+   - Frontend Service は Python Service の出力を **必要としません**
+   - ユーザーは任意の CSV ファイルをフロントエンドで分析可能
+
+**環境変数 (.env ファイル):**
+
 ```bash
-# Start both services
+# Python Service
+STOCK_FILE=stocks_sample.json
+CHUNK_SIZE=1000
+
+# Frontend Service
+PORT=8080
+NODE_ENV=production
+```
+
+**実行コマンド:**
+
+```bash
+# 全サービスビルド&起動
 docker-compose up --build
 
-# Access frontend
-open http://localhost:8080
+# バックグラウンド実行
+docker-compose up -d
 
-# View logs
+# 特定サービスのみ起動
+docker-compose up frontend-service
+
+# ログ確認
 docker-compose logs -f
+docker-compose logs -f python-service
 
-# Stop services
+# サービス停止
 docker-compose down
 
-# Clean volumes
+# ボリュームも含めて完全削除
 docker-compose down -v
+
+# 再ビルド（キャッシュなし）
+docker-compose build --no-cache
+```
+
+**トラブルシューティング:**
+
+```bash
+# コンテナ内に入る
+docker-compose exec frontend-service sh
+docker-compose exec python-service bash
+
+# ボリューム確認
+docker-compose exec frontend-service ls -la /usr/share/nginx/html/csv
+
+# nginxログ確認
+docker-compose exec frontend-service cat /var/log/nginx/error.log
+
+# Pythonログ確認
+docker-compose logs python-service | grep ERROR
+```
+
+**ポート競合時の対処:**
+
+```bash
+# .env でポート変更
+echo "PORT=3000" >> .env
+docker-compose up
+
+# または直接指定
+PORT=3000 docker-compose up
 ```
 
 ### 4. GitHub Actions Automation (`.github/workflows/`)
@@ -298,6 +928,7 @@ CSV Data Ready for Local/Docker Use
 ```
 
 #### **Workflow 1: `stock-data-fetch.yml` (Manual Single File Processing)**
+
 - **Trigger**: Manual (workflow_dispatch)
 - **Purpose**: Process single stock file for quick testing
 - **Input**: Stock file selection (stocks_1.json - stocks_4.json, stocks_sample.json)
@@ -306,35 +937,42 @@ CSV Data Ready for Local/Docker Use
 - **Use Case**: Quick data collection for specific stock chunk
 
 #### **Workflow 2-5: Sequential Stock Fetch Workflows**
+
 **Part 1** (`stock-fetch-sequential-1.yml`):
+
 - **Trigger**: Manual (workflow_dispatch)
 - **Process**: stocks_1.json → Commit → Auto-trigger Part 2
 - **Timeout**: 120 minutes
 
 **Part 2** (`stock-fetch-sequential-2.yml`):
+
 - **Trigger**: Auto (triggered by Part 1 completion)
 - **Process**: stocks_2.json → Commit → Auto-trigger Part 3
 
 **Part 3** (`stock-fetch-sequential-3.yml`):
+
 - **Trigger**: Auto (triggered by Part 2 completion)
 - **Process**: stocks_3.json → Commit → Auto-trigger Part 4
 
 **Part 4 (Final)** (`stock-fetch-sequential-4.yml`):
+
 - **Trigger**: Auto (triggered by Part 3 completion)
 - **Process**: stocks_4.json → Commit → Auto-trigger CSV Combine
 - **Special**: Completion summary and workflow chain trigger
 
 **Why Sequential?**
+
 - Avoids API rate limiting from yfinance
 - Prevents GitHub Actions timeout (max 6 hours total, 120 min per workflow)
 - Allows monitoring and intervention at each stage
 - Commits data incrementally for safety
 
 #### **Workflow 6: `csv-combine-export.yml` (CSV Combination)**
+
 - **Trigger**:
   - Auto (triggered by Sequential Part 4 completion)
   - Manual (workflow_dispatch)
-- **Purpose**: Combine all japanese_stocks_data_*.csv files into single dated file
+- **Purpose**: Combine all japanese*stocks_data*\*.csv files into single dated file
 - **Input Parameters** (manual only):
   - `custom_date` - Custom date for output filename (YYYYMMDD)
   - `reason` - Reason for combination
@@ -345,6 +983,7 @@ CSV Data Ready for Local/Docker Use
 - **Output**: `YYYYMMDD_combined.csv` in stock_list/Export/
 
 #### **Workflow 7: `stock-list-update.yml` (Master List Update)**
+
 - **Trigger**: Manual (workflow_dispatch)
 - **Purpose**: Update master stock list from JPX
 - **Process**:
@@ -359,11 +998,13 @@ CSV Data Ready for Local/Docker Use
 ### 5. CSV Data Flow Architecture
 
 **Important Note on Directory Paths:**
+
 - **GitHub Actions & Local Development**: Uses `stock_list/Export/` (repository structure)
 - **Docker Environment**: Uses `Export/` directly (simplified with named volumes)
 - **Python Scripts**: Use relative path `Export/` which works in both contexts
 
 **CSV File Upload System (Drag & Drop):**
+
 - **Method**: Client-side file upload only (no server required)
 - **Processing**: Papa Parse library for CSV parsing
 - **Benefits**: シンプル、高速、メンテナンスフリー、完全クライアントサイド
@@ -371,6 +1012,7 @@ CSV Data Ready for Local/Docker Use
 **Application Flow:**
 
 #### **Local Development**
+
 ```
 npm run dev → http://localhost:5173
     ↓
@@ -384,6 +1026,7 @@ DataTable displays results
 ```
 
 #### **Production Build**
+
 ```
 npm run build
     ↓
@@ -395,6 +1038,7 @@ User uploads CSV via browser (D&D or click)
 ```
 
 #### **Docker Deployment**
+
 ```
 docker-compose up → nginx serves static files
     ↓
@@ -406,10 +1050,11 @@ Client-side processing and display
 ```
 
 **Key Features**:
+
 - **Zero Server Dependency**: 完全クライアントサイド処理
-- **Any CSV Structure**: 任意のCSV構造に対応
+- **Any CSV Structure**: 任意の CSV 構造に対応
 - **Fast Processing**: ブラウザ上で高速解析
-- **Simple Deployment**: 静的ファイルのみ（nginx, GitHub Pages, S3など）
+- **Simple Deployment**: 静的ファイルのみ（nginx, GitHub Pages, S3 など）
 - **Privacy**: データはブラウザ内のみで処理（サーバーに送信されない）
 
 ## Data Architecture
@@ -417,12 +1062,14 @@ Client-side processing and display
 ### Stock List Management
 
 **Master Data Source**: JPX (Japan Exchange Group) official data
+
 - **Source**: `https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls`
 - **Format**: Excel → JSON conversion with Japanese character support
 - **Markets**: プライム (Prime), スタンダード (Standard), グロース (Growth)
-- **Data Fields**: コード (Stock Code), 銘柄名 (Company Name), 市場・商品区分 (Market Classification), 33業種区分 (Industry Classification)
+- **Data Fields**: コード (Stock Code), 銘柄名 (Company Name), 市場・商品区分 (Market Classification), 33 業種区分 (Industry Classification)
 
 **File Structure:**
+
 ```
 stocks_all.json      # Master list (~3795 companies)
 ├── stocks_1.json    # Companies 1-1000
@@ -434,6 +1081,7 @@ stocks_all.json      # Master list (~3795 companies)
 ### Industry Data Structure (search/kogata/)
 
 **Core Financial Fields:**
+
 - **Basic Info**: 会社名 (Company Name), 銘柄コード (Stock Code), 業種 (Industry)
 - **Market Data**: 優先市場 (Preferred Market), 時価総額 (Market Cap), 決算月 (Settlement Month)
 - **Geographic**: 都道府県 (Prefecture), 会計基準 (Accounting Standard)
@@ -445,6 +1093,7 @@ stocks_all.json      # Master list (~3795 companies)
 - **Additional Fields**: 総負債, 現金及び現金同等物, 投資有価証券
 
 **Data Quality Features:**
+
 - Automatic data type detection and conversion
 - Japanese unit parsing (倍, %, 円) with proper formatting
 - Null value handling and validation
@@ -452,6 +1101,7 @@ stocks_all.json      # Master list (~3795 companies)
 - Flexible schema adaptation for varying CSV structures
 
 **Industry Sectors Available (23 sectors):**
+
 - **Basic Industries**: 化学, 鉄鋼, 非鉄金属, 金属製品, ゴム
 - **Manufacturing**: 機械, 電気機器, 運送用, 機密製品, パルプ・紙, 繊維
 - **Services**: サービス, 情報・通信業, 倉庫・運輸関連業
@@ -466,6 +1116,7 @@ stocks_all.json      # Master list (~3795 companies)
 This repository serves as a comprehensive Japanese stock analysis platform with:
 
 ### Japanese Business Focus
+
 - **Language**: Primary data and interface in Japanese with Unicode support
 - **Market**: Japanese stock exchanges (プライム, スタンダード, グロース)
 - **Specialization**: Small-cap company (小型株) analysis and screening
@@ -473,6 +1124,7 @@ This repository serves as a comprehensive Japanese stock analysis platform with:
 - **Cultural Context**: Japanese financial terminology and reporting standards
 
 ### Technical Environment
+
 - **Backend**: Python 3.11+ (data processing and API integration)
 - **Frontend**: React 19 + TypeScript + Vite (modern web interface)
 - **Data Processing**: yfinance, pandas, Papa Parse
@@ -482,6 +1134,7 @@ This repository serves as a comprehensive Japanese stock analysis platform with:
 - **Containerization**: Docker Compose (nginx production + Python data service)
 
 ### Automation Strategy
+
 - **Sequential Workflows**: Multi-part data collection to avoid timeouts and rate limits (GitHub Actions)
 - **Workflow Orchestration**: Auto-triggered workflow chains for complete automation (7 workflows)
 - **Data Pipeline**: Collection → Combination → Local/Docker Use
@@ -493,6 +1146,7 @@ This repository serves as a comprehensive Japanese stock analysis platform with:
 ### Data Collection Operations
 
 **Full Sequential Collection (All 3795+ companies):**
+
 ```bash
 # GitHub Actions (Recommended)
 # 1. Navigate to Actions → "📊 Sequential Stock Fetch - Part 1"
@@ -504,6 +1158,7 @@ This repository serves as a comprehensive Japanese stock analysis platform with:
 ```
 
 **Quick Single File Collection:**
+
 ```bash
 # GitHub Actions
 # Navigate to Actions → "📊 Stock Data Fetch"
@@ -514,6 +1169,7 @@ This repository serves as a comprehensive Japanese stock analysis platform with:
 ```
 
 **Local Development:**
+
 ```bash
 cd stock_list
 
@@ -530,6 +1186,7 @@ ls -lh Export/*_combined.csv
 ### Web Application Development
 
 **Local Development:**
+
 ```bash
 cd stock_search
 
@@ -553,6 +1210,7 @@ npm run copy-csv
 ```
 
 **Docker Development:**
+
 ```bash
 # Build and start both services
 docker-compose up --build
@@ -576,6 +1234,7 @@ docker-compose down -v && docker-compose up --build
 ### CSV Combination & Docker Deployment
 
 **CSV Combination:**
+
 ```bash
 # GitHub Actions (Automated after Sequential Part 4)
 # Navigate to Actions → "📋 CSV Combine & Export"
@@ -589,6 +1248,7 @@ python combine_latest_csv.py --date 20251006
 ```
 
 **Docker Deployment:**
+
 ```bash
 # Build and start both services (data collection + frontend)
 docker-compose up --build
@@ -625,7 +1285,9 @@ ls -lh stocks_*.json
 ### Workflow Management Strategy
 
 **Two-Tier Automation System:**
+
 1. **Data Collection** (5 workflows)
+
    - `stock-data-fetch.yml` - Manual single file
    - `stock-fetch-sequential-1/2/3/4.yml` - Automated sequential chain
 
@@ -636,6 +1298,7 @@ ls -lh stocks_*.json
 ### Workflow Execution Best Practices
 
 **For Complete Data Update:**
+
 1. Start `stock-fetch-sequential-1.yml` manually
 2. Wait for automatic completion of all 4 parts (6-8 hours)
 3. Automatic CSV combination follows
@@ -643,11 +1306,13 @@ ls -lh stocks_*.json
 5. Deploy locally using Docker if needed
 
 **For Quick Testing:**
+
 1. Run `stock-data-fetch.yml` with `stocks_sample.json`
 2. Manually run `csv-combine-export.yml` if needed
 3. Test locally with Docker
 
 **For Stock List Updates:**
+
 1. Run `stock-list-update.yml` when JPX updates listings
 2. Manually verify stocks_all.json and split files
 3. Run sequential collection for new companies
@@ -655,6 +1320,7 @@ ls -lh stocks_*.json
 ### Error Handling and Monitoring
 
 **Built-in Error Handling:**
+
 - Timeout protection (60-120 minutes per workflow)
 - Dependency validation before execution
 - Build artifact verification
@@ -662,6 +1328,7 @@ ls -lh stocks_*.json
 - Comprehensive error logging
 
 **Monitoring Features:**
+
 - Real-time workflow status in Actions tab
 - Execution time tracking for performance metrics
 - Build artifact retention (30 days) for debugging
@@ -671,6 +1338,7 @@ ls -lh stocks_*.json
 ## Technical Specifications
 
 ### Japanese Language Support
+
 - **Character Encoding**: UTF-8 throughout all components
 - **Financial Terminology**: Native Japanese terms with English annotations
 - **Geographic Data**: Prefecture-based analysis (都道府県)
@@ -678,6 +1346,7 @@ ls -lh stocks_*.json
 - **Market Classifications**: Japanese exchange-specific categories
 
 ### Performance Considerations
+
 - **Data Volume**: 3795+ companies across 23+ industry sectors
 - **Processing Time**: ~3-5 seconds per company via yfinance API
 - **Sequential Processing**: 120 minutes timeout per workflow part
@@ -690,6 +1359,7 @@ ls -lh stocks_*.json
 - **Bundle Optimization**: Vendor chunks separated for efficient loading
 
 ### Integration Points
+
 - **yfinance API**: Primary data source with rate limiting and retry logic
 - **JPX Official Data**: Stock list source with Excel → JSON conversion
 - **GitHub Actions**: 7 workflows with sequential orchestration
@@ -700,6 +1370,7 @@ ls -lh stocks_*.json
 - **Papa Parse**: CSV parsing with Japanese character support
 
 ### Security and Compliance
+
 - **API Rate Limiting**: Respectful usage of external APIs (yfinance, JPX)
 - **Error Handling**: Graceful failure handling without data corruption
 - **Version Control**: Complete audit trail of all data changes
@@ -711,6 +1382,7 @@ ls -lh stocks_*.json
 ## Development Workflow
 
 ### Local Development Process
+
 1. **Environment Setup**: Python 3.11+ and Node.js 20+ required
 2. **Data Development**: Work in `stock_list/` directory for data processing scripts
 3. **Web Development**: Work in `stock_search/` directory for React application
@@ -719,6 +1391,7 @@ ls -lh stocks_*.json
 6. **Deployment**: Deploy using Docker Compose
 
 ### Docker Production Deployment
+
 1. **Data Collection**: Run sequential workflows via GitHub Actions (6-8 hours)
 2. **CSV Combination**: Automatic combination after Part 4
 3. **Code Changes**: Modify files in `stock_search/` directory if needed
@@ -727,6 +1400,7 @@ ls -lh stocks_*.json
 6. **Monitoring**: Use `docker-compose logs -f` for real-time logs
 
 ### Complete Data Update & Deployment Workflow
+
 1. **Sequential Collection**: Start Part 1 workflow via GitHub Actions
 2. **Automatic Chain**: Parts 2-4 execute automatically (6-8 hours)
 3. **CSV Combination**: Automatic combination after Part 4 completion
@@ -736,17 +1410,19 @@ ls -lh stocks_*.json
 
 ## システム概要
 
-個人向け日本株式分析プラットフォーム。GitHub Actionsによる自動データ収集と、Docker + nginxによるローカルデプロイメントを提供。
+個人向け日本株式分析プラットフォーム。GitHub Actions による自動データ収集と、Docker + nginx によるローカルデプロイメントを提供。
 
 **主要機能:**
-- JPX公式データからの株式リスト自動取得（3795+銘柄）
-- yfinance APIによる財務データ収集
-- 4段階Sequential実行でタイムアウト回避
-- React 19 + TypeScript + Viteによるモダンなウェブインターフェース
-- Docker Composeによる2サービス構成（Python + nginx）
+
+- JPX 公式データからの株式リスト自動取得（3795+銘柄）
+- yfinance API による財務データ収集
+- 4 段階 Sequential 実行でタイムアウト回避
+- React 19 + TypeScript + Vite によるモダンなウェブインターフェース
+- Docker Compose による 2 サービス構成（Python + nginx）
 - 日本語財務データの完全サポート
 
 **デプロイメント:**
+
 - **開発**: Vite dev server (port 5173) + Vite preview (port 4173)
 - **本番**: nginx production server (port 8080) via Docker Compose
 
@@ -756,7 +1432,7 @@ ls -lh stocks_*.json
 
 ### System Architecture Summary
 
-**yfinance-jp-screener** は、日本株式市場の3795+銘柄を自動収集・分析するフルスタック株式スクリーニングプラットフォームです。
+**yfinance-jp-screener** は、日本株式市場の 3795+銘柄を自動収集・分析するフルスタック株式スクリーニングプラットフォームです。
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -800,17 +1476,19 @@ ls -lh stocks_*.json
 ### Core Components
 
 #### 1. **Data Collection Pipeline** (stock_list/)
-- **Purpose**: JPX公式データから3795+銘柄の財務データ自動収集
+
+- **Purpose**: JPX 公式データから 3795+銘柄の財務データ自動収集
 - **Technology**: Python 3.11, yfinance, pandas
 - **Key Scripts**:
-  - `sumalize.py` - yfinance APIによる財務データ収集
-  - `get_jp_stocklist.py` - JPX公式株式リスト取得
-  - `combine_latest_csv.py` - CSV統合処理
-  - `split_stocks.py` - 株式リスト分割（CLI対応）
-- **Output**: `Export/YYYYMMDD_combined.csv` (タイムスタンプ付き統合CSV)
+  - `sumalize.py` - yfinance API による財務データ収集
+  - `get_jp_stocklist.py` - JPX 公式株式リスト取得
+  - `combine_latest_csv.py` - CSV 統合処理
+  - `split_stocks.py` - 株式リスト分割（CLI 対応）
+- **Output**: `Export/YYYYMMDD_combined.csv` (タイムスタンプ付き統合 CSV)
 
 #### 2. **Web Application** (stock_search/)
-- **Purpose**: ドラッグ&ドロップによるCSVファイル分析UI
+
+- **Purpose**: ドラッグ&ドロップによる CSV ファイル分析 UI
 - **Technology**: React 19, TypeScript, Vite, Tailwind CSS, DaisyUI
 - **Architecture**:
   ```
@@ -833,17 +1511,18 @@ ls -lh stocks_*.json
   ```
 - **Key Features**:
   - 完全クライアントサイド処理（サーバー不要）
-  - 任意のCSV構造に対応（動的カラム検出）
+  - 任意の CSV 構造に対応（動的カラム検出）
   - 日本語財務データフォーマット対応（円、%、倍）
   - リアルタイム検索・フィルタリング
   - レスポンシブデザイン（モバイル対応）
 
 #### 3. **Docker Environment**
-- **Architecture**: 2サービス構成 + 共有ボリューム
+
+- **Architecture**: 2 サービス構成 + 共有ボリューム
 - **Services**:
   1. **Python Service** (Dockerfile.fetch)
      - Base: `python:3.11-slim`
-     - Purpose: データ収集・CSV生成
+     - Purpose: データ収集・CSV 生成
      - Volume: `stock-data:/app/Export:rw`
   2. **Frontend Service** (Dockerfile.app)
      - Base: `nginx:alpine` (multi-stage build)
@@ -859,8 +1538,9 @@ ls -lh stocks_*.json
   ```
 
 #### 4. **GitHub Actions CI/CD**
+
 - **7 Workflows** による完全自動化パイプライン
-- **Sequential Execution**: 4段階データ収集（各120分タイムアウト）
+- **Sequential Execution**: 4 段階データ収集（各 120 分タイムアウト）
 - **Workflow Chain**:
   1. `stock-fetch-sequential-1.yml` (Manual Start) → stocks_1.json
   2. `stock-fetch-sequential-2.yml` (Auto-trigger) → stocks_2.json
@@ -869,26 +1549,27 @@ ls -lh stocks_*.json
   5. `csv-combine-export.yml` (Auto-trigger) → YYYYMMDD_combined.csv
 - **Additional Workflows**:
   - `stock-data-fetch.yml` - 単一ファイル手動実行
-  - `stock-list-update.yml` - JPX株式リスト更新
+  - `stock-list-update.yml` - JPX 株式リスト更新
 
 ### Technology Stack Summary
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Backend** | Python 3.11 | データ収集・処理 |
-| **Data Source** | yfinance API | 財務データ取得 |
-| **Data Processing** | pandas | CSV処理・統合 |
-| **Frontend** | React 19 + TypeScript | UIフレームワーク |
-| **Build Tool** | Vite | 高速ビルド・HMR |
-| **Styling** | Tailwind CSS + DaisyUI | レスポンシブデザイン |
-| **CSV Parser** | PapaParse | クライアントサイドCSV解析 |
-| **Deployment** | Docker + nginx | 本番環境コンテナ化 |
-| **CI/CD** | GitHub Actions | 自動データ収集 |
-| **Version Control** | Git + GitHub | ソースコード管理 |
+| Layer               | Technology             | Purpose                     |
+| ------------------- | ---------------------- | --------------------------- |
+| **Backend**         | Python 3.11            | データ収集・処理            |
+| **Data Source**     | yfinance API           | 財務データ取得              |
+| **Data Processing** | pandas                 | CSV 処理・統合              |
+| **Frontend**        | React 19 + TypeScript  | UI フレームワーク           |
+| **Build Tool**      | Vite                   | 高速ビルド・HMR             |
+| **Styling**         | Tailwind CSS + DaisyUI | レスポンシブデザイン        |
+| **CSV Parser**      | PapaParse              | クライアントサイド CSV 解析 |
+| **Deployment**      | Docker + nginx         | 本番環境コンテナ化          |
+| **CI/CD**           | GitHub Actions         | 自動データ収集              |
+| **Version Control** | Git + GitHub           | ソースコード管理            |
 
 ### Data Architecture
 
 #### Stock Data Structure (CSV Format)
+
 ```csv
 会社名,銘柄コード,業種,優先市場,時価総額,決算月,都道府県,会計基準,
 PBR,ROE,自己資本比率,PER(会予),売上高,営業利益,営業利益率,当期純利益,
@@ -897,6 +1578,7 @@ PBR,ROE,自己資本比率,PER(会予),売上高,営業利益,営業利益率,�
 ```
 
 #### Data Flow Pipeline
+
 ```
 JPX Official Data (Excel) → get_jp_stocklist.py → stocks_all.json (3795+ companies)
                                                         ↓
@@ -916,26 +1598,30 @@ JPX Official Data (Excel) → get_jp_stocklist.py → stocks_all.json (3795+ com
 ### Key Design Decisions
 
 #### ✅ **Simplified CSV Handling (2025-10-19 Update)**
+
 - **Before**: 自動検出システム + prebuild scripts
-- **After**: Drag & Drop専用システム
+- **After**: Drag & Drop 専用システム
 - **Benefits**:
   - サーバー設定不要（完全クライアントサイド）
   - プライバシー保護（データはブラウザ内のみで処理）
-  - 柔軟性（任意のCSV構造に対応）
+  - 柔軟性（任意の CSV 構造に対応）
   - デプロイ簡素化（静的ファイルのみ）
-  - メンテナンスフリー（prebuildスクリプト不要）
+  - メンテナンスフリー（prebuild スクリプト不要）
 
 #### ✅ **Sequential GitHub Actions Workflow**
-- **Why**: API rate limiting回避 + GitHub Actions 6時間制限対応
-- **How**: 4段階自動連鎖実行（各120分タイムアウト）
+
+- **Why**: API rate limiting 回避 + GitHub Actions 6 時間制限対応
+- **How**: 4 段階自動連鎖実行（各 120 分タイムアウト）
 - **Benefits**: 安定性、監視可能性、段階的コミット
 
 #### ✅ **Docker Two-Service Architecture**
+
 - **Why**: データ収集とフロントエンドの分離
-- **How**: Named volume共有（stock-data）
+- **How**: Named volume 共有（stock-data）
 - **Benefits**: モジュール性、再利用性、環境一貫性
 
 #### ✅ **Client-Side CSV Processing**
+
 - **Why**: サーバーレス、高速、プライバシー
 - **How**: PapaParse library + React hooks
 - **Benefits**: 即座の処理、柔軟な構造対応、デプロイ簡単
@@ -961,25 +1647,28 @@ JPX Official Data (Excel) → get_jp_stocklist.py → stocks_all.json (3795+ com
 
 ### Drag & Drop File Upload System
 
-**変更概要**: CSV自動検出システムを削除し、シンプルなドラッグ&ドロップファイルアップロード専用に変更しました。
+**変更概要**: CSV 自動検出システムを削除し、シンプルなドラッグ&ドロップファイルアップロード専用に変更しました。
 
 #### 主要な変更点
 
 **1. 削除されたファイル:**
+
 - `stock_search/src/hooks/useCSVFileDetector.ts` - 自動検出フックの削除
-- `stock_search/scripts/copy-csv-files.js` - prebuildスクリプトの削除
+- `stock_search/scripts/copy-csv-files.js` - prebuild スクリプトの削除
 - `package.json` - `prebuild`および`copy-csv`スクリプトの削除
 
 **2. DataPage.tsx の簡素化**
+
 - **場所**: `stock_search/src/pages/DataPage.tsx`
 - **変更内容**:
   - `useCSVFileDetector`フックの使用を削除
   - ファイル自動検出ロジックの削除
-  - D&D専用UIに変更
+  - D&D 専用 UI に変更
   - ファイル情報表示の追加（ファイル名、サイズ、更新日）
   - ファイル閉じるボタンの追加
 
 **3. 新しいユーザーフロー**
+
 ```
 アプリケーション起動
     ↓
@@ -1000,14 +1689,15 @@ CSVViewer でデータを表示
 
 ✅ **シンプル**: サーバー設定不要、完全クライアントサイド
 ✅ **プライバシー**: データはブラウザ内のみで処理（サーバー送信なし）
-✅ **柔軟性**: 任意のCSV構造に対応
+✅ **柔軟性**: 任意の CSV 構造に対応
 ✅ **高速**: 即座にファイル処理開始
-✅ **デプロイ簡単**: 静的ファイルのみ（GitHub Pages, S3, netlifyなど）
-✅ **メンテナンスフリー**: prebuildスクリプト不要
+✅ **デプロイ簡単**: 静的ファイルのみ（GitHub Pages, S3, netlify など）
+✅ **メンテナンスフリー**: prebuild スクリプト不要
 
 #### ビルドプロセスの簡素化
 
 **Before (自動検出時):**
+
 ```bash
 npm run build
   ↓
@@ -1016,29 +1706,10 @@ prebuild: node scripts/copy-csv-files.js
 tsc -b && vite build
 ```
 
-**After (D&D専用):**
+**After (D&D 専用):**
+
 ```bash
 npm run build
   ↓
 tsc -b && vite build
 ```
-
-#### UI改善
-
-- **初回表示**: D&D案内と使い方ガイド
-- **ファイル選択後**: ファイル情報カード表示
-- **ファイル操作**: 閉じるボタンで別ファイルに切り替え可能
-- **エラーハンドリング**: 不正なファイル形式のエラー表示
-
-## Support / 寄付
-
-このプロジェクトが役立つ場合は、サポートをご検討ください。
-
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-pink?style=for-the-badge&logo=github)](https://github.com/sponsors/testkun08080)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/testkun08080)
-
-**寄付方法:**
-- **GitHub Sponsors**: 継続的なサポート、月額プランあり
-- **Buy Me a Coffee**: 一回限りの寄付、感謝の気持ちを伝える
-
-ご支援いただいたサポートは、プロジェクトの継続的な開発と改善に使用されます。

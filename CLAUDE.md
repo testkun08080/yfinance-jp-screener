@@ -217,7 +217,6 @@ stock_search/
 │   │   ├── AboutPage.tsx           # About ページ
 │   │   ├── DataPage.tsx            # メインデータページ
 │   │   ├── NotFound.tsx            # 404 ページ
-│   │   └── index.ts                # ページエクスポート
 │   ├── hooks/               # カスタムReact Hooks
 │   │   ├── useCSVParser.ts         # CSV解析ロジック
 │   │   └── useFilters.ts           # フィルタリング状態管理
@@ -237,7 +236,6 @@ stock_search/
 ├── vite.config.ts           # Vite設定
 ├── tsconfig.json            # TypeScript設定
 ├── tailwind.config.js       # Tailwind CSS設定
-└── postcss.config.js        # PostCSS設定
 ```
 
 **総行数**: ~2,771 行 (TypeScript/TSX)
@@ -418,17 +416,20 @@ Total: ~100KB (gzip)
 
 **Lazy Loading Strategy:**
 
-```typescript
-// ルートベースの遅延読み込み
-const AboutPage = lazy(() => import("./pages/AboutPage"));
-const DataPage = lazy(() => import("./pages/DataPage"));
-```
+- 現状: ルートの遅延読み込みは未実装（将来対応可）
+- 目的: 初期バンドルを削減し、初回描画を高速化
+- 実装予定例:
+  ```typescript
+  // import { lazy } from "react";
+  // const AboutPage = lazy(() => import("./pages/AboutPage"));
+  // const DataPage = lazy(() => import("./pages/DataPage"));
+  ```
 
 **Caching Strategy:**
 
 - **静的アセット**: Cache-Control: public, immutable (1 年)
 - **HTML**: Cache-Control: no-cache, no-store
-- **CSV**: Cache-Control: public, must-revalidate (1 時間)
+- **CSV**: ブラウザ内でのクライアントサイド処理のため、サーバー配信は想定していません（必要時は別途 `/csv/` ロケーションとヘッダーを設定）。
 
 ---
 
@@ -459,15 +460,8 @@ npm run preview
 
 **環境変数:**
 
-```bash
-# .env.local (開発環境)
-VITE_API_BASE_URL=http://localhost:3000
-VITE_CSV_DIR=./public/csv
-
-# .env.production (本番環境)
-VITE_API_BASE_URL=https://api.example.com
-VITE_CSV_DIR=/csv
-```
+- 現状: �� ロントエンドは完全クライアントサイドで動作し、外部 API やサーバー配信前提の環境変数は使用していません。
+- 例としての `VITE_API_BASE_URL` / `VITE_CSV_DIR` は削除しました（要件に応じて将来追加）。
 
 **Docker Build Process:**
 
@@ -653,7 +647,6 @@ RUN npm ci  # 本番環境向け依存関係の厳密インストール
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY stock_search/ .
-COPY stock_list/Export Export  # CSV files for build process
 
 ENV DOCKER_ENV=true
 RUN npm run build --loglevel=info
@@ -679,10 +672,6 @@ COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
 # ビルド成果物のみコピー（最小限）
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# CSVディレクトリ作成（ボリュームマウント用）
-RUN mkdir -p /usr/share/nginx/html/csv && \
-    chown -R nginx:nginx /usr/share/nginx/html
-
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
@@ -704,13 +693,6 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    # CSVファイルキャッシュ (1時間、CORS有効)
-    location /csv/ {
-        expires 1h;
-        add_header Cache-Control "public, must-revalidate";
-        add_header Access-Control-Allow-Origin "*";
-    }
-
     # SPA routing (全てのルートを index.html にフォールバック)
     location / {
         try_files $uri $uri/ /index.html;
@@ -723,6 +705,8 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
 }
 ```
+
+- 備考: 現状は CSV のサーバー配信を行っていないため、`/csv/` ロケーションや CORS の追加設定は行っていません。将来的にサーバー経由で CSV を配信する場合は、別途 `/csv/` ブロックを追加してください。
 
 **パフォーマンス最適化:**
 
@@ -772,6 +756,7 @@ services:
       - "${PORT:-8080}:80"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-8080}
     command: >
       sh -c "echo 'Frontend running on http://localhost:${PORT:-8080}' && nginx -g 'daemon off;'"
 ```
@@ -1465,10 +1450,10 @@ ls -lh stocks_*.json
 │  │  (Dockerfile.fetch)     │    │  (Dockerfile.app)       │    │
 │  │  ├─ Data Collection     │    │  ├─ nginx:alpine        │    │
 │  │  ├─ CSV Generation      │    │  ├─ Static Files        │    │
-│  │  └─ Export/ → volume    │←──→│  └─ Drag & Drop UI      │    │
+│  │  └─ Export/ (host directory)                                  │
 │  └─────────────────────────┘    └─────────────────────────┘    │
-│              stock-data volume (named Docker volume)             │
-└─────────────────────────────────────────────────────────────────┘
+│         Independent services (no direct volume coupling)         │
+└────────────────────────────────────��────────────────────────────┘
                               ↓
                    Browser: http://localhost:8080
 ```
@@ -1527,14 +1512,14 @@ ls -lh stocks_*.json
   2. **Frontend Service** (Dockerfile.app)
      - Base: `nginx:alpine` (multi-stage build)
      - Purpose: 静的ファイル配信
-     - Volume: `stock-data:/usr/share/nginx/html/csv:ro`
+     - Volume: なし（完全クライアントサイド）
 - **Data Flow**:
   ```
   Python Container → Export/*.csv → stock-data volume
                                         ↓
-  Frontend Container ← /usr/share/nginx/html/csv ← stock-data volume
+  Frontend Container (Static SPA)
                                         ↓
-                        Browser: http://localhost:8080
+                        Browser: http://localhost:8080 (CSV はユーザーがローカルからアップロード)
   ```
 
 #### 4. **GitHub Actions CI/CD**

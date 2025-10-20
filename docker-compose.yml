@@ -27,8 +27,9 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT}:80"
+      - "${PORT:-8080}:80"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-8080}
     command: >
-      sh -c "echo 'Frontend running on http://localhost:${PORT}' && nginx -g 'daemon off;'"
+      sh -c "echo 'Frontend running on http://localhost:${PORT:-8080}' && nginx -g 'daemon off;'"

@@ -4,10 +4,7 @@ import { EXTERNAL_URLS } from "../constants/urls";
 import { BREADCRUMB_ITEMS } from "../constants/ui";
 
 export const AboutPage = () => {
-  const breadcrumbItems = [
-    BREADCRUMB_ITEMS.home,
-    BREADCRUMB_ITEMS.about,
-  ];
+  const breadcrumbItems = [BREADCRUMB_ITEMS.home, BREADCRUMB_ITEMS.about];
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -23,20 +20,10 @@ export const AboutPage = () => {
           </p>
         </div>
 
-        {/* 概要 */}
-        <div className="card bg-base-200 shadow-sm mb-8">
-          <div className="card-body">
-            <h2 className="card-title text-2xl mb-4">🎯 概要</h2>
-            <p className="text-base-content/80 leading-relaxed">
-              本サービスは、YahooFinanceのデータを使った日本株式のスクリーニングサービスです。
-            </p>
-          </div>
-        </div>
-
         {/* なぜ作成したか */}
         <div className="card bg-base-200 shadow-sm mb-8">
           <div className="card-body">
-            <h2 className="card-title text-2xl mb-4">❓ なぜ作成したか？</h2>
+            <h2 className="card-title text-2xl mb-4">❓ なぜ作ったのか</h2>
             <div className="space-y-4 text-base-content/80 leading-relaxed">
               <p>
                 日本で頑張ってる企業を見つけたい。

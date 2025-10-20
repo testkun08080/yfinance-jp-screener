@@ -24,17 +24,14 @@ RUN npm run build --loglevel=info
 # 本番環境ステージ（nginx使用）
 FROM nginx:alpine AS runner
 
-# 環境変数のデフォルト値を設定
-ENV PORT=8000
-
 # nginxの設定ファイルをコピー
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
 
 # ビルド成果物のみをコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# ポート公開
-EXPOSE ${PORT}
+# ポート公開（nginx は 80 で待受）
+EXPOSE 80
 
 # nginx起動
 CMD ["nginx", "-g", "daemon off;"]

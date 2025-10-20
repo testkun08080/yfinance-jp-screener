@@ -1,8 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
-import { AboutPage, DataPage } from "./pages";
-import { NotFound } from "./pages/NotFound";
+
+const DataPage = lazy(() =>
+  import("./pages/DataPage").then((m) => ({ default: m.DataPage }))
+);
+const AboutPage = lazy(() =>
+  import("./pages/AboutPage").then((m) => ({ default: m.AboutPage }))
+);
+const NotFound = lazy(() =>
+  import("./pages/NotFound").then((m) => ({ default: m.NotFound }))
+);
 
 function App() {
   return (
@@ -10,11 +19,13 @@ function App() {
       <div className="min-h-screen bg-base-100 flex flex-col">
         <Navigation />
         <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<DataPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<div className="p-6 text-center">Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<DataPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
       </div>

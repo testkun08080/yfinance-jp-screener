@@ -16,7 +16,6 @@ FROM base AS builder
 COPY stock_search/package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY stock_search/ .
-COPY stock_list/Export Export
 
 # TypeScriptコンパイルとViteビルド
 ENV DOCKER_ENV=true
@@ -26,17 +25,13 @@ RUN npm run build --loglevel=info
 FROM nginx:alpine AS runner
 
 # 環境変数のデフォルト値を設定
-ENV PORT=80
+ENV PORT=8000
 
 # nginxの設定ファイルをコピー
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
 
 # ビルド成果物のみをコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# CSVデータディレクトリを作成（ボリュームマウント用）
-RUN mkdir -p /usr/share/nginx/html/csv && \
-    chown -R nginx:nginx /usr/share/nginx/html
 
 # ポート公開
 EXPOSE ${PORT}

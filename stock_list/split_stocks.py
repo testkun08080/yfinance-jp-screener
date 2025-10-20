@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 stocks_all.jsonを1000社ずつのファイルに分割するスクリプト
 """
@@ -52,9 +51,7 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
             with open(output_filename, "w", encoding="utf-8") as f:
                 json.dump(chunk_data, f, ensure_ascii=False, indent=2)
 
-            logger.info(
-                f"✅ {output_filename}: {len(chunk_data)}社 (#{start_idx + 1}-#{end_idx})"
-            )
+            logger.info(f"✅ {output_filename}: {len(chunk_data)}社 (#{start_idx + 1}-#{end_idx})")
 
         logger.info("-" * 50)
         logger.info(f"分割完了: {total_files}個のファイルを作成しました")

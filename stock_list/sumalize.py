@@ -1,3 +1,27 @@
+"""
+日本株式財務データ収集スクリプト
+
+yfinance APIを使用して日本株式市場の財務データを自動収集し、CSV形式で保存します。
+
+主な機能:
+- yfinance APIによる株式財務データの取得
+- 郵便番号から都道府県名の自動取得（digital-address API使用）
+- 財務諸表データの安全な取得とフォールバック機能
+- ネットキャッシュ比率の自動計算
+- タイムスタンプ付きCSVファイルの自動生成
+- 詳細なログ出力とエラーハンドリング
+
+使用例:
+    $ python sumalize.py                    # stocks_sample.jsonを処理（デフォルト）
+    $ python sumalize.py stocks_1.json     # stocks_1.jsonを処理
+    $ python sumalize.py --json stocks_2.json  # stocks_2.jsonを処理
+
+依存関係:
+    - yfinance: 株式データ取得
+    - pandas: データ処理
+    - requests: API通信
+"""
+
 import yfinance as yf
 import pandas as pd
 import json
@@ -29,7 +53,20 @@ logger = logging.getLogger(__name__)
 
 
 def get_prefecture_from_zip(zip_code):
-    """郵便番号から都道府県名を取得（digital-address API使用）"""
+    """郵便番号から都道府県名を取得（digital-address API使用）
+
+    Args:
+        zip_code (str): 郵便番号（ハイフンあり/なし両方対応）
+
+    Returns:
+        str: 都道府県名（例: "東京都", "大阪府"）
+        None: 取得失敗時またはデータなし
+
+    Note:
+        - digital-address APIを使用してリアルタイム取得
+        - 郵便番号の前処理（ハイフン・空白除去）を自動実行
+        - タイムアウト設定: 10秒
+    """
     try:
         if not zip_code:
             return None
@@ -63,7 +100,25 @@ def get_prefecture_from_zip(zip_code):
 
 
 def format_duration(seconds):
-    """秒数を読みやすい形式に変換"""
+    """秒数を読みやすい形式に変換
+
+    Args:
+        seconds (float): 秒数
+
+    Returns:
+        str: 読みやすい時間表示
+            - 60秒未満: "X.X秒"
+            - 60秒以上: "X分Y.Y秒"
+            - 3600秒以上: "X時間Y分Z.Z秒"
+
+    Examples:
+        >>> format_duration(45.5)
+        '45.5秒'
+        >>> format_duration(125.3)
+        '2分5.3秒'
+        >>> format_duration(3725.8)
+        '1時間2分5.8秒'
+    """
     if seconds < 60:
         return f"{seconds:.1f}秒"
     elif seconds < 3600:
@@ -78,7 +133,25 @@ def format_duration(seconds):
 
 
 def format_ticker(code):
-    """銘柄コードを正しい形式に変換"""
+    """銘柄コードをyfinance用の形式に変換
+
+    Args:
+        code (str or int): 銘柄コード（数値または英数字混合）
+
+    Returns:
+        str: yfinance用のティッカーシンボル（例: "7203.T", "130A.T"）
+
+    Examples:
+        >>> format_ticker(7203)
+        '7203.T'
+        >>> format_ticker("130A")
+        '130A.T'
+
+    Note:
+        - 数値コードは4桁にゼロパディング
+        - 英数字混合コードはそのまま使用
+        - すべてのコードに".T"（東京証券取引所）を付加
+    """
     if isinstance(code, str):
         # 英数字混合コード（例：130A）はそのまま使用
         return f"{code}.T"
@@ -88,7 +161,20 @@ def format_ticker(code):
 
 
 def safe_get_value(data, key, default=None):
-    """安全にデータを取得（KeyErrorを回避）"""
+    """安全にデータを取得（KeyErrorを回避）
+
+    Args:
+        data (dict or object): データソース（辞書またはget()メソッドを持つオブジェクト）
+        key (str): 取得するキー
+        default: キーが存在しない場合のデフォルト値（デフォルト: None）
+
+    Returns:
+        取得した値、またはdefault値
+
+    Note:
+        - KeyError, AttributeErrorを安全にキャッチ
+        - 辞書、yfinanceのinfoオブジェクトなど様々なデータ型に対応
+    """
     try:
         if isinstance(data, dict):
             return data.get(key, default)
@@ -101,7 +187,30 @@ def safe_get_value(data, key, default=None):
 
 
 def safe_get_financial_data(ticker, statement_type, item, fallback_items=None):
-    """財務諸表から安全にデータを取得（フォールバック機能付き）"""
+    """財務諸表から安全にデータを取得（フォールバック機能付き）
+
+    Args:
+        ticker (yfinance.Ticker): yfinanceのTickerオブジェクト
+        statement_type (str): 財務諸表タイプ（"financials" または "balance_sheet"）
+        item (str): 取得する項目名（例: "Total Revenue", "Total Assets"）
+        fallback_items (list, optional): メイン項目が存在しない場合の代替項目リスト
+
+    Returns:
+        float: 取得した財務データ値
+        None: データが存在しない、またはエラー時
+
+    Note:
+        - 最新決算期（最初の列）のデータを自動取得
+        - フォールバック機能により複数の項目名に対応
+        - データが空の場合や存在しない場合は安全にNoneを返す
+
+    Examples:
+        >>> safe_get_financial_data(ticker, "financials", "Total Revenue")
+        1234567890.0
+        >>> safe_get_financial_data(ticker, "balance_sheet", "Total Liabilities Net Minority Interest",
+        ...                          fallback_items=["Total Liab"])
+        9876543210.0
+    """
     try:
         if statement_type == "financials":
             data = ticker.financials
@@ -139,7 +248,28 @@ def safe_get_financial_data(ticker, statement_type, item, fallback_items=None):
 
 
 def calculate_net_cash(current_assets, investments, total_liabilities):
-    """ネットキャッシュを計算: 流動資産 + 投資有価証券×70% - 負債"""
+    """ネットキャッシュを計算: 流動資産 + 投資有価証券×70% - 負債
+
+    Args:
+        current_assets (float): 流動資産
+        investments (float): 投資有価証券
+        total_liabilities (float): 総負債
+
+    Returns:
+        float: ネットキャッシュ額
+        None: 必須データが不足している場合
+
+    Note:
+        - 投資有価証券は70%で評価（保守的な見積もり）
+        - 流動資産と総負債は必須、投資有価証券はオプション
+        - ネットキャッシュ = 流動資産 + (投資有価証券 × 0.7) - 総負債
+
+    Examples:
+        >>> calculate_net_cash(10000000, 5000000, 3000000)
+        10500000.0
+        >>> calculate_net_cash(10000000, None, 3000000)
+        7000000.0
+    """
     try:
         if current_assets is not None and total_liabilities is not None:
             inv_value = (investments * 0.7) if investments is not None else 0
@@ -150,7 +280,35 @@ def calculate_net_cash(current_assets, investments, total_liabilities):
 
 
 def get_stock_data(stock_info):
-    """個別銘柄の財務データを取得"""
+    """個別銘柄の財務データを取得
+
+    Args:
+        stock_info (dict): 株式情報（コード、銘柄名、業種など）
+            - 必須キー: "コード", "銘柄名"
+            - オプションキー: "市場・商品区分", "33業種区分"
+
+    Returns:
+        dict: 財務データ辞書（以下の項目を含む）
+            - 基本情報: 会社名、銘柄コード、業種、優先市場、決算月、都道府県
+            - 市場データ: 時価総額、PBR、PER(会予)
+            - 収益性: 売上高、営業利益、営業利益率、当期純利益、純利益率、ROE
+            - 財務健全性: 自己資本比率、負債、流動負債、流動資産、総負債
+            - キャッシュ: 現金及び現金同等物、投資有価証券、ネットキャッシュ、ネットキャッシュ比率
+        None: データ取得失敗時
+
+    Note:
+        - yfinance APIを使用してリアルタイムデータ取得
+        - API制限回避のため0.5秒のスリープを実施
+        - 郵便番号から都道府県を自動取得
+        - 詳細なログ出力（開始時刻、終了時刻、実行時間）
+        - エラー時も詳細なログを記録
+
+    Examples:
+        >>> stock_info = {"コード": 7203, "銘柄名": "トヨタ自動車"}
+        >>> data = get_stock_data(stock_info)
+        >>> data['会社名']
+        'トヨタ自動車'
+    """
     code = stock_info["コード"]
     ticker_symbol = format_ticker(code)
 
@@ -468,7 +626,23 @@ def main(json_filename="stocks_sample.json"):
 
 
 def parse_arguments():
-    """コマンドライン引数を解析"""
+    """コマンドライン引数を解析
+
+    Returns:
+        argparse.Namespace: 解析された引数オブジェクト
+            - json_file: 処理対象のJSONファイル名（位置引数）
+            - json_file_alt: --jsonオプションで指定されたファイル名
+
+    Note:
+        - デフォルトファイル: stocks_sample.json
+        - --jsonオプションが位置引数より優先される
+        - 詳細なヘルプメッセージと使用例を提供
+
+    Examples:
+        >>> args = parse_arguments()
+        >>> args.json_file
+        'stocks_sample.json'
+    """
     parser = argparse.ArgumentParser(
         description="日本株の財務データを取得してCSVファイルに保存します",
         formatter_class=argparse.RawDescriptionHelpFormatter,

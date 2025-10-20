@@ -34,11 +34,25 @@ def get_latest_csv_files(export_dir="./Export", target_date=None):
     Exportディレクトリから最新のCSVファイルを取得
 
     Args:
-        export_dir (str): CSVファイルが格納されているディレクトリ
-        target_date (str): 対象日付 (YYYYMMDD形式、Noneの場合は今日)
+        export_dir (str): CSVファイルが格納されているディレクトリ（デフォルト: "./Export"）
+        target_date (str): 対象日付 (YYYYMMDD形式、Noneの場合は今日の日付を使用)
 
     Returns:
-        list: 最新のCSVファイルのリスト（今日の日付のもののみ）
+        list: 最新のCSVファイルのリスト（対象日付のもののみ）
+            - 更新日時でソート済み（最新順）
+            - 空リストの場合は該当ファイルなし
+
+    Note:
+        - ファイル名パターン: "japanese_stocks_data_*.csv"
+        - 対象日付が含まれるファイルのみを抽出
+        - 各ファイルの詳細情報（更新日時）をログ出力
+
+    Examples:
+        >>> files = get_latest_csv_files("./Export", "20251020")
+        >>> len(files)
+        4
+        >>> files[0]
+        './Export/japanese_stocks_data_1_20251020_123456.csv'
     """
     # CSVファイルのパターンを定義
     pattern = os.path.join(export_dir, "japanese_stocks_data_*.csv")
@@ -80,6 +94,13 @@ def get_today_date():
 
     Returns:
         str: 今日の日付（YYYYMMDD形式）
+
+    Examples:
+        >>> date = get_today_date()
+        >>> len(date)
+        8
+        >>> date
+        '20251020'
     """
     return datetime.now().strftime("%Y%m%d")
 
@@ -89,11 +110,26 @@ def combine_csv_files(csv_files, output_file):
     複数のCSVファイルを結合して一つのファイルに保存
 
     Args:
-        csv_files (list): 結合するCSVファイルのリスト
-        output_file (str): 出力ファイル名
+        csv_files (list): 結合するCSVファイルのリスト（絶対パスまたは相対パス）
+        output_file (str): 出力ファイル名（パスを含む）
 
     Returns:
         bool: 成功した場合True、失敗した場合False
+
+    Note:
+        - UTF-8エンコーディングでCSVを読み込み・保存
+        - BOM（Byte Order Mark）を自動除去
+        - 銘柄コードをキーとして重複データを除去（最新を保持）
+        - 結合後のデータ統計（行数、列数、ファイルサイズ）をログ出力
+        - 出力ディレクトリが存在しない場合は自動作成
+
+    Raises:
+        Exception: CSVファイル読み込み・結合・保存時のエラー
+
+    Examples:
+        >>> files = ['file1.csv', 'file2.csv', 'file3.csv']
+        >>> combine_csv_files(files, 'Export/20251020_combined.csv')
+        True
     """
     try:
         combined_data = []
@@ -159,6 +195,28 @@ def combine_csv_files(csv_files, output_file):
 def main():
     """
     メイン実行関数
+
+    コマンドライン引数を解析し、CSV結合処理を実行します。
+
+    Returns:
+        bool: 処理成功時True、失敗時False
+
+    Note:
+        - argparseでコマンドライン引数を解析
+        - --export-dir: CSVファイルの入力ディレクトリ（デフォルト: ./Export）
+        - --output-dir: 結合ファイルの出力ディレクトリ（デフォルト: ./Export）
+        - --date: 対象日付（YYYYMMDD形式、未指定時は今日の日付）
+        - GitHub Actions向けに出力ファイルパスをprint
+
+    Examples:
+        実行例:
+            $ python combine_latest_csv.py
+            $ python combine_latest_csv.py --date 20251020
+            $ python combine_latest_csv.py --export-dir ./data --output-dir ./output
+
+    Exit Codes:
+        0: 成功
+        1: 失敗
     """
     parser = argparse.ArgumentParser(
         description="最新のCSVファイルを結合して日付付きファイルを生成"

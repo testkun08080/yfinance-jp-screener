@@ -1,3 +1,41 @@
+"""
+JPX公式データから日本株式リストを取得するスクリプト
+
+JPX（日本取引所グループ）の公式ウェブサイトから、
+上場企業の最新株式リストをダウンロードし、JSON形式で保存します。
+
+主な機能:
+- JPX公式サイトからExcelファイル(.xls)を自動ダウンロード
+- .xls形式を.xlsx形式に変換（pandas互換性のため）
+- プライム、スタンダード、グロース市場の株式を抽出
+- JSON形式でstocks_all.jsonに保存
+
+対象市場:
+- プライム（内国株式）
+- スタンダード（内国株式）
+- グロース（内国株式）
+
+出力データ項目:
+- コード: 株式コード（例: 7203）
+- 銘柄名: 会社名（例: トヨタ自動車）
+- 市場・商品区分: 上場市場区分
+- 33業種区分: 業種分類
+
+使用例:
+    $ python get_jp_stocklist.py
+
+出力ファイル:
+    - stocks_all.json: 全上場企業のJSONリスト（~3795社）
+    - tickers.xls: ダウンロードされた元データ（一時ファイル）
+    - converted.xlsx: 変換後のExcelファイル（一時ファイル）
+
+依存関係:
+    - requests: ファイルダウンロード
+    - pandas: データ処理
+    - xlrd: .xls読み込み
+    - openpyxl: .xlsx書き込み
+"""
+
 import requests
 import pandas as pd
 import xlrd

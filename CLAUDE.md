@@ -752,6 +752,211 @@ ls -lh stocks_*.json
 
 詳細は[DOCKER.md](DOCKER.md)を参照してください。
 
+## 🔄 Architecture Overview (Updated 2025-10-20)
+
+### System Architecture Summary
+
+**yfinance-jp-screener** は、日本株式市場の3795+銘柄を自動収集・分析するフルスタック株式スクリーニングプラットフォームです。
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GitHub Actions Workflows                      │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐│
+│  │ Part 1/4   │→ │ Part 2/4   │→ │ Part 3/4   │→ │ Part 4/4   ││
+│  │ stocks_1   │  │ stocks_2   │  │ stocks_3   │  │ stocks_4   ││
+│  └────────────┘  └────────────┘  └────────────┘  └─────┬──────┘│
+│                                                         ↓        │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │ CSV Combine & Export → YYYYMMDD_combined.csv          │ │
+│  └───────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      Local Development                           │
+│  ┌─────────────────────────┐    ┌─────────────────────────┐    │
+│  │  stock_list/            │    │  stock_search/          │    │
+│  │  (Python 3.11)          │    │  (React 19 + TS)        │    │
+│  │  ├─ sumalize.py         │    │  ├─ DataPage.tsx        │    │
+│  │  ├─ combine_csv.py      │    │  ├─ FileUpload.tsx      │    │
+│  │  └─ Export/*.csv        │    │  └─ CSVViewer.tsx       │    │
+│  └─────────────────────────┘    └─────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      Docker Production                           │
+│  ┌─────────────────────────┐    ┌─────────────────────────┐    │
+│  │  Python Service         │    │  Frontend Service       │    │
+│  │  (Dockerfile.fetch)     │    │  (Dockerfile.app)       │    │
+│  │  ├─ Data Collection     │    │  ├─ nginx:alpine        │    │
+│  │  ├─ CSV Generation      │    │  ├─ Static Files        │    │
+│  │  └─ Export/ → volume    │←──→│  └─ Drag & Drop UI      │    │
+│  └─────────────────────────┘    └─────────────────────────┘    │
+│              stock-data volume (named Docker volume)             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+                   Browser: http://localhost:8080
+```
+
+### Core Components
+
+#### 1. **Data Collection Pipeline** (stock_list/)
+- **Purpose**: JPX公式データから3795+銘柄の財務データ自動収集
+- **Technology**: Python 3.11, yfinance, pandas
+- **Key Scripts**:
+  - `sumalize.py` - yfinance APIによる財務データ収集
+  - `get_jp_stocklist.py` - JPX公式株式リスト取得
+  - `combine_latest_csv.py` - CSV統合処理
+  - `split_stocks.py` - 株式リスト分割（CLI対応）
+- **Output**: `Export/YYYYMMDD_combined.csv` (タイムスタンプ付き統合CSV)
+
+#### 2. **Web Application** (stock_search/)
+- **Purpose**: ドラッグ&ドロップによるCSVファイル分析UI
+- **Technology**: React 19, TypeScript, Vite, Tailwind CSS, DaisyUI
+- **Architecture**:
+  ```
+  src/
+  ├── pages/
+  │   └── DataPage.tsx         # メインページ（D&Dエリア + データ表示）
+  ├── components/
+  │   ├── FileUpload.tsx       # D&Dファイルアップロード
+  │   ├── CSVViewer.tsx        # データテーブル表示
+  │   ├── DataTable.tsx        # 動的カラム検出
+  │   ├── SearchFilters.tsx    # 検索・フィルタリング
+  │   └── Pagination.tsx       # ページネーション
+  ├── hooks/
+  │   ├── useCSVParser.ts      # CSV解析ロジック
+  │   └── useFilters.ts        # フィルタリング状態管理
+  └── utils/
+      ├── csvParser.ts         # PapaParse統合
+      ├── csvDownload.ts       # CSVエクスポート
+      └── columnConfig.ts      # カラム設定
+  ```
+- **Key Features**:
+  - 完全クライアントサイド処理（サーバー不要）
+  - 任意のCSV構造に対応（動的カラム検出）
+  - 日本語財務データフォーマット対応（円、%、倍）
+  - リアルタイム検索・フィルタリング
+  - レスポンシブデザイン（モバイル対応）
+
+#### 3. **Docker Environment**
+- **Architecture**: 2サービス構成 + 共有ボリューム
+- **Services**:
+  1. **Python Service** (Dockerfile.fetch)
+     - Base: `python:3.11-slim`
+     - Purpose: データ収集・CSV生成
+     - Volume: `stock-data:/app/Export:rw`
+  2. **Frontend Service** (Dockerfile.app)
+     - Base: `nginx:alpine` (multi-stage build)
+     - Purpose: 静的ファイル配信
+     - Volume: `stock-data:/usr/share/nginx/html/csv:ro`
+- **Data Flow**:
+  ```
+  Python Container → Export/*.csv → stock-data volume
+                                        ↓
+  Frontend Container ← /usr/share/nginx/html/csv ← stock-data volume
+                                        ↓
+                        Browser: http://localhost:8080
+  ```
+
+#### 4. **GitHub Actions CI/CD**
+- **7 Workflows** による完全自動化パイプライン
+- **Sequential Execution**: 4段階データ収集（各120分タイムアウト）
+- **Workflow Chain**:
+  1. `stock-fetch-sequential-1.yml` (Manual Start) → stocks_1.json
+  2. `stock-fetch-sequential-2.yml` (Auto-trigger) → stocks_2.json
+  3. `stock-fetch-sequential-3.yml` (Auto-trigger) → stocks_3.json
+  4. `stock-fetch-sequential-4.yml` (Auto-trigger) → stocks_4.json
+  5. `csv-combine-export.yml` (Auto-trigger) → YYYYMMDD_combined.csv
+- **Additional Workflows**:
+  - `stock-data-fetch.yml` - 単一ファイル手動実行
+  - `stock-list-update.yml` - JPX株式リスト更新
+
+### Technology Stack Summary
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Backend** | Python 3.11 | データ収集・処理 |
+| **Data Source** | yfinance API | 財務データ取得 |
+| **Data Processing** | pandas | CSV処理・統合 |
+| **Frontend** | React 19 + TypeScript | UIフレームワーク |
+| **Build Tool** | Vite | 高速ビルド・HMR |
+| **Styling** | Tailwind CSS + DaisyUI | レスポンシブデザイン |
+| **CSV Parser** | PapaParse | クライアントサイドCSV解析 |
+| **Deployment** | Docker + nginx | 本番環境コンテナ化 |
+| **CI/CD** | GitHub Actions | 自動データ収集 |
+| **Version Control** | Git + GitHub | ソースコード管理 |
+
+### Data Architecture
+
+#### Stock Data Structure (CSV Format)
+```csv
+会社名,銘柄コード,業種,優先市場,時価総額,決算月,都道府県,会計基準,
+PBR,ROE,自己資本比率,PER(会予),売上高,営業利益,営業利益率,当期純利益,
+純利益率,負債,流動負債,流動資産,ネットキャッシュ,ネットキャッシュ比率,
+総負債,現金及び現金同等物,投資有価証券
+```
+
+#### Data Flow Pipeline
+```
+JPX Official Data (Excel) → get_jp_stocklist.py → stocks_all.json (3795+ companies)
+                                                        ↓
+                              split_stocks.py → stocks_1-4.json (1000 companies each)
+                                                        ↓
+        yfinance API ← sumalize.py (Sequential 4-part execution, ~3-4 hours total)
+                                                        ↓
+              japanese_stocks_data_1-4_YYYYMMDD_HHMMSS.csv (Timestamped outputs)
+                                                        ↓
+                   combine_latest_csv.py → YYYYMMDD_combined.csv (Single merged file)
+                                                        ↓
+                            Docker Volume or Local Export/ directory
+                                                        ↓
+                   Frontend: Drag & Drop → PapaParse → DataTable Display
+```
+
+### Key Design Decisions
+
+#### ✅ **Simplified CSV Handling (2025-10-19 Update)**
+- **Before**: 自動検出システム + prebuild scripts
+- **After**: Drag & Drop専用システム
+- **Benefits**:
+  - サーバー設定不要（完全クライアントサイド）
+  - プライバシー保護（データはブラウザ内のみで処理）
+  - 柔軟性（任意のCSV構造に対応）
+  - デプロイ簡素化（静的ファイルのみ）
+  - メンテナンスフリー（prebuildスクリプト不要）
+
+#### ✅ **Sequential GitHub Actions Workflow**
+- **Why**: API rate limiting回避 + GitHub Actions 6時間制限対応
+- **How**: 4段階自動連鎖実行（各120分タイムアウト）
+- **Benefits**: 安定性、監視可能性、段階的コミット
+
+#### ✅ **Docker Two-Service Architecture**
+- **Why**: データ収集とフロントエンドの分離
+- **How**: Named volume共有（stock-data）
+- **Benefits**: モジュール性、再利用性、環境一貫性
+
+#### ✅ **Client-Side CSV Processing**
+- **Why**: サーバーレス、高速、プライバシー
+- **How**: PapaParse library + React hooks
+- **Benefits**: 即座の処理、柔軟な構造対応、デプロイ簡単
+
+### Performance Considerations
+
+- **Data Volume**: 3795+ companies × 30+ financial metrics
+- **Collection Time**: ~3-4 hours for full dataset (via GitHub Actions)
+- **API Rate**: ~3-5 seconds per company (yfinance throttling)
+- **CSV Size**: ~1-2 MB per combined file
+- **Build Time**: ~1-2 minutes (Vite optimization)
+- **Bundle Size**: Vendor chunks separated for caching efficiency
+
+### Security & Compliance
+
+- **API Usage**: yfinance rate limiting compliance
+- **Data Privacy**: クライアントサイド処理（サーバー送信なし）
+- **Docker Security**: Non-root users, minimal base images
+- **Version Control**: Complete audit trail
+- **Access Control**: GitHub repository permissions
+
 ## 🆕 Recent Updates (2025-10-19)
 
 ### Drag & Drop File Upload System

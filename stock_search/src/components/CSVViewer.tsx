@@ -8,6 +8,7 @@ import { ColumnSelector, type ColumnConfig } from "./ColumnSelector";
 import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "./DownloadButton";
 import type { PaginationConfig } from "../types/stock";
+import { PAGINATION } from "../constants/ui";
 
 interface CSVFile {
   name: string;
@@ -37,7 +38,7 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
   } = useFilters(data);
   const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
     currentPage: 1,
-    itemsPerPage: 50,
+    itemsPerPage: PAGINATION.defaultItemsPerPage,
     totalItems: 0,
   });
   const [columns, setColumns] = useState<ColumnConfig[]>([]);

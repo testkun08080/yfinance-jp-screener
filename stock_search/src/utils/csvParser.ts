@@ -1,40 +1,21 @@
 import Papa from "papaparse";
 import type { StockData } from "../types/stock";
+import { CSV_PARSER_CONFIG, CSV_NUMERIC_FIELDS } from "../constants/csv";
+import { CURRENCY_FORMAT, PERCENTAGE_FORMAT } from "../constants/formatting";
 
 export const parseCSVFile = (file: File): Promise<StockData[]> => {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
-      header: true,
-      encoding: "UTF-8",
-      skipEmptyLines: true,
+      header: CSV_PARSER_CONFIG.header,
+      encoding: CSV_PARSER_CONFIG.encoding,
+      skipEmptyLines: CSV_PARSER_CONFIG.skipEmptyLines,
       transformHeader: (header: string) => {
         // ヘッダーのトリミング
         return header.trim();
       },
       transform: (value: string, header: string) => {
         // 数値フィールドの処理
-        const numericFields = [
-          "時価総額",
-          "PBR",
-          "売上高",
-          "営業利益",
-          "営業利益率",
-          "当期純利益",
-          "純利益率",
-          "ROE",
-          "自己資本比率",
-          "PER(会予)",
-          "負債",
-          "流動負債",
-          "流動資産",
-          "総負債",
-          "現金及び現金同等物",
-          "投資有価証券",
-          "ネットキャッシュ（流動資産-負債）",
-          "ネットキャッシュ比率",
-        ];
-
-        if (numericFields.includes(header)) {
+        if (CSV_NUMERIC_FIELDS.includes(header as (typeof CSV_NUMERIC_FIELDS)[number])) {
           // 単位表記を除去（倍、%、円など）
           const cleanValue = value
             .replace(/,/g, "")
@@ -84,10 +65,16 @@ export const formatCurrency = (value: number | null): string => {
   if (value === null || value === undefined) return "-";
 
   // 全て百万円単位で表示（単位サフィックスなし）
-  return formatNumber(value / 1000000, 0);
+  return formatNumber(
+    value / CURRENCY_FORMAT.millionDivisor,
+    CURRENCY_FORMAT.decimals
+  );
 };
 
 export const formatPercentage = (value: number | null): string => {
   if (value === null || value === undefined) return "-";
-  return `${formatNumber(value * 100, 2)}%`;
+  return `${formatNumber(
+    value * PERCENTAGE_FORMAT.multiplier,
+    PERCENTAGE_FORMAT.decimals
+  )}%`;
 };

@@ -1,5 +1,6 @@
 import type { StockData } from "../types/stock";
 import type { ColumnConfig } from "../components/ColumnSelector";
+import { DATE_FORMAT, FILE_SIZE } from "../constants/formatting";
 
 /**
  * CSVダウンロード機能のユーティリティ関数
@@ -90,10 +91,22 @@ export const generateFileName = (
 ): string => {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const day = String(now.getDate()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const hours = String(now.getHours()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const minutes = String(now.getMinutes()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
 
   return `${baseFileName}_${year}${month}${day}_${hours}${minutes}.csv`;
 };
@@ -108,10 +121,22 @@ export const generateFileNameWithFilters = (
 ): string => {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const day = String(now.getDate()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const hours = String(now.getHours()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
+  const minutes = String(now.getMinutes()).padStart(
+    DATE_FORMAT.zeroPadLength,
+    DATE_FORMAT.zeroPadChar
+  );
 
   if (filterCount < totalCount) {
     return `${baseFileName}_filtered_${filterCount}件_${year}${month}${day}_${hours}${minutes}.csv`;
@@ -135,11 +160,11 @@ export const estimateCSVSize = (
   const avgRowSize = sampleCSV.length / sampleRows;
   const totalSize = avgRowSize * data.length;
 
-  if (totalSize < 1024) {
+  if (totalSize < FILE_SIZE.kilobyte) {
     return `${Math.round(totalSize)} B`;
-  } else if (totalSize < 1024 * 1024) {
-    return `${(totalSize / 1024).toFixed(1)} KB`;
+  } else if (totalSize < FILE_SIZE.megabyte) {
+    return `${(totalSize / FILE_SIZE.kilobyte).toFixed(1)} KB`;
   } else {
-    return `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(totalSize / FILE_SIZE.megabyte).toFixed(1)} MB`;
   }
 };

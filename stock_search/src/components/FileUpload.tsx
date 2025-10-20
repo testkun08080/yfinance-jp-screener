@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { CSV_FILE_CONFIG } from "../constants/csv";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -27,7 +28,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
-    if (file && file.type === "text/csv") {
+    if (file && file.type === CSV_FILE_CONFIG.mimeType) {
       onFileSelect(file);
     }
   };
@@ -55,7 +56,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept={CSV_FILE_CONFIG.acceptAttribute}
           onChange={handleFileChange}
           className="hidden"
           disabled={loading}
@@ -81,7 +82,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               </p>
             </div>
             <div className="text-xs text-base-content/50">
-              対応形式: CSV (.csv)
+              対応形式: CSV ({CSV_FILE_CONFIG.extension})
             </div>
           </div>
         )}

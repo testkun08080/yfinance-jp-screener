@@ -1,12 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
+import { NAVIGATION_ITEMS } from "../constants/ui";
 
 export const Navigation = () => {
   const location = useLocation();
 
-  const navItems = [
-    { path: "/", label: "データビューア", icon: "📊" },
-    { path: "/about", label: "このアプリについて", icon: "📖" },
-  ];
+  const navItems = NAVIGATION_ITEMS;
 
   return (
     <nav className="navbar bg-base-200 shadow-sm">

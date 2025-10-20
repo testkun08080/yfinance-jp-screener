@@ -1,10 +1,12 @@
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FaGithub, FaEnvelope } from "react-icons/fa";
+import { EXTERNAL_URLS } from "../constants/urls";
+import { BREADCRUMB_ITEMS } from "../constants/ui";
 
 export const AboutPage = () => {
   const breadcrumbItems = [
-    { label: "ホーム", href: "/", icon: "🏠" },
-    { label: "このアプリについて", icon: "ℹ️" },
+    BREADCRUMB_ITEMS.home,
+    BREADCRUMB_ITEMS.about,
   ];
 
   return (
@@ -42,7 +44,7 @@ export const AboutPage = () => {
                 けど、せっかくなら割安株を見つけてみたい。
                 <br /> そんな想いと、
                 <a
-                  href="https://amzn.to/3IEVRkq"
+                  href={EXTERNAL_URLS.sponsorship.amazonBook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link link-primary font-semibold"
@@ -82,7 +84,7 @@ export const AboutPage = () => {
             <ul className="list-disc list-inside text-base-content/80 mb-4">
               <li>
                 <a
-                  href="https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
+                  href={EXTERNAL_URLS.dataSources.jpxData}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link link-primary"
@@ -92,7 +94,7 @@ export const AboutPage = () => {
               </li>
               <li>
                 <a
-                  href="https://ranaroussi.github.io/yfinance/"
+                  href={EXTERNAL_URLS.dataSources.yfinanceAPI}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link link-primary"
@@ -197,7 +199,7 @@ export const AboutPage = () => {
                 <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
                   <li>
                     <a
-                      href="https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html"
+                      href={EXTERNAL_URLS.legal.yahooTerms}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="link link-primary"
@@ -207,7 +209,7 @@ export const AboutPage = () => {
                   </li>
                   <li>
                     <a
-                      href="https://legal.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.html"
+                      href={EXTERNAL_URLS.legal.yahooDevTerms}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="link link-primary"
@@ -217,7 +219,7 @@ export const AboutPage = () => {
                   </li>
                   <li>
                     <a
-                      href="https://finance.yahoo.com/about/terms"
+                      href={EXTERNAL_URLS.legal.yahooFinanceTerms}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="link link-primary"
@@ -237,7 +239,7 @@ export const AboutPage = () => {
                 <p className="mb-2">
                   データの取得方法や使用方法については、{" "}
                   <a
-                    href="https://github.com/testkun08080/yfinance-jp-screener"
+                    href={EXTERNAL_URLS.social.githubRepo}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="link link-primary font-semibold"
@@ -263,7 +265,7 @@ export const AboutPage = () => {
               {/* 寄付ボタン */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center my-6">
                 <a
-                  href="https://github.com/sponsors/testkun08080"
+                  href={EXTERNAL_URLS.sponsorship.githubSponsors}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary gap-2 flex-1 sm:flex-initial"
@@ -279,7 +281,7 @@ export const AboutPage = () => {
                   GitHub Sponsors
                 </a>
                 <a
-                  href="https://www.buymeacoffee.com/testkun08080"
+                  href={EXTERNAL_URLS.sponsorship.buyMeACoffee}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-warning gap-2 flex-1 sm:flex-initial"
@@ -329,7 +331,7 @@ export const AboutPage = () => {
             </p>
             <div className="flex gap-4 justify-center">
               <a
-                href="mailto:testkun.08080@gmail.com"
+                href={EXTERNAL_URLS.social.email}
                 className="btn btn-outline gap-2 hover:bg-red-500 hover:text-white hover:border-red-500"
                 title="メールでお問い合わせ"
               >
@@ -337,7 +339,7 @@ export const AboutPage = () => {
                 メール
               </a>
               <a
-                href="https://github.com/testkun08080"
+                href={EXTERNAL_URLS.social.github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-outline gap-2 hover:bg-gray-800 hover:text-white hover:border-gray-800"

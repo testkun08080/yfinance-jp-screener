@@ -1,6 +1,6 @@
 import React from "react";
-import { ITEMS_PER_PAGE_OPTIONS } from "../types/stock";
 import type { PaginationConfig } from "../types/stock";
+import { PAGINATION } from "../constants/ui";
 
 interface PaginationProps {
   config: PaginationConfig;
@@ -21,7 +21,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   const getPageNumbers = () => {
     const pages: number[] = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = PAGINATION.maxVisiblePages;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
@@ -117,7 +117,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               value={itemsPerPage}
               onChange={(e) => onItemsPerPageChange(parseInt(e.target.value))}
             >
-              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+              {PAGINATION.itemsPerPageOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}件
                 </option>

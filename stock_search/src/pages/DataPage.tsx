@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CSVViewer } from "../components/CSVViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FileUpload } from "../components/FileUpload";
+import { EXTERNAL_URLS } from "../constants/urls";
+import { FILE_SIZE } from "../constants/formatting";
 
 interface CSVFile {
   name: string;
@@ -31,9 +33,10 @@ export const DataPage = () => {
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    if (bytes < FILE_SIZE.kilobyte) return `${bytes} B`;
+    if (bytes < FILE_SIZE.megabyte)
+      return `${(bytes / FILE_SIZE.kilobyte).toFixed(2)} KB`;
+    return `${(bytes / FILE_SIZE.megabyte).toFixed(2)} MB`;
   };
 
   const formatDate = (dateString: string): string => {
@@ -157,7 +160,7 @@ export const DataPage = () => {
                     <p>
                       CSVデータの取得方法は{" "}
                       <a
-                        href="https://github.com/testkun08080/yfinance-jp-screener#readme"
+                        href={EXTERNAL_URLS.social.githubRepoReadme}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link link-primary"

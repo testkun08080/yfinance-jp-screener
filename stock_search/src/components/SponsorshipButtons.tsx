@@ -1,4 +1,5 @@
 import React from "react";
+import { EXTERNAL_URLS } from "../constants/urls";
 
 interface SponsorshipButtonsProps {
   className?: string;
@@ -8,9 +9,9 @@ const SponsorshipButtons: React.FC<SponsorshipButtonsProps> = ({
   className = "",
 }) => {
   const sponsorshipLinks = {
-    github: "https://github.com/sponsors/testkun08080",
-    buyMeACoffee: "https://www.buymeacoffee.com/testkun08080",
-    amazonBook: "https://amzn.to/3IEVRkq",
+    github: EXTERNAL_URLS.sponsorship.githubSponsors,
+    buyMeACoffee: EXTERNAL_URLS.sponsorship.buyMeACoffee,
+    amazonBook: EXTERNAL_URLS.sponsorship.amazonBook,
   };
 
   const handleSponsorClick = (url: string) => {

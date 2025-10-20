@@ -200,19 +200,6 @@ def get_stock_data(stock_info):
 
         # PER(会予)のデバッグ
         forward_pe = info.get("forwardPE", None)
-        # print(f"  📊 forwardPE値: {forward_pe} (type: {type(forward_pe)})")
-
-        # その他のPE関連データもチェック
-        # trailing_pe = safe_get_value(info, "trailingPE")
-        # pe_ratio = safe_get_value(info, "priceEarningsRatio")
-        # print(f"  📊 trailingPE: {trailing_pe}, priceEarningsRatio: {pe_ratio}")
-
-        # 郵便番号と都道府県のデバッグ
-        zip_code = safe_get_value(info, "zip")
-        # prefecture_from_zip = get_prefecture_from_zip(zip_code)
-        # city = safe_get_value(info, "city")
-        # state = safe_get_value(info, "state")
-        # print(f"  🏢 zip: {zip_code}, 都道府県(zip): {prefecture_from_zip}, city: {city}, state: {state}")
 
         # データ収集
         result = {

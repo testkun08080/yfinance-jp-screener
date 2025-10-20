@@ -16,8 +16,6 @@ services:
       - PYTHONUNBUFFERED=1
       - STOCK_FILE=${STOCK_FILE:-stocks_sample.json}
       - CHUNK_SIZE=${CHUNK_SIZE:-1000}
-    networks:
-      - stock-network
     restart: "no"
 
   # React フロントエンドサービス
@@ -32,15 +30,5 @@ services:
       - "${PORT}:80"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-    networks:
-      - stock-network
     command: >
       sh -c "echo 'Frontend running on http://localhost:${PORT}' && nginx -g 'daemon off;'"
-
-networks:
-  stock-network:
-    driver: bridge
-
-volumes:
-  stock-data:
-    driver: local

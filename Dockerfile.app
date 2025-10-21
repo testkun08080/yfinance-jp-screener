@@ -18,7 +18,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY stock_search/ .
 
 # TypeScriptコンパイルとViteビルド
-ENV DOCKER_ENV=true
 RUN npm run build --loglevel=info
 
 # 本番環境ステージ（nginx使用）

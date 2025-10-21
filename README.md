@@ -19,7 +19,7 @@
 
 - 📈 GitHub Actions による自動データ収集
 - 🔍 Web 上でのスクリーニング・可視化
-- 📂 ドラッグ&ドロップでCSVファイルアップロード（完全クライアントサイド）
+- 📂 ドラッグ&ドロップで CSV ファイルアップロード（完全クライアントサイド）
 - ⚙️ JPX 公式データ対応・簡易データ分割機能
 
 ---
@@ -71,16 +71,19 @@ cp .env.example .env
 
 # 3. Docker起動（データ収集 → ビルド → プレビュー）
 
-# 📦 Python データ収集ビルド・実行
-docker-compose build python-service
-docker-compose run --rm python-service
+# これでpythonとフロントエンドが起動します（pythonは裏で動き続けるので、終わったらstock_list/Export以下にあるcsvを使って下さい）
+docker-compose up
 
-# 🌐 フロントエンドビルド・起動
-docker-compose build frontend-service
-docker-compose up frontend-service
+# # 📦 Python データ収集ビルド・実行
+# docker-compose build python-service
+# docker-compose run --rm python-service
+
+# # 🌐 フロントエンドビルド・起動
+# docker-compose build frontend-service
+# docker-compose up frontend-service
 
 # 4. ブラウザでアクセス(環境変数のPORT番号によります)
-# http://localhost:8000
+open http://localhost:8000
 ```
 
 ---

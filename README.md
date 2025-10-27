@@ -128,12 +128,12 @@ cd ../stock_search
 # 2. 依存関係をインストール
 npm install
 
-# 3. ビルド（ビルドしないとcsvが正常にpublicへコピーされません）
+# 3. ビルド
 npm run build
 
 # 4. プレビュー
 npm run preview
-# http://localhost:8000/ にアクセス(.envに依存)
+# おそらく　http://localhost:4173/ にアクセス
 
 ```
 

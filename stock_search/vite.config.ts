@@ -3,9 +3,11 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
-  base: "/",
+  // GitHub Pages デプロイ時のみリポジトリ名をベースパスに設定
+  // ローカル開発時は "/" を使用
+  base: mode === "github-pages" ? "/yfinance-jp-screener/" : "/",
   build: {
     outDir: "dist",
     assetsDir: "assets",

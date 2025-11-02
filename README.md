@@ -24,7 +24,7 @@
 
 ## 🌐 オンラインデモ
 
-**以下 URL 上でアプリケーション**にアクセスできます:
+**以下 URL 上でCSV分析用のアプリケーション**にアクセスできます:
 
 👉 **<https://yfinance-jp-screener-serach.vercel.app/>**
 

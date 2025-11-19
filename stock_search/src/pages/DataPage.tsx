@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CSVViewer } from "../components/CSVViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FileUpload } from "../components/FileUpload";
-import { EXTERNAL_URLS } from "../constants/urls";
+// import { EXTERNAL_URLS } from "../constants/urls";
 import { FILE_SIZE } from "../constants/formatting";
 
 interface CSVFile {

@@ -17,11 +17,13 @@ export const PAGINATION = {
 /** ナビゲーションメニュー項目 */
 export const NAVIGATION_ITEMS = [
   { path: "/", label: "データビューア", icon: "📊" },
+  { path: "/usage", label: "使い方", icon: "📚" },
   { path: "/about", label: "このアプリについて", icon: "📖" },
 ] as const;
 
 /** ブレッドクラム項目 */
 export const BREADCRUMB_ITEMS = {
   home: { label: "ホーム", href: "/", icon: "🏠" },
+  usage: { label: "使い方", icon: "📚" },
   about: { label: "このアプリについて", icon: "ℹ️" },
 } as const;

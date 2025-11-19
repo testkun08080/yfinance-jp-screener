@@ -35,4 +35,11 @@ export const EXTERNAL_URLS = {
       "https://legal.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.html",
     yahooFinanceTerms: "https://finance.yahoo.com/about/terms",
   },
+
+  /** 使い方・ドキュメント */
+  documentation: {
+    zennArticle: "https://zenn.dev/testkun08080/articles/python-yfinance-4c4331412bc50f",
+    noteArticle: "https://note.com/testkun08080/n/n6af1ee248ea6",
+    readme: "https://github.com/testkun08080/yfinance-jp-screener#readme",
+  },
 } as const;

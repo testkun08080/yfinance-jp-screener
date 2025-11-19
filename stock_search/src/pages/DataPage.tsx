@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { CSVViewer } from "../components/CSVViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { FileUpload } from "../components/FileUpload";
@@ -138,39 +139,27 @@ export const DataPage = () => {
 
               <div className="divider my-8">使い方</div>
 
-              <div className="max-w-2xl mx-auto text-left">
-                <div className="alert alert-info">
+              <div className="max-w-2xl mx-auto">
+                <Link
+                  to="/usage"
+                  className="btn btn-primary btn-lg gap-2 w-full sm:w-auto"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="stroke-current shrink-0 h-5 w-5"
+                    className="h-5 w-5"
                     fill="none"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth="2"
+                      strokeWidth={2}
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <div className="text-sm">
-                    <div className="font-semibold mb-2">
-                      データの取得方法について
-                    </div>
-                    <p>
-                      CSVデータの取得方法は{" "}
-                      <a
-                        href={EXTERNAL_URLS.social.githubRepoReadme}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="link link-primary"
-                      >
-                        README
-                      </a>{" "}
-                      をご確認ください
-                    </p>
-                  </div>
-                </div>
+                  使い方ページへ
+                </Link>
               </div>
             </div>
           </div>

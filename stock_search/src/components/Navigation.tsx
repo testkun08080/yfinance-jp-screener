@@ -40,7 +40,12 @@ export const Navigation = () => {
         {/* モバイルメニュー */}
         <div className="navbar-end">
           <div className="dropdown dropdown-end lg:hidden">
-            <div tabIndex={0} role="button" className="btn btn-ghost" aria-label="メニューを開く">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-ghost"
+              aria-label="メニューを開く"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"

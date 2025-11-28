@@ -6,7 +6,7 @@ import type { ColumnConfig } from "../components/ColumnSelector";
  * @returns ColumnConfig配列
  */
 export const getDefaultColumns = (
-  availableColumns: string[]
+  availableColumns: string[],
 ): ColumnConfig[] => {
   const columnDefinitions: Record<
     string,

@@ -12,7 +12,7 @@ interface NumberRangeInputProps {
   filters: SearchFiltersType;
   onFilterChange: (
     key: keyof SearchFiltersType,
-    value: string | number | string[] | null
+    value: string | number | string[] | null,
   ) => void;
 }
 
@@ -35,10 +35,10 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
             ? isInteger
               ? parseInt(e.target.value)
               : parseFloat(e.target.value)
-            : null
+            : null,
         );
       },
-      [minKey, isInteger, onFilterChange]
+      [minKey, isInteger, onFilterChange],
     );
 
     const handleMaxChange = useCallback(
@@ -49,10 +49,10 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
             ? isInteger
               ? parseInt(e.target.value)
               : parseFloat(e.target.value)
-            : null
+            : null,
         );
       },
-      [maxKey, isInteger, onFilterChange]
+      [maxKey, isInteger, onFilterChange],
     );
 
     return (
@@ -83,7 +83,7 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 NumberRangeInput.displayName = "NumberRangeInput";
@@ -95,7 +95,7 @@ interface SearchFiltersProps {
   availablePrefectures: string[];
   onFilterChange: (
     key: keyof SearchFiltersType,
-    value: string | number | string[] | null
+    value: string | number | string[] | null,
   ) => void;
   onClearFilters: () => void;
 }
@@ -130,7 +130,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "industries",
-        currentIndustries.filter((i) => i !== industry)
+        currentIndustries.filter((i) => i !== industry),
       );
     }
   };
@@ -142,7 +142,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "market",
-        currentMarkets.filter((m) => m !== market)
+        currentMarkets.filter((m) => m !== market),
       );
     }
   };
@@ -154,7 +154,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "prefecture",
-        currentPrefectures.filter((p) => p !== prefecture)
+        currentPrefectures.filter((p) => p !== prefecture),
       );
     }
   };

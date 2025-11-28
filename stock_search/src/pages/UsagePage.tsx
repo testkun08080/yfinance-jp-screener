@@ -40,7 +40,8 @@ export const UsagePage = () => {
                       </h3>
                       <p className="text-base-content/70 mb-4">
                         技術的な詳細、アーキテクチャ、セットアップ方法、GitHub
-                        Actions の使い方など、開発者向けの詳細な情報を掲載しています。
+                        Actions
+                        の使い方など、開発者向けの詳細な情報を掲載しています。
                       </p>
                       <a
                         href={EXTERNAL_URLS.documentation.zennArticle}
@@ -102,9 +103,7 @@ export const UsagePage = () => {
                   <div className="flex items-start gap-4">
                     <div className="text-4xl">📋</div>
                     <div className="flex-1">
-                      <h3 className="card-title text-xl mb-2">
-                        GitHub README
-                      </h3>
+                      <h3 className="card-title text-xl mb-2">GitHub README</h3>
                       <p className="text-base-content/70 mb-4">
                         プロジェクトの概要、セットアップ手順、技術スタックなどの詳細情報は
                         GitHub の README をご覧ください。
@@ -190,4 +189,3 @@ export const UsagePage = () => {
     </div>
   );
 };
-

@@ -80,7 +80,7 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
 
 // URLパラメータをフィルターに変換
 export const urlParamsToFilters = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): Partial<SearchFilters> => {
   const filters: Partial<SearchFilters> = {};
 

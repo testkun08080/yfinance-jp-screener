@@ -160,8 +160,8 @@ export const DataTable: FC<DataTableProps> = ({
                   index === 0
                     ? "left-0 min-w-20 max-w-20"
                     : index === 1
-                    ? "left-20 min-w-16 max-w-16"
-                    : ""
+                      ? "left-20 min-w-16 max-w-16"
+                      : ""
                 }`}
               />
             ))}

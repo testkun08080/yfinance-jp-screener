@@ -629,7 +629,7 @@ export const useFilters = (data: StockData[]) => {
 
   const updateFilter = (
     key: keyof SearchFilters,
-    value: string | number | string[] | null
+    value: string | number | string[] | null,
   ) => {
     const newFilters = {
       ...filters,
@@ -679,7 +679,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.業種)
       .filter(
         (industry): industry is string =>
-          industry !== undefined && industry !== null && industry !== ""
+          industry !== undefined && industry !== null && industry !== "",
       )
       .filter((industry, index, arr) => arr.indexOf(industry) === index)
       .sort();
@@ -692,7 +692,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.優先市場)
       .filter(
         (market): market is string =>
-          market !== undefined && market !== null && market !== ""
+          market !== undefined && market !== null && market !== "",
       )
       .filter((market, index, arr) => arr.indexOf(market) === index)
       .sort();
@@ -705,7 +705,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.都道府県)
       .filter(
         (prefecture): prefecture is string =>
-          prefecture !== undefined && prefecture !== null && prefecture !== ""
+          prefecture !== undefined && prefecture !== null && prefecture !== "",
       )
       .filter((prefecture, index, arr) => arr.indexOf(prefecture) === index)
       .sort();

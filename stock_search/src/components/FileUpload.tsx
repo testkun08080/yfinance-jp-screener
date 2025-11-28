@@ -81,7 +81,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 </span>
               </p>
             </div>
-            <div className="text-xs text-base-content/50">
+            <div className="text-xs text-base-content/70">
               対応形式: CSV ({CSV_FILE_CONFIG.extension})
             </div>
           </div>

@@ -61,6 +61,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             className="btn btn-ghost btn-sm"
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
+            aria-label="最初のページへ"
           >
             ⏮️
           </button>
@@ -70,6 +71,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             className="btn btn-ghost btn-sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
+            aria-label="前のページへ"
           >
             ⬅️
           </button>
@@ -83,6 +85,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                   page === currentPage ? "btn-primary" : "btn-ghost"
                 }`}
                 onClick={() => onPageChange(page)}
+                aria-label={`ページ ${page} へ`}
+                aria-current={page === currentPage ? "page" : undefined}
               >
                 {page}
               </button>
@@ -94,6 +98,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             className="btn btn-ghost btn-sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
+            aria-label="次のページへ"
           >
             ➡️
           </button>
@@ -103,6 +108,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             className="btn btn-ghost btn-sm"
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
+            aria-label="最後のページへ"
           >
             ⏭️
           </button>

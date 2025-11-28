@@ -40,6 +40,16 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
     { key: "equityRatioMax", param: "eqMax" },
     { key: "forwardPEMin", param: "peMin" },
     { key: "forwardPEMax", param: "peMax" },
+    { key: "trailingPEMin", param: "tpeMin" }, // PER直近(過去12ヶ月分)
+    { key: "trailingPEMax", param: "tpeMax" },
+    { key: "dividendDirectionMin", param: "ddMin" },
+    { key: "dividendDirectionMax", param: "ddMax" },
+    { key: "dividendYieldMin", param: "dyMin" },
+    { key: "dividendYieldMax", param: "dyMax" },
+    { key: "trailingEpsMin", param: "tepsMin" },
+    { key: "trailingEpsMax", param: "tepsMax" },
+    { key: "forwardEpsMin", param: "fepsMin" },
+    { key: "forwardEpsMax", param: "fepsMax" },
     { key: "totalLiabilitiesMin", param: "tlMin" },
     { key: "totalLiabilitiesMax", param: "tlMax" },
     { key: "currentLiabilitiesMin", param: "clMin" },
@@ -70,7 +80,7 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
 
 // URLパラメータをフィルターに変換
 export const urlParamsToFilters = (
-  searchParams: URLSearchParams,
+  searchParams: URLSearchParams
 ): Partial<SearchFilters> => {
   const filters: Partial<SearchFilters> = {};
 
@@ -116,6 +126,16 @@ export const urlParamsToFilters = (
     { param: "eqMax", key: "equityRatioMax" },
     { param: "peMin", key: "forwardPEMin" },
     { param: "peMax", key: "forwardPEMax" },
+    { param: "tpeMin", key: "trailingPEMin" }, // PER直近(過去12ヶ月分)
+    { param: "tpeMax", key: "trailingPEMax" },
+    { param: "ddMin", key: "dividendDirectionMin" },
+    { param: "ddMax", key: "dividendDirectionMax" },
+    { param: "dyMin", key: "dividendYieldMin" },
+    { param: "dyMax", key: "dividendYieldMax" },
+    { param: "tepsMin", key: "trailingEpsMin" },
+    { param: "tepsMax", key: "trailingEpsMax" },
+    { param: "fepsMin", key: "forwardEpsMin" },
+    { param: "fepsMax", key: "forwardEpsMax" },
     { param: "tlMin", key: "totalLiabilitiesMin" },
     { param: "tlMax", key: "totalLiabilitiesMax" },
     { param: "clMin", key: "currentLiabilitiesMin" },
@@ -157,5 +177,7 @@ export const updateUrlWithFilters = (filters: SearchFilters) => {
 // 共有用URLを生成
 export const generateShareUrl = (filters: SearchFilters): string => {
   const params = filtersToUrlParams(filters);
-  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  return `${window.location.origin}${
+    window.location.pathname
+  }?${params.toString()}`;
 };

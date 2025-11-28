@@ -88,7 +88,12 @@ export const DataTable: FC<DataTableProps> = ({
         const key = col.key as keyof StockData;
 
         let format = "string";
-        if (String(col.key).includes("率") || String(col.key).includes("ROE"))
+        if (
+          String(col.key).includes("率") ||
+          String(col.key).includes("ROE") ||
+          String(col.key).includes("配当方向性") ||
+          String(col.key).includes("配当利回り")
+        )
           format = "percentage";
         else if (isCurrencyField(key)) format = "currency";
         else if (
@@ -149,7 +154,15 @@ export const DataTable: FC<DataTableProps> = ({
                 key={column.key}
                 label={column.label}
                 sortKey={column.key}
-                className={`min-w-24 ${index === 0 || index === 1 ? " z-10 bg-base-200" : ""} ${index === 0 ? "left-0 min-w-20 max-w-20" : index === 1 ? "left-20 min-w-16 max-w-16" : ""}`}
+                className={`min-w-24 ${
+                  index === 0 || index === 1 ? " z-10 bg-base-200" : ""
+                } ${
+                  index === 0
+                    ? "left-0 min-w-20 max-w-20"
+                    : index === 1
+                    ? "left-20 min-w-16 max-w-16"
+                    : ""
+                }`}
               />
             ))}
           </tr>
@@ -167,13 +180,19 @@ export const DataTable: FC<DataTableProps> = ({
                 // const isSticky = colIndex === 0 || colIndex === 1;
                 const isSticky = false;
                 const stickyClass = isSticky
-                  ? `sticky z-10 bg-white ${colIndex === 0 ? "left-0 min-w-20 max-w-20" : "left-20 min-w-16 max-w-16"}`
+                  ? `sticky z-10 bg-white ${
+                      colIndex === 0
+                        ? "left-0 min-w-20 max-w-20"
+                        : "left-20 min-w-16 max-w-16"
+                    }`
                   : "";
 
                 return (
                   <td
                     key={column.key}
-                    className={`text-xs ${column.format === "string" ? "text-left" : "text-right"} ${stickyClass} px-1`}
+                    className={`text-xs ${
+                      column.format === "string" ? "text-left" : "text-right"
+                    } ${stickyClass} px-1`}
                   >
                     {column.format === "string" && column.key === "会社名" ? (
                       <div

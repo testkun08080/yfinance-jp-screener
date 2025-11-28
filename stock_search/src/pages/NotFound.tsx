@@ -44,7 +44,7 @@ export const NotFound: React.FC = () => {
           </div>
 
           {/* サポート情報 */}
-          <div className="mt-6 text-xs text-base-content/50">
+          <div className="mt-6 text-xs text-base-content/70">
             問題が解決しない場合は、ブラウザを更新するか、
             <br />
             しばらく時間をおいてから再度アクセスしてください。

@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
               className="btn btn-ghost btn-circle btn-sm"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="GitHub"
+              aria-label="Twitter"
             >
               <svg
                 width="20"
@@ -53,15 +53,15 @@ export const Footer: React.FC = () => {
           </p>
 
           {/* データ利用に関する重要な注意 */}
-          <div className="text-xs text-base-content/60 text-center space-y-1 mt-2">
-            <p className="font-semibold">
+          <div className="text-xs text-base-content/80 text-center space-y-1 mt-2">
+            <p className="font-semibold text-base-content">
               ⚠️ このプロジェクトは Yahoo Finance
               のデータ取得を補助するツールです
             </p>
-            <p>
+            <p className="text-base-content/80">
               取得したデータの利用については Yahoo の利用規約に従ってください
             </p>
-            <p>
+            <p className="text-base-content/80">
               本リポジトリはデータ自体を配布しません・個人利用目的のみで使用してください
             </p>
             <p className="font-semibold text-error">
@@ -70,7 +70,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* 投資判断に関する免責事項 */}
-          <p className="text-xs text-base-content/50 text-center mt-2">
+          <p className="text-xs text-base-content/80 text-center mt-2">
             ⚠️
             投資判断は自己責任で行ってください。本サービスで提供される情報は投資助言ではありません。
           </p>

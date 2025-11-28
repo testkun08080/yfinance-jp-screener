@@ -279,6 +279,50 @@ def calculate_net_cash(current_assets, investments, total_liabilities):
         return None
 
 
+def calculate_dividend_direction(dividends):
+    """配当方向性を計算（過去の配当データから変化率を%で計算）
+
+    Args:
+        dividends (pandas.Series): 配当金履歴（時系列データ）
+
+    Returns:
+        float: 配当方向性（変化率を%で表現、例: 10.5 = 10.5%増加）
+        None: データ不足時
+
+    Note:
+        - 最新2回とその前2回の平均を比較
+        - 変化率を%で返す（例: 0.1 → 10.0%）
+        - データが4回未満の場合はNoneを返す
+
+    Examples:
+        >>> dividends = pd.Series([20, 25, 30, 35], index=pd.date_range('2021-01-01', periods=4, freq='6M'))
+        >>> calculate_dividend_direction(dividends)
+        44.44  # 44.44%増加
+    """
+    try:
+        if dividends is None or len(dividends) < 4:
+            return None
+
+        # 最新4回の配当を取得
+        recent_dividends = dividends.tail(4).values
+
+        # 最新2回の平均
+        latest_avg = (recent_dividends[-1] + recent_dividends[-2]) / 2
+
+        # その前2回の平均
+        previous_avg = (recent_dividends[-3] + recent_dividends[-4]) / 2
+
+        if previous_avg == 0:
+            return None
+
+        # 変化率を計算（%で返す）
+        change_rate = (latest_avg - previous_avg) / previous_avg
+        return change_rate * 100  # %に変換
+    except Exception as e:
+        logger.debug(f"    配当方向性計算エラー: {e}")
+        return None
+
+
 def get_stock_data(stock_info):
     """個別銘柄の財務データを取得
 
@@ -359,6 +403,19 @@ def get_stock_data(stock_info):
         # PER(会予)のデバッグ
         forward_pe = info.get("forwardPE", None)
 
+        # 配当方向性（payoutRatio）- 生データをそのまま保存（小数、例: 0.3 = 30%）
+        dividend_direction = safe_get_value(info, "payoutRatio")
+
+        # 配当利回り（trailingAnnualDividendYield）- 生データをそのまま保存（小数、例: 0.03 = 3%）
+        dividend_yield = safe_get_value(info, "trailingAnnualDividendYield")
+
+        # PER（trailingPE）- 過去12ヶ月分を考慮したもの
+        trailing_pe = safe_get_value(info, "trailingPE")
+
+        # EPS関連データ
+        trailing_eps = safe_get_value(info, "trailingEps")  # 過去12ヶ月のEPS
+        forward_eps = safe_get_value(info, "forwardEps")  # 予想EPS
+
         # データ収集
         result = {
             "会社名": stock_info["銘柄名"] or safe_get_value(info, "longName") or safe_get_value(info, "shortName"),
@@ -371,6 +428,11 @@ def get_stock_data(stock_info):
             "時価総額": safe_get_value(info, "marketCap"),
             "PBR": safe_get_value(info, "priceToBook"),
             "PER(会予)": forward_pe,
+            "PER直近": trailing_pe,
+            "配当方向性": dividend_direction,
+            "配当利回り": dividend_yield,
+            "EPS(過去12ヶ月)": trailing_eps,
+            "EPS(予想)": forward_eps,
             "ROE": safe_get_value(info, "returnOnEquity"),
             "営業利益率": safe_get_value(info, "operatingMargins"),
             "純利益率": safe_get_value(info, "profitMargins"),
@@ -552,6 +614,12 @@ def main(json_filename="stocks_sample.json"):
             "都道府県",
             "時価総額",
             "PBR",
+            "PER(会予)",
+            "PER直近",
+            "配当方向性",
+            "配当利回り",
+            "EPS(過去12ヶ月)",
+            "EPS(予想)",
             "売上高",
             "営業利益",
             "営業利益率",
@@ -559,7 +627,6 @@ def main(json_filename="stocks_sample.json"):
             "純利益率",
             "ROE",
             "自己資本比率",
-            "PER(会予)",
             "負債",
             "流動負債",
             "流動資産",

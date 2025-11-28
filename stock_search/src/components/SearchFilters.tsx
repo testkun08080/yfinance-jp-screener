@@ -475,7 +475,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               onFilterChange={onFilterChange}
             />
             <NumberRangeInput
-              label="配当方向性"
+              label="配当性向"
               unit="%"
               minKey="dividendDirectionMin"
               maxKey="dividendDirectionMax"

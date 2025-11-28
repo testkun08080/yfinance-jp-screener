@@ -15,7 +15,6 @@ import pandas as pd
 from datetime import datetime
 import argparse
 import logging
-from pathlib import Path
 
 # ログ設定
 logging.basicConfig(

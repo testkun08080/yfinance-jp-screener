@@ -279,50 +279,6 @@ def calculate_net_cash(current_assets, investments, total_liabilities):
         return None
 
 
-def calculate_dividend_direction(dividends):
-    """配当方向性を計算（過去の配当データから変化率を%で計算）
-
-    Args:
-        dividends (pandas.Series): 配当金履歴（時系列データ）
-
-    Returns:
-        float: 配当方向性（変化率を%で表現、例: 10.5 = 10.5%増加）
-        None: データ不足時
-
-    Note:
-        - 最新2回とその前2回の平均を比較
-        - 変化率を%で返す（例: 0.1 → 10.0%）
-        - データが4回未満の場合はNoneを返す
-
-    Examples:
-        >>> dividends = pd.Series([20, 25, 30, 35], index=pd.date_range('2021-01-01', periods=4, freq='6M'))
-        >>> calculate_dividend_direction(dividends)
-        44.44  # 44.44%増加
-    """
-    try:
-        if dividends is None or len(dividends) < 4:
-            return None
-
-        # 最新4回の配当を取得
-        recent_dividends = dividends.tail(4).values
-
-        # 最新2回の平均
-        latest_avg = (recent_dividends[-1] + recent_dividends[-2]) / 2
-
-        # その前2回の平均
-        previous_avg = (recent_dividends[-3] + recent_dividends[-4]) / 2
-
-        if previous_avg == 0:
-            return None
-
-        # 変化率を計算（%で返す）
-        change_rate = (latest_avg - previous_avg) / previous_avg
-        return change_rate * 100  # %に変換
-    except Exception as e:
-        logger.debug(f"    配当方向性計算エラー: {e}")
-        return None
-
-
 def get_stock_data(stock_info):
     """個別銘柄の財務データを取得
 

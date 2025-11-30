@@ -1,36 +1,36 @@
 export interface StockData {
-  会社名?: string;
-  銘柄コード?: string;
-  コード?: string;
-  業種?: string;
-  優先市場?: string;
-  決算月?: string | null;
-  // 会計基準?: string | null;
-  都道府県?: string | null;
-  時価総額?: number | null;
-  PBR?: number | null;
-  売上高?: number | null;
-  営業利益?: number | null;
-  営業利益率?: number | null;
-  当期純利益?: number | null;
-  純利益率?: number | null;
-  ROE?: number | null;
-  自己資本比率?: number | null;
+  "会社名"?: string;
+  "銘柄コード"?: string;
+  "コード"?: string;
+  "業種"?: string;
+  "優先市場"?: string;
+  "決算月"?: string | null;
+  // "会計基準"?: string | null;
+  "都道府県"?: string | null;
+  "時価総額"?: number | null;
+  "PBR"?: number | null;
+  "売上高"?: number | null;
+  "営業利益"?: number | null;
+  "営業利益率"?: number | null;
+  "当期純利益"?: number | null;
+  "純利益率"?: number | null;
+  "ROE"?: number | null;
+  "自己資本比率"?: number | null;
   "PER(会予)"?: number | null;
-  // PER?: number | null;  // 情報的に不確かなためコメントアウト
-  PER(過去12ヶ月)?: number | null; // trailingPE（過去12ヶ月分）
-  配当方向性?: number | null; // payoutRatio（生データ、小数、例: 0.3 = 30%）
-  配当利回り?: number | null; // trailingAnnualDividendYield（生データ、小数、例: 0.03 = 3%）
+  // "PER"?: number | null;  // 情報的に不確かなためコメントアウト
+  "PER(過去12ヶ月)"?: number | null; // trailingPE（過去12ヶ月分）
+  "配当方向性"?: number | null; // payoutRatio（生データ、小数、例: 0.3 = 30%）
+  "配当利回り"?: number | null; // trailingAnnualDividendYield（生データ、小数、例: 0.03 = 3%）
   "EPS(過去12ヶ月)"?: number | null; // trailingEps（生データ）
   "EPS(予想)"?: number | null; // forwardEps（生データ）
-  負債?: number | null;
-  流動負債?: number | null;
-  流動資産?: number | null;
-  総負債?: number | null;
-  現金及び現金同等物?: number | null;
-  投資有価証券?: number | null;
+  "負債"?: number | null;
+  "流動負債"?: number | null;
+  "流動資産"?: number | null;
+  "総負債"?: number | null;
+  "現金及び現金同等物"?: number | null;
+  "投資有価証券"?: number | null;
   "ネットキャッシュ（流動資産-負債）"?: number | null;
-  ネットキャッシュ比率?: number | null;
+  "ネットキャッシュ比率"?: number | null;
   _source_file?: string;
   _row_index?: number;
   [key: string]: string | number | null | undefined; // Allow additional dynamic properties

@@ -475,6 +475,14 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               onFilterChange={onFilterChange}
             />
             <NumberRangeInput
+              label="PER(前年度)"
+              minKey="previousYearPEMin"
+              maxKey="previousYearPEMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
               label="配当性向"
               unit="%"
               minKey="dividendDirectionMin"
@@ -504,6 +512,14 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               label="EPS(予想)"
               minKey="forwardEpsMin"
               maxKey="forwardEpsMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
+              label="EPS(前年度)"
+              minKey="previousYearEpsMin"
+              maxKey="previousYearEpsMax"
               step={0.1}
               filters={filters}
               onFilterChange={onFilterChange}

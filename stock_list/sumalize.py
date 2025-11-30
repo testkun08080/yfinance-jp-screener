@@ -279,6 +279,105 @@ def calculate_net_cash(current_assets, investments, total_liabilities):
         return None
 
 
+def calculate_previous_year_per(ticker, financials):
+    """前年度のPERとEPSを計算
+
+    Args:
+        ticker (yfinance.Ticker): yfinanceのTickerオブジェクト
+        financials (pd.DataFrame): 年度別損益計算書
+
+    Returns:
+        tuple: (前年度のPER, 前年度のEPS) のタプル
+        None: データが不足している場合
+
+    Note:
+        - 最新年度（financials.columns[0]）の次の年度を前年度として使用
+        - 前年度のNet IncomeとDiluted Average SharesからEPSを計算
+        - 前年度末の株価を取得してPERを計算
+        - ハードコードを避けるため、動的に前年度を取得
+
+    Examples:
+        >>> result = calculate_previous_year_per(ticker, financials)
+        >>> if result:
+        ...     per, eps = result
+        ...     print(f"PER: {per}, EPS: {eps}")
+    """
+    try:
+        if financials.empty:
+            return None
+
+        # 年度の列を取得（最新年度が最初、前年度が2番目）
+        cols = financials.columns.tolist()
+        if len(cols) < 2:
+            # 前年度のデータが存在しない場合
+            return None
+
+        # 前年度の決算期を取得（2番目の列）
+        previous_year_period = cols[1]
+
+        # 前年度のNet Incomeを取得
+        net_income_key = "Net Income"
+        if net_income_key not in financials.index:
+            return None
+
+        net_income_last_year = financials.loc[net_income_key, previous_year_period]
+        if pd.isna(net_income_last_year) or net_income_last_year == 0:
+            return None
+
+        # 前年度のDiluted Average Sharesを取得
+        shares_key = "Diluted Average Shares"
+        if shares_key not in financials.index:
+            return None
+
+        shares_last_year = financials.loc[shares_key, previous_year_period]
+        if pd.isna(shares_last_year) or shares_last_year == 0:
+            return None
+
+        # 前年度EPSを計算
+        eps_last_year = net_income_last_year / shares_last_year
+
+        # 前年度末の日付を取得（決算期の日付から）
+        if hasattr(previous_year_period, "to_pydatetime"):
+            previous_year_date = previous_year_period.to_pydatetime()
+        elif hasattr(previous_year_period, "strftime"):
+            # datetimeオブジェクトの場合
+            previous_year_date = previous_year_period
+        else:
+            # 文字列の場合、パースを試みる
+            try:
+                previous_year_date = pd.to_datetime(previous_year_period).to_pydatetime()
+            except:
+                return None
+
+        # 前年度末の株価を取得（決算期の前後数日で取得）
+        from datetime import timedelta
+
+        start_date = previous_year_date - timedelta(days=3)
+        end_date = previous_year_date + timedelta(days=3)
+
+        try:
+            price_history = ticker.history(start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+            if price_history.empty:
+                return None
+
+            # 決算期に最も近い日付のClose価格を取得
+            price_last_year = price_history["Close"].iloc[0]
+            if pd.isna(price_last_year) or price_last_year == 0:
+                return None
+        except Exception as e:
+            logger.debug(f"    前年度株価取得エラー: {e}")
+            return None
+
+        # 前年度PERを計算
+        per_last_year = price_last_year / eps_last_year
+
+        return (per_last_year, eps_last_year)
+
+    except Exception as e:
+        logger.debug(f"    前年度PER計算エラー: {e}")
+        return None
+
+
 def get_stock_data(stock_info):
     """個別銘柄の財務データを取得
 
@@ -372,6 +471,14 @@ def get_stock_data(stock_info):
         trailing_eps = safe_get_value(info, "trailingEps")  # 過去12ヶ月のEPS
         forward_eps = safe_get_value(info, "forwardEps")  # 予想EPS
 
+        # 前年度PERとEPSを計算
+        previous_year_pe = None
+        previous_year_eps = None
+        if not financials.empty:
+            previous_year_data = calculate_previous_year_per(ticker, financials)
+            if previous_year_data:
+                previous_year_pe, previous_year_eps = previous_year_data
+
         # データ収集
         result = {
             "会社名": stock_info["銘柄名"] or safe_get_value(info, "longName") or safe_get_value(info, "shortName"),
@@ -385,10 +492,12 @@ def get_stock_data(stock_info):
             "PBR": safe_get_value(info, "priceToBook"),
             "PER(会予)": forward_pe,
             "PER(過去12ヶ月)": trailing_pe,
+            "PER(前年度)": previous_year_pe,
             "配当方向性": dividend_direction,
             "配当利回り": dividend_yield,
             "EPS(過去12ヶ月)": trailing_eps,
             "EPS(予想)": forward_eps,
+            "EPS(前年度)": previous_year_eps,
             "ROE": safe_get_value(info, "returnOnEquity"),
             "営業利益率": safe_get_value(info, "operatingMargins"),
             "純利益率": safe_get_value(info, "profitMargins"),
@@ -572,10 +681,12 @@ def main(json_filename="stocks_sample.json"):
             "PBR",
             "PER(会予)",
             "PER(過去12ヶ月)",
+            "PER(前年度)",
             "配当方向性",
             "配当利回り",
             "EPS(過去12ヶ月)",
             "EPS(予想)",
+            "EPS(前年度)",
             "売上高",
             "営業利益",
             "営業利益率",

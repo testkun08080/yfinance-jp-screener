@@ -42,6 +42,8 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
     { key: "forwardPEMax", param: "peMax" },
     { key: "trailingPEMin", param: "tpeMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
     { key: "trailingPEMax", param: "tpeMax" },
+    { key: "previousYearPEMin", param: "pypeMin" }, // PER(前年度)
+    { key: "previousYearPEMax", param: "pypeMax" },
     { key: "dividendDirectionMin", param: "ddMin" },
     { key: "dividendDirectionMax", param: "ddMax" },
     { key: "dividendYieldMin", param: "dyMin" },
@@ -50,6 +52,8 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
     { key: "trailingEpsMax", param: "tepsMax" },
     { key: "forwardEpsMin", param: "fepsMin" },
     { key: "forwardEpsMax", param: "fepsMax" },
+    { key: "previousYearEpsMin", param: "pyepsMin" }, // EPS(前年度)
+    { key: "previousYearEpsMax", param: "pyepsMax" },
     { key: "totalLiabilitiesMin", param: "tlMin" },
     { key: "totalLiabilitiesMax", param: "tlMax" },
     { key: "currentLiabilitiesMin", param: "clMin" },
@@ -128,6 +132,8 @@ export const urlParamsToFilters = (
     { param: "peMax", key: "forwardPEMax" },
     { param: "tpeMin", key: "trailingPEMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
     { param: "tpeMax", key: "trailingPEMax" },
+    { param: "pypeMin", key: "previousYearPEMin" }, // PER(前年度)
+    { param: "pypeMax", key: "previousYearPEMax" },
     { param: "ddMin", key: "dividendDirectionMin" },
     { param: "ddMax", key: "dividendDirectionMax" },
     { param: "dyMin", key: "dividendYieldMin" },
@@ -136,6 +142,8 @@ export const urlParamsToFilters = (
     { param: "tepsMax", key: "trailingEpsMax" },
     { param: "fepsMin", key: "forwardEpsMin" },
     { param: "fepsMax", key: "forwardEpsMax" },
+    { param: "pyepsMin", key: "previousYearEpsMin" }, // EPS(前年度)
+    { param: "pyepsMax", key: "previousYearEpsMax" },
     { param: "tlMin", key: "totalLiabilitiesMin" },
     { param: "tlMax", key: "totalLiabilitiesMax" },
     { param: "clMin", key: "currentLiabilitiesMin" },

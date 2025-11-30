@@ -6,7 +6,7 @@ import type { ColumnConfig } from "../components/ColumnSelector";
  * @returns ColumnConfig配列
  */
 export const getDefaultColumns = (
-  availableColumns: string[],
+  availableColumns: string[]
 ): ColumnConfig[] => {
   const columnDefinitions: Record<
     string,
@@ -26,7 +26,10 @@ export const getDefaultColumns = (
     ROE: { label: "ROE", category: "valuation" },
     自己資本比率: { label: "自己資本比率", category: "valuation" },
     "PER(会予)": { label: "PER(会予)", category: "valuation" },
-    PER直近: { label: "PER直近", category: "valuation" },
+    "PER(過去12ヶ月)": {
+      label: "PER(過去12ヶ月)",
+      category: "valuation",
+    },
     配当方向性: { label: "配当性向", category: "valuation" },
     配当利回り: { label: "配当利回り", category: "valuation" },
     "EPS(過去12ヶ月)": { label: "EPS(過去12ヶ月)", category: "valuation" },

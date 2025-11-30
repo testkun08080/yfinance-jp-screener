@@ -33,7 +33,7 @@ const initialFilters: SearchFilters = {
   equityRatioMax: null,
   forwardPEMin: null,
   forwardPEMax: null,
-  trailingPEMin: null, // PER直近（trailingPE、過去12ヶ月分）
+  trailingPEMin: null,
   trailingPEMax: null,
   dividendDirectionMin: null,
   dividendDirectionMax: null,
@@ -338,22 +338,22 @@ export const useFilters = (data: StockData[]) => {
       //   return false;
       // }
 
-      // PER直近フィルター（trailingPE、過去12ヶ月分）（データがnull/undefinedの場合は含める）
+      // PER(過去12ヶ月)フィルター（trailingPE、過去12ヶ月分）（データがnull/undefinedの場合は含める）
       if (
         filters.trailingPEMin !== null &&
-        stock.PER直近 !== null &&
-        stock.PER直近 !== undefined &&
-        typeof stock.PER直近 === "number" &&
-        stock.PER直近 < filters.trailingPEMin
+        stock.PER(過去12ヶ月) !== null &&
+        stock.PER(過去12ヶ月) !== undefined &&
+        typeof stock.PER(過去12ヶ月) === "number" &&
+        stock.PER(過去12ヶ月) < filters.trailingPEMin
       ) {
         return false;
       }
       if (
         filters.trailingPEMax !== null &&
-        stock.PER直近 !== null &&
-        stock.PER直近 !== undefined &&
-        typeof stock.PER直近 === "number" &&
-        stock.PER直近 > filters.trailingPEMax
+        stock.PER(過去12ヶ月) !== null &&
+        stock.PER(過去12ヶ月) !== undefined &&
+        typeof stock.PER(過去12ヶ月) === "number" &&
+        stock.PER(過去12ヶ月) > filters.trailingPEMax
       ) {
         return false;
       }
@@ -629,7 +629,7 @@ export const useFilters = (data: StockData[]) => {
 
   const updateFilter = (
     key: keyof SearchFilters,
-    value: string | number | string[] | null,
+    value: string | number | string[] | null
   ) => {
     const newFilters = {
       ...filters,
@@ -679,7 +679,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.業種)
       .filter(
         (industry): industry is string =>
-          industry !== undefined && industry !== null && industry !== "",
+          industry !== undefined && industry !== null && industry !== ""
       )
       .filter((industry, index, arr) => arr.indexOf(industry) === index)
       .sort();
@@ -692,7 +692,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.優先市場)
       .filter(
         (market): market is string =>
-          market !== undefined && market !== null && market !== "",
+          market !== undefined && market !== null && market !== ""
       )
       .filter((market, index, arr) => arr.indexOf(market) === index)
       .sort();
@@ -705,7 +705,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.都道府県)
       .filter(
         (prefecture): prefecture is string =>
-          prefecture !== undefined && prefecture !== null && prefecture !== "",
+          prefecture !== undefined && prefecture !== null && prefecture !== ""
       )
       .filter((prefecture, index, arr) => arr.indexOf(prefecture) === index)
       .sort();

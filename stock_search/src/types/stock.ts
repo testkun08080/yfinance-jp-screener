@@ -18,7 +18,7 @@ export interface StockData {
   自己資本比率?: number | null;
   "PER(会予)"?: number | null;
   // PER?: number | null;  // 情報的に不確かなためコメントアウト
-  PER直近?: number | null; // trailingPE（過去12ヶ月分）
+  PER(過去12ヶ月)?: number | null; // trailingPE（過去12ヶ月分）
   配当方向性?: number | null; // payoutRatio（生データ、小数、例: 0.3 = 30%）
   配当利回り?: number | null; // trailingAnnualDividendYield（生データ、小数、例: 0.03 = 3%）
   "EPS(過去12ヶ月)"?: number | null; // trailingEps（生データ）
@@ -66,7 +66,7 @@ export interface SearchFilters {
   equityRatioMax: number | null;
   forwardPEMin: number | null; // PER(会予)
   forwardPEMax: number | null;
-  trailingPEMin: number | null; // PER直近（trailingPE、過去12ヶ月分）
+  trailingPEMin: number | null; // PER(過去12ヶ月)（trailingPE、過去12ヶ月分）
   trailingPEMax: number | null;
   dividendDirectionMin: number | null; // 配当方向性（%）
   dividendDirectionMax: number | null;

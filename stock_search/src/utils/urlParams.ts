@@ -40,7 +40,7 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
     { key: "equityRatioMax", param: "eqMax" },
     { key: "forwardPEMin", param: "peMin" },
     { key: "forwardPEMax", param: "peMax" },
-    { key: "trailingPEMin", param: "tpeMin" }, // PER直近(過去12ヶ月分)
+    { key: "trailingPEMin", param: "tpeMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
     { key: "trailingPEMax", param: "tpeMax" },
     { key: "dividendDirectionMin", param: "ddMin" },
     { key: "dividendDirectionMax", param: "ddMax" },
@@ -80,7 +80,7 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
 
 // URLパラメータをフィルターに変換
 export const urlParamsToFilters = (
-  searchParams: URLSearchParams,
+  searchParams: URLSearchParams
 ): Partial<SearchFilters> => {
   const filters: Partial<SearchFilters> = {};
 
@@ -126,7 +126,7 @@ export const urlParamsToFilters = (
     { param: "eqMax", key: "equityRatioMax" },
     { param: "peMin", key: "forwardPEMin" },
     { param: "peMax", key: "forwardPEMax" },
-    { param: "tpeMin", key: "trailingPEMin" }, // PER直近(過去12ヶ月分)
+    { param: "tpeMin", key: "trailingPEMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
     { param: "tpeMax", key: "trailingPEMax" },
     { param: "ddMin", key: "dividendDirectionMin" },
     { param: "ddMax", key: "dividendDirectionMax" },

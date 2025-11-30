@@ -88,7 +88,9 @@ export const DataTable: FC<DataTableProps> = ({
         const key = col.key as keyof StockData;
 
         let format = "string";
-        if (
+        if (col.key === "銘柄コード") {
+          format = "string";
+        } else if (
           String(col.key).includes("率") ||
           String(col.key).includes("ROE") ||
           String(col.key).includes("配当方向性") ||
@@ -160,8 +162,8 @@ export const DataTable: FC<DataTableProps> = ({
                   index === 0
                     ? "left-0 min-w-20 max-w-20"
                     : index === 1
-                      ? "left-20 min-w-16 max-w-16"
-                      : ""
+                    ? "left-20 min-w-16 max-w-16"
+                    : ""
                 }`}
               />
             ))}

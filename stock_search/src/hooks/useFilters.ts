@@ -35,6 +35,8 @@ const initialFilters: SearchFilters = {
   forwardPEMax: null,
   trailingPEMin: null,
   trailingPEMax: null,
+  previousYearPEMin: null,
+  previousYearPEMax: null,
   dividendDirectionMin: null,
   dividendDirectionMax: null,
   dividendYieldMin: null,
@@ -43,6 +45,8 @@ const initialFilters: SearchFilters = {
   trailingEpsMax: null,
   forwardEpsMin: null,
   forwardEpsMax: null,
+  previousYearEpsMin: null,
+  previousYearEpsMax: null,
   totalLiabilitiesMin: null,
   totalLiabilitiesMax: null,
   currentLiabilitiesMin: null,
@@ -358,6 +362,26 @@ export const useFilters = (data: StockData[]) => {
         return false;
       }
 
+      // PER(前年度)フィルター（データがnull/undefinedの場合は含める）
+      if (
+        filters.previousYearPEMin !== null &&
+        stock["PER(前年度)"] !== null &&
+        stock["PER(前年度)"] !== undefined &&
+        typeof stock["PER(前年度)"] === "number" &&
+        stock["PER(前年度)"] < filters.previousYearPEMin
+      ) {
+        return false;
+      }
+      if (
+        filters.previousYearPEMax !== null &&
+        stock["PER(前年度)"] !== null &&
+        stock["PER(前年度)"] !== undefined &&
+        typeof stock["PER(前年度)"] === "number" &&
+        stock["PER(前年度)"] > filters.previousYearPEMax
+      ) {
+        return false;
+      }
+
       // 配当方向性フィルター（%）（データがnull/undefinedの場合は含める）
       // フィルター値は%で入力されるが、データは小数（0.3 = 30%）で保存されているため変換
       if (
@@ -435,6 +459,26 @@ export const useFilters = (data: StockData[]) => {
         stock["EPS(予想)"] !== undefined &&
         typeof stock["EPS(予想)"] === "number" &&
         stock["EPS(予想)"] > filters.forwardEpsMax
+      ) {
+        return false;
+      }
+
+      // EPS(前年度)フィルター（データがnull/undefinedの場合は含める）
+      if (
+        filters.previousYearEpsMin !== null &&
+        stock["EPS(前年度)"] !== null &&
+        stock["EPS(前年度)"] !== undefined &&
+        typeof stock["EPS(前年度)"] === "number" &&
+        stock["EPS(前年度)"] < filters.previousYearEpsMin
+      ) {
+        return false;
+      }
+      if (
+        filters.previousYearEpsMax !== null &&
+        stock["EPS(前年度)"] !== null &&
+        stock["EPS(前年度)"] !== undefined &&
+        typeof stock["EPS(前年度)"] === "number" &&
+        stock["EPS(前年度)"] > filters.previousYearEpsMax
       ) {
         return false;
       }

@@ -30,10 +30,15 @@ export const getDefaultColumns = (
       label: "PER(過去12ヶ月)",
       category: "valuation",
     },
+    "PER(前年度)": {
+      label: "PER(前年度)",
+      category: "valuation",
+    },
     配当方向性: { label: "配当性向", category: "valuation" },
     配当利回り: { label: "配当利回り", category: "valuation" },
     "EPS(過去12ヶ月)": { label: "EPS(過去12ヶ月)", category: "valuation" },
     "EPS(予想)": { label: "EPS(予想)", category: "valuation" },
+    "EPS(前年度)": { label: "EPS(前年度)", category: "valuation" },
 
     // 業績・収益性
     売上高: { label: "売上高", category: "performance" },

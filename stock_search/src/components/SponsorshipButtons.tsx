@@ -24,7 +24,7 @@ const SponsorshipButtons: React.FC<SponsorshipButtonsProps> = ({
         <h3 className="text-base sm:text-lg font-semibold text-base-content mb-1 sm:mb-2">
           ☕ サポートのお願い
         </h3>
-        <p className="text-xs sm:text-sm text-base-content/60 px-2">
+        <p className="text-xs sm:text-sm text-base-content/80 px-2">
           このアプリケーションが便利だと思っていただけた場合、開発者への寄付をご検討ください。
         </p>
       </div>
@@ -122,7 +122,7 @@ const SponsorshipButtons: React.FC<SponsorshipButtonsProps> = ({
       </div>
 
       <div className="text-center mt-2 sm:mt-4 px-2">
-        <p className="text-xs sm:text-sm text-base-content/60">
+        <p className="text-xs sm:text-sm text-base-content/80">
           皆様からのサポートが、継続的な開発とメンテナンスの大きな励みになります。
         </p>
       </div>

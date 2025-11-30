@@ -47,7 +47,7 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
   useEffect(() => {
     if (data.length > 0) {
       const availableColumns = Object.keys(data[0]).filter(
-        (key) => !key.startsWith("_") // 内部フィールドを除外
+        (key) => !key.startsWith("_"), // 内部フィールドを除外
       );
       setColumns(getDefaultColumns(availableColumns));
     }
@@ -79,15 +79,15 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
 
   const handleColumnChange = (key: string, visible: boolean) => {
     setColumns((prev) =>
-      prev.map((col) => (col.key === key ? { ...col, visible } : col))
+      prev.map((col) => (col.key === key ? { ...col, visible } : col)),
     );
   };
 
   const handleCategoryToggle = (category: string, visible: boolean) => {
     setColumns((prev) =>
       prev.map((col) =>
-        col.category === category && !col.essential ? { ...col, visible } : col
-      )
+        col.category === category && !col.essential ? { ...col, visible } : col,
+      ),
     );
   };
 

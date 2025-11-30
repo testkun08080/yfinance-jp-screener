@@ -359,6 +359,19 @@ def get_stock_data(stock_info):
         # PER(会予)のデバッグ
         forward_pe = info.get("forwardPE", None)
 
+        # 配当方向性（payoutRatio）- 生データをそのまま保存（小数、例: 0.3 = 30%）
+        dividend_direction = safe_get_value(info, "payoutRatio")
+
+        # 配当利回り（trailingAnnualDividendYield）- 生データをそのまま保存（小数、例: 0.03 = 3%）
+        dividend_yield = safe_get_value(info, "trailingAnnualDividendYield")
+
+        # PER（trailingPE）- 過去12ヶ月分を考慮したもの
+        trailing_pe = safe_get_value(info, "trailingPE")
+
+        # EPS関連データ
+        trailing_eps = safe_get_value(info, "trailingEps")  # 過去12ヶ月のEPS
+        forward_eps = safe_get_value(info, "forwardEps")  # 予想EPS
+
         # データ収集
         result = {
             "会社名": stock_info["銘柄名"] or safe_get_value(info, "longName") or safe_get_value(info, "shortName"),
@@ -371,6 +384,11 @@ def get_stock_data(stock_info):
             "時価総額": safe_get_value(info, "marketCap"),
             "PBR": safe_get_value(info, "priceToBook"),
             "PER(会予)": forward_pe,
+            "PER(過去12ヶ月)": trailing_pe,
+            "配当方向性": dividend_direction,
+            "配当利回り": dividend_yield,
+            "EPS(過去12ヶ月)": trailing_eps,
+            "EPS(予想)": forward_eps,
             "ROE": safe_get_value(info, "returnOnEquity"),
             "営業利益率": safe_get_value(info, "operatingMargins"),
             "純利益率": safe_get_value(info, "profitMargins"),
@@ -552,6 +570,12 @@ def main(json_filename="stocks_sample.json"):
             "都道府県",
             "時価総額",
             "PBR",
+            "PER(会予)",
+            "PER(過去12ヶ月)",
+            "配当方向性",
+            "配当利回り",
+            "EPS(過去12ヶ月)",
+            "EPS(予想)",
             "売上高",
             "営業利益",
             "営業利益率",
@@ -559,7 +583,6 @@ def main(json_filename="stocks_sample.json"):
             "純利益率",
             "ROE",
             "自己資本比率",
-            "PER(会予)",
             "負債",
             "流動負債",
             "流動資産",

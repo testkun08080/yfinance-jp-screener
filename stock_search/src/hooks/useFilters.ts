@@ -33,6 +33,16 @@ const initialFilters: SearchFilters = {
   equityRatioMax: null,
   forwardPEMin: null,
   forwardPEMax: null,
+  trailingPEMin: null,
+  trailingPEMax: null,
+  dividendDirectionMin: null,
+  dividendDirectionMax: null,
+  dividendYieldMin: null,
+  dividendYieldMax: null,
+  trailingEpsMin: null,
+  trailingEpsMax: null,
+  forwardEpsMin: null,
+  forwardEpsMax: null,
   totalLiabilitiesMin: null,
   totalLiabilitiesMax: null,
   currentLiabilitiesMin: null,
@@ -308,6 +318,127 @@ export const useFilters = (data: StockData[]) => {
         return false;
       }
 
+      // PER（trailingPE）フィルター - 情報的に不確かなためコメントアウト
+      // if (
+      //   filters.trailingPEMin !== null &&
+      //   stock.PER !== null &&
+      //   stock.PER !== undefined &&
+      //   typeof stock.PER === "number" &&
+      //   stock.PER < filters.trailingPEMin
+      // ) {
+      //   return false;
+      // }
+      // if (
+      //   filters.trailingPEMax !== null &&
+      //   stock.PER !== null &&
+      //   stock.PER !== undefined &&
+      //   typeof stock.PER === "number" &&
+      //   stock.PER > filters.trailingPEMax
+      // ) {
+      //   return false;
+      // }
+
+      // PER(過去12ヶ月)フィルター（trailingPE、過去12ヶ月分）（データがnull/undefinedの場合は含める）
+      if (
+        filters.trailingPEMin !== null &&
+        stock.PER(過去12ヶ月) !== null &&
+        stock.PER(過去12ヶ月) !== undefined &&
+        typeof stock.PER(過去12ヶ月) === "number" &&
+        stock.PER(過去12ヶ月) < filters.trailingPEMin
+      ) {
+        return false;
+      }
+      if (
+        filters.trailingPEMax !== null &&
+        stock.PER(過去12ヶ月) !== null &&
+        stock.PER(過去12ヶ月) !== undefined &&
+        typeof stock.PER(過去12ヶ月) === "number" &&
+        stock.PER(過去12ヶ月) > filters.trailingPEMax
+      ) {
+        return false;
+      }
+
+      // 配当方向性フィルター（%）（データがnull/undefinedの場合は含める）
+      // フィルター値は%で入力されるが、データは小数（0.3 = 30%）で保存されているため変換
+      if (
+        filters.dividendDirectionMin !== null &&
+        stock.配当方向性 !== null &&
+        stock.配当方向性 !== undefined &&
+        typeof stock.配当方向性 === "number" &&
+        stock.配当方向性 < filters.dividendDirectionMin / 100
+      ) {
+        return false;
+      }
+      if (
+        filters.dividendDirectionMax !== null &&
+        stock.配当方向性 !== null &&
+        stock.配当方向性 !== undefined &&
+        typeof stock.配当方向性 === "number" &&
+        stock.配当方向性 > filters.dividendDirectionMax / 100
+      ) {
+        return false;
+      }
+
+      // 配当利回りフィルター（%）（データがnull/undefinedの場合は含める）
+      if (
+        filters.dividendYieldMin !== null &&
+        stock.配当利回り !== null &&
+        stock.配当利回り !== undefined &&
+        typeof stock.配当利回り === "number" &&
+        stock.配当利回り < filters.dividendYieldMin / 100
+      ) {
+        return false;
+      }
+      if (
+        filters.dividendYieldMax !== null &&
+        stock.配当利回り !== null &&
+        stock.配当利回り !== undefined &&
+        typeof stock.配当利回り === "number" &&
+        stock.配当利回り > filters.dividendYieldMax / 100
+      ) {
+        return false;
+      }
+
+      // EPS(過去12ヶ月)フィルター（データがnull/undefinedの場合は含める）
+      if (
+        filters.trailingEpsMin !== null &&
+        stock["EPS(過去12ヶ月)"] !== null &&
+        stock["EPS(過去12ヶ月)"] !== undefined &&
+        typeof stock["EPS(過去12ヶ月)"] === "number" &&
+        stock["EPS(過去12ヶ月)"] < filters.trailingEpsMin
+      ) {
+        return false;
+      }
+      if (
+        filters.trailingEpsMax !== null &&
+        stock["EPS(過去12ヶ月)"] !== null &&
+        stock["EPS(過去12ヶ月)"] !== undefined &&
+        typeof stock["EPS(過去12ヶ月)"] === "number" &&
+        stock["EPS(過去12ヶ月)"] > filters.trailingEpsMax
+      ) {
+        return false;
+      }
+
+      // EPS(予想)フィルター（データがnull/undefinedの場合は含める）
+      if (
+        filters.forwardEpsMin !== null &&
+        stock["EPS(予想)"] !== null &&
+        stock["EPS(予想)"] !== undefined &&
+        typeof stock["EPS(予想)"] === "number" &&
+        stock["EPS(予想)"] < filters.forwardEpsMin
+      ) {
+        return false;
+      }
+      if (
+        filters.forwardEpsMax !== null &&
+        stock["EPS(予想)"] !== null &&
+        stock["EPS(予想)"] !== undefined &&
+        typeof stock["EPS(予想)"] === "number" &&
+        stock["EPS(予想)"] > filters.forwardEpsMax
+      ) {
+        return false;
+      }
+
       // 負債フィルター（データがnull/undefinedの場合は含める）
       if (
         filters.totalLiabilitiesMin !== null &&
@@ -498,7 +629,7 @@ export const useFilters = (data: StockData[]) => {
 
   const updateFilter = (
     key: keyof SearchFilters,
-    value: string | number | string[] | null,
+    value: string | number | string[] | null
   ) => {
     const newFilters = {
       ...filters,
@@ -548,7 +679,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.業種)
       .filter(
         (industry): industry is string =>
-          industry !== undefined && industry !== null && industry !== "",
+          industry !== undefined && industry !== null && industry !== ""
       )
       .filter((industry, index, arr) => arr.indexOf(industry) === index)
       .sort();
@@ -561,7 +692,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.優先市場)
       .filter(
         (market): market is string =>
-          market !== undefined && market !== null && market !== "",
+          market !== undefined && market !== null && market !== ""
       )
       .filter((market, index, arr) => arr.indexOf(market) === index)
       .sort();
@@ -574,7 +705,7 @@ export const useFilters = (data: StockData[]) => {
       .map((stock) => stock.都道府県)
       .filter(
         (prefecture): prefecture is string =>
-          prefecture !== undefined && prefecture !== null && prefecture !== "",
+          prefecture !== undefined && prefecture !== null && prefecture !== ""
       )
       .filter((prefecture, index, arr) => arr.indexOf(prefecture) === index)
       .sort();

@@ -8,15 +8,15 @@ CSVファイルから読み込んだ日本株データをリアルタイムで�
 
 ## 技術スタック
 
-| カテゴリ | 技術 |
-|---------|------|
-| **Frontend** | React 19 + TypeScript + Vite |
-| **Styling** | Tailwind CSS + DaisyUI |
+| カテゴリ             | 技術                                       |
+| -------------------- | ------------------------------------------ |
+| **Frontend**         | React 19 + TypeScript + Vite               |
+| **Styling**          | Tailwind CSS + DaisyUI                     |
 | **State Management** | React hooks (useState, useEffect, useMemo) |
-| **Data Parsing** | Papa Parse (CSV) |
-| **Routing** | React Router DOM v6 |
-| **Build Tool** | Vite 6.x |
-| **Linting** | ESLint + TypeScript ESLint |
+| **Data Parsing**     | Papa Parse (CSV)                           |
+| **Routing**          | React Router DOM v6                        |
+| **Build Tool**       | Vite 6.x                                   |
+| **Linting**          | ESLint + TypeScript ESLint                 |
 
 ---
 
@@ -68,17 +68,20 @@ stock_search/
 ### 1. データ表示
 
 #### 動的カラム検出
+
 - CSVファイルのヘッダーを自動検出
 - 任意のCSV構造に対応
 - 日本語カラム名の完全サポート
 
 #### 日本語データフォーマット
+
 - 金額: `1,234,567,890 円`
 - パーセント: `12.34%`
 - 倍率: `1.23 倍`
 - 自動単位認識
 
 #### レスポンシブデザイン
+
 - モバイル最適化（スティッキー列）
 - タブレット対応
 - デスクトップ向けワイドレイアウト
@@ -88,16 +91,19 @@ stock_search/
 ### 2. 検索・フィルタリング
 
 #### テキスト検索
+
 - 会社名での部分一致検索
 - リアルタイムフィルタリング
 - 大文字小文字区別なし
 
 #### 高度フィルター
+
 - 業種別フィルタリング
 - 市場区分フィルタリング
 - 財務指標範囲指定
 
 #### ソート機能
+
 - 各列での昇順/降順ソート
 - 数値・文字列の適切な比較
 - ソート状態の視覚的表示
@@ -107,16 +113,19 @@ stock_search/
 ### 3. データ操作
 
 #### CSV出力
+
 - フィルタ結果のCSVダウンロード
 - 元のデータ構造を保持
 - UTF-8エンコーディング
 
 #### ページネーション
+
 - 50件/100件/200件表示切替
 - 合計件数表示
 - ページ番号ナビゲーション
 
 #### ファイルアップロード（D&D専用）
+
 - **ドラッグ&ドロップ**: CSVファイルを簡単アップロード
 - **クリック選択**: ファイル選択ダイアログも利用可能
 - **完全クライアントサイド**: データはブラウザ内のみで処理
@@ -129,6 +138,7 @@ stock_search/
 ## セットアップ
 
 ### 必要要件
+
 - Node.js 20.x 以上
 - npm または yarn
 
@@ -156,6 +166,7 @@ npm run dev
 ```
 
 **特徴**:
+
 - ホットモジュールリプレースメント（HMR）
 - 高速ビルド
 - TypeScriptエラー即時表示
@@ -172,11 +183,13 @@ npm run build
 ```
 
 **ビルドプロセス**:
+
 1. **TypeScriptコンパイル**: `tsc -b`
 2. **Viteビルド**: 最適化されたバンドル生成
 3. **出力**: `dist/`ディレクトリに静的ファイル生成
 
 **最適化**:
+
 - ベンダーチャンク分離（効率的キャッシング）
 - Tree shaking
 - コード分割
@@ -214,6 +227,7 @@ npm run type-check
 ## CSVファイル処理フロー
 
 ### ユーザーアップロードフロー
+
 ```
 ユーザー操作
     ↓
@@ -238,6 +252,7 @@ DataTable コンポーネントで表示
 ### デプロイメントの簡素化
 
 **静的ホスティングのみ**:
+
 - GitHub Pages
 - Netlify
 - Vercel
@@ -254,17 +269,17 @@ DataTable コンポーネントで表示
 
 ```javascript
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       // カスタムカラー、フォント、スペーシングなど
     },
   },
-  plugins: [require('daisyui')],
+  plugins: [require("daisyui")],
   daisyui: {
-    themes: ['light', 'dark'], // テーマ設定
+    themes: ["light", "dark"], // テーマ設定
   },
-}
+};
 ```
 
 ### Vite設定
@@ -278,12 +293,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'], // ベンダーチャンク
+          vendor: ["react", "react-dom"], // ベンダーチャンク
         },
       },
     },
   },
-})
+});
 ```
 
 ---
@@ -313,6 +328,7 @@ EXPOSE 80
 ### nginx設定
 
 `nginx.conf`の主要機能:
+
 - **SPA対応**: すべてのルートを`index.html`にフォールバック
 - **Gzip圧縮**: テキストファイルの圧縮配信
 - **キャッシング**: 静的アセットのブラウザキャッシュ
@@ -345,12 +361,14 @@ npx tsc -b
 ### CSVファイルがアップロードできない
 
 **確認ポイント**:
+
 - ファイル形式がCSVであることを確認
 - ファイルサイズが大きすぎないか確認（推奨: 50MB以下）
 - ブラウザのJavaScriptが有効になっているか確認
 - ブラウザコンソール（F12）でエラーメッセージを確認
 
 **対処方法**:
+
 ```bash
 # 開発サーバーを再起動
 npm run dev
@@ -359,6 +377,7 @@ npm run dev
 ### データが表示されない
 
 **確認ポイント**:
+
 - CSVファイルのエンコーディング（UTF-8推奨）
 - CSVファイルのヘッダー行が存在するか
 - データに特殊文字が含まれていないか
@@ -369,16 +388,19 @@ npm run dev
 ## パフォーマンス最適化
 
 ### ビルドサイズ削減
+
 - ベンダーチャンク分離済み
 - Tree shaking有効
 - 未使用コードの削除
 
 ### 実行時最適化
+
 - `useMemo`でデータキャッシュ
 - 仮想スクロール（将来実装予定）
 - 遅延ローディング
 
 ### ネットワーク最適化
+
 - nginx Gzip圧縮
 - 静的アセットキャッシュ
 - CDN対応準備済み
@@ -388,26 +410,31 @@ npm run dev
 ## 開発フェーズ
 
 ### Phase 1: 基盤構築 ✅
+
 - Vite + React + TypeScript セットアップ
 - TailwindCSS + DaisyUI 統合
 - 基本レイアウト
 
 ### Phase 2: データ層 ✅
+
 - Papa Parse統合
 - CSV読み込み・パース
 - TypeScript型定義
 
 ### Phase 3: 検索・表示 ✅
+
 - 検索フィルター
 - データテーブル
 - ページネーション
 
 ### Phase 4: UI/UX強化 ✅
+
 - レスポンシブデザイン
 - ソート機能
 - CSVエクスポート
 
 ### Phase 5: 将来の拡張（検討中）
+
 - データ分析機能
 - チャート表示
 - 銘柄詳細ページ
@@ -418,15 +445,18 @@ npm run dev
 ## 注意事項
 
 ⚠️ **データの取り扱い**
+
 - 本アプリは個人利用目的のみで使用してください
 - Yahoo Financeデータの二次配布は禁止されています
 - データの正確性は保証されません
 
 ⚠️ **ブラウザ互換性**
+
 - 最新版のChrome、Firefox、Safari、Edgeを推奨
 - Internet Explorer 11はサポート対象外
 
 ⚠️ **セキュリティ**
+
 - 本番環境では必ずHTTPSを使用してください
 - APIキーなどの機密情報を含めないでください
 

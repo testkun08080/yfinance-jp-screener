@@ -15,7 +15,11 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
       },
       transform: (value: string, header: string) => {
         // 数値フィールドの処理
-        if (CSV_NUMERIC_FIELDS.includes(header as (typeof CSV_NUMERIC_FIELDS)[number])) {
+        if (
+          CSV_NUMERIC_FIELDS.includes(
+            header as (typeof CSV_NUMERIC_FIELDS)[number],
+          )
+        ) {
           // 単位表記を除去（倍、%、円など）
           const cleanValue = value
             .replace(/,/g, "")
@@ -67,7 +71,7 @@ export const formatCurrency = (value: number | null): string => {
   // 全て百万円単位で表示（単位サフィックスなし）
   return formatNumber(
     value / CURRENCY_FORMAT.millionDivisor,
-    CURRENCY_FORMAT.decimals
+    CURRENCY_FORMAT.decimals,
   );
 };
 
@@ -75,6 +79,6 @@ export const formatPercentage = (value: number | null): string => {
   if (value === null || value === undefined) return "-";
   return `${formatNumber(
     value * PERCENTAGE_FORMAT.multiplier,
-    PERCENTAGE_FORMAT.decimals
+    PERCENTAGE_FORMAT.decimals,
   )}%`;
 };

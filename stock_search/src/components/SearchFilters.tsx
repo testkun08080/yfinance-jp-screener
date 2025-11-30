@@ -12,7 +12,7 @@ interface NumberRangeInputProps {
   filters: SearchFiltersType;
   onFilterChange: (
     key: keyof SearchFiltersType,
-    value: string | number | string[] | null,
+    value: string | number | string[] | null
   ) => void;
 }
 
@@ -35,10 +35,10 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
             ? isInteger
               ? parseInt(e.target.value)
               : parseFloat(e.target.value)
-            : null,
+            : null
         );
       },
-      [minKey, isInteger, onFilterChange],
+      [minKey, isInteger, onFilterChange]
     );
 
     const handleMaxChange = useCallback(
@@ -49,10 +49,10 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
             ? isInteger
               ? parseInt(e.target.value)
               : parseFloat(e.target.value)
-            : null,
+            : null
         );
       },
-      [maxKey, isInteger, onFilterChange],
+      [maxKey, isInteger, onFilterChange]
     );
 
     return (
@@ -83,7 +83,7 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
         </div>
       </div>
     );
-  },
+  }
 );
 
 NumberRangeInput.displayName = "NumberRangeInput";
@@ -95,7 +95,7 @@ interface SearchFiltersProps {
   availablePrefectures: string[];
   onFilterChange: (
     key: keyof SearchFiltersType,
-    value: string | number | string[] | null,
+    value: string | number | string[] | null
   ) => void;
   onClearFilters: () => void;
 }
@@ -130,7 +130,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "industries",
-        currentIndustries.filter((i) => i !== industry),
+        currentIndustries.filter((i) => i !== industry)
       );
     }
   };
@@ -142,7 +142,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "market",
-        currentMarkets.filter((m) => m !== market),
+        currentMarkets.filter((m) => m !== market)
       );
     }
   };
@@ -154,7 +154,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     } else {
       onFilterChange(
         "prefecture",
-        currentPrefectures.filter((p) => p !== prefecture),
+        currentPrefectures.filter((p) => p !== prefecture)
       );
     }
   };
@@ -453,6 +453,57 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               label="PER(会予)"
               minKey="forwardPEMin"
               maxKey="forwardPEMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            {/* PER（trailingPE）は情報的に不確かなためコメントアウト */}
+            {/* <NumberRangeInput
+              label="PER"
+              minKey="trailingPEMin"
+              maxKey="trailingPEMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            /> */}
+            <NumberRangeInput
+              label="PER(過去12ヶ月)"
+              minKey="trailingPEMin"
+              maxKey="trailingPEMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
+              label="配当性向"
+              unit="%"
+              minKey="dividendDirectionMin"
+              maxKey="dividendDirectionMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
+              label="配当利回り"
+              unit="%"
+              minKey="dividendYieldMin"
+              maxKey="dividendYieldMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
+              label="EPS(過去12ヶ月)"
+              minKey="trailingEpsMin"
+              maxKey="trailingEpsMax"
+              step={0.1}
+              filters={filters}
+              onFilterChange={onFilterChange}
+            />
+            <NumberRangeInput
+              label="EPS(予想)"
+              minKey="forwardEpsMin"
+              maxKey="forwardEpsMax"
               step={0.1}
               filters={filters}
               onFilterChange={onFilterChange}

@@ -93,19 +93,19 @@ export const generateFileName = (
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const day = String(now.getDate()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const hours = String(now.getHours()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const minutes = String(now.getMinutes()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
 
   return `${baseFileName}_${year}${month}${day}_${hours}${minutes}.csv`;
@@ -123,19 +123,19 @@ export const generateFileNameWithFilters = (
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const day = String(now.getDate()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const hours = String(now.getHours()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
   const minutes = String(now.getMinutes()).padStart(
     DATE_FORMAT.zeroPadLength,
-    DATE_FORMAT.zeroPadChar
+    DATE_FORMAT.zeroPadChar,
   );
 
   if (filterCount < totalCount) {

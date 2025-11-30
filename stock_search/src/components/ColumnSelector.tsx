@@ -67,6 +67,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
           <button
             onClick={() => (document.activeElement as HTMLElement)?.blur()}
             className="btn btn-ghost btn-xs"
+            aria-label="閉じる"
           >
             ✕
           </button>
@@ -97,7 +98,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
                       {categoryLabels[category as keyof typeof categoryLabels]}
                     </span>
                   </div>
-                  <span className="text-xs text-base-content/60">
+                  <span className="text-xs text-base-content/70">
                     {visibleInCategory}/{totalInCategory}
                   </span>
                 </div>
@@ -118,7 +119,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
                         }
                       />
                       <span
-                        className={`text-xs ${col.essential ? "text-base-content/50" : "text-base-content/80"}`}
+                        className={`text-xs ${col.essential ? "text-base-content/70" : "text-base-content/80"}`}
                       >
                         {col.label}
                         {col.essential && (
@@ -133,7 +134,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
           })}
         </div>
 
-        <div className="mt-4 text-xs text-base-content/60 border-t border-base-300 pt-2">
+        <div className="mt-4 text-xs text-base-content/70 border-t border-base-300 pt-2">
           * 必須項目は非表示にできません
         </div>
       </div>

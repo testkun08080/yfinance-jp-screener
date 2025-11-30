@@ -341,19 +341,19 @@ export const useFilters = (data: StockData[]) => {
       // PER(過去12ヶ月)フィルター（trailingPE、過去12ヶ月分）（データがnull/undefinedの場合は含める）
       if (
         filters.trailingPEMin !== null &&
-        stock.PER(過去12ヶ月) !== null &&
-        stock.PER(過去12ヶ月) !== undefined &&
-        typeof stock.PER(過去12ヶ月) === "number" &&
-        stock.PER(過去12ヶ月) < filters.trailingPEMin
+        stock["PER(過去12ヶ月)"] !== null &&
+        stock["PER(過去12ヶ月)"] !== undefined &&
+        typeof stock["PER(過去12ヶ月)"] === "number" &&
+        stock["PER(過去12ヶ月)"] < filters.trailingPEMin
       ) {
         return false;
       }
       if (
         filters.trailingPEMax !== null &&
-        stock.PER(過去12ヶ月) !== null &&
-        stock.PER(過去12ヶ月) !== undefined &&
-        typeof stock.PER(過去12ヶ月) === "number" &&
-        stock.PER(過去12ヶ月) > filters.trailingPEMax
+        stock["PER(過去12ヶ月)"] !== null &&
+        stock["PER(過去12ヶ月)"] !== undefined &&
+        typeof stock["PER(過去12ヶ月)"] === "number" &&
+        stock["PER(過去12ヶ月)"] > filters.trailingPEMax
       ) {
         return false;
       }

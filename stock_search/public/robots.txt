@@ -1,0 +1,8 @@
+# robots.txt for yfinance-jp-screener
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://yfinance-jp-screener-serach.vercel.app/sitemap.xml
+

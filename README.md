@@ -30,7 +30,7 @@
 
 **以下 URL 上で CSV 分析用のアプリケーション**にアクセスできます:
 
-👉 **<https://yfinance-jp-screener-serach.vercel.app/>**
+👉 **<https://yfinance-jp-screener-search.vercel.app/>**
 
 ---
 
@@ -72,7 +72,7 @@
 
 ```bash
 # 1. リポジトリをクローン
-git clone https://github.com/yourusername/yfinance-jp-screener.git
+git clone https://github.com/testkun08080/yfinance-jp-screener.git
 cd yfinance-jp-screener
 
 # 2. 環境変数を設定
@@ -104,7 +104,7 @@ open http://localhost:8000
 
 ```bash
 # 1. リポジトリをクローン
-git clone https://github.com/yourusername/yfinance-jp-screener.git
+git clone https://github.com/testkun08080/yfinance-jp-screener.git
 cd yfinance-jp-screener/stock_list
 
 # 2. Python環境のセットアップ（uvを使用）
@@ -187,7 +187,7 @@ GitHub Actions でワークフローを使用する前に、以下の設定変�
    - パブリックリポジトリで使用すると、データの二次配布に当たる可能性があると考えられます
 2. フォークしたプライベートリポジトリの **Actions** タブに移動
 3. **""Stock List Update"** を実行して、リストを取得
-4. **" Sequential Stock Fetch - Part 1"** を実行しデータのダウンロード（自動的に終われば次のワークフローが起動するはずです...3~4 時間ほどかかります）
+4. **" Sequential Stock Fetch - Part 1"** を実行しデータのダウンロード（自動的に終われば次のワークフローが起動するはずです...3~4 時間ほどかかります(日本株の場合)）
 5. 実行完了後、`stock_list/Export/` ディレクトリにデータファイルが生成されます
 
 ---

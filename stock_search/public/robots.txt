@@ -4,5 +4,5 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://yfinance-jp-screener-serach.vercel.app/sitemap.xml
+Sitemap: https://yfinance-jp-screener-search.vercel.app/sitemap.xml
 

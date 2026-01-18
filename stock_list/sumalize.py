@@ -31,6 +31,12 @@ from datetime import datetime
 import warnings
 import logging
 import requests
+import sys
+import os
+
+# utilsモジュールをインポート（同じディレクトリから）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from utils import detect_market_type, format_ticker_for_market
 
 
 warnings.filterwarnings("ignore")
@@ -132,32 +138,40 @@ def format_duration(seconds):
         return f"{hours}時間{minutes}分{remaining_seconds:.1f}秒"
 
 
-def format_ticker(code):
+def format_ticker(code, market_type=None):
     """銘柄コードをyfinance用の形式に変換
 
     Args:
         code (str or int): 銘柄コード（数値または英数字混合）
+        market_type (str, optional): 市場タイプ（"JP" または "US"）
+            - 未指定の場合はティッカー形式から自動判定
 
     Returns:
-        str: yfinance用のティッカーシンボル（例: "7203.T", "130A.T"）
+        str: yfinance用のティッカーシンボル（例: "7203.T", "AAPL"）
 
     Examples:
         >>> format_ticker(7203)
         '7203.T'
         >>> format_ticker("130A")
         '130A.T'
+        >>> format_ticker("AAPL", "US")
+        'AAPL'
+        >>> format_ticker("AAPL")
+        'AAPL'
 
     Note:
-        - 数値コードは4桁にゼロパディング
-        - 英数字混合コードはそのまま使用
-        - すべてのコードに".T"（東京証券取引所）を付加
+        - 市場タイプが未指定の場合、ティッカー形式から自動判定
+        - 日本株: 数値コードは4桁にゼロパディング、すべてのコードに".T"を付加
+        - 米国株: そのまま返す
     """
-    if isinstance(code, str):
-        # 英数字混合コード（例：130A）はそのまま使用
-        return f"{code}.T"
-    else:
-        # 数値コードは4桁にゼロパディング
-        return f"{code:04d}.T"
+    code_str = str(code).strip()
+
+    # 市場タイプが未指定の場合、自動判定
+    if market_type is None:
+        market_type = detect_market_type(code_str)
+
+    # 市場タイプに応じた形式を生成
+    return format_ticker_for_market(code_str, market_type)
 
 
 def safe_get_value(data, key, default=None):
@@ -384,11 +398,11 @@ def get_stock_data(stock_info):
     Args:
         stock_info (dict): 株式情報（コード、銘柄名、業種など）
             - 必須キー: "コード", "銘柄名"
-            - オプションキー: "市場・商品区分", "33業種区分"
+            - オプションキー: "市場・商品区分", "33業種区分", "市場タイプ"
 
     Returns:
         dict: 財務データ辞書（以下の項目を含む）
-            - 基本情報: 会社名、銘柄コード、業種、優先市場、決算月、都道府県
+            - 基本情報: 会社名、銘柄コード、業種、優先市場、決算月、都道府県（日本株のみ）、市場タイプ
             - 市場データ: 時価総額、PBR、PER(会予)
             - 収益性: 売上高、営業利益、営業利益率、当期純利益、純利益率、ROE
             - 財務健全性: 自己資本比率、負債、流動負債、流動資産、総負債
@@ -398,7 +412,8 @@ def get_stock_data(stock_info):
     Note:
         - yfinance APIを使用してリアルタイムデータ取得
         - API制限回避のため0.5秒のスリープを実施
-        - 郵便番号から都道府県を自動取得
+        - 日本株の場合のみ郵便番号から都道府県を自動取得
+        - 市場タイプが未指定の場合、ティッカー形式から自動判定
         - 詳細なログ出力（開始時刻、終了時刻、実行時間）
         - エラー時も詳細なログを記録
 
@@ -407,9 +422,19 @@ def get_stock_data(stock_info):
         >>> data = get_stock_data(stock_info)
         >>> data['会社名']
         'トヨタ自動車'
+        >>> stock_info_us = {"コード": "AAPL", "銘柄名": "Apple Inc.", "市場タイプ": "US"}
+        >>> data_us = get_stock_data(stock_info_us)
+        >>> data_us['市場タイプ']
+        'US'
     """
     code = stock_info["コード"]
-    ticker_symbol = format_ticker(code)
+    
+    # 市場タイプを取得（stock_infoから、または自動判定）
+    market_type = stock_info.get("市場タイプ")
+    if market_type is None:
+        market_type = detect_market_type(str(code))
+    
+    ticker_symbol = format_ticker(code, market_type)
 
     start_time = time.time()
     start_datetime = datetime.now()
@@ -479,15 +504,32 @@ def get_stock_data(stock_info):
             if previous_year_data:
                 previous_year_pe, previous_year_eps = previous_year_data
 
+        # 市場区分のマッピング（米国株の場合）
+        market = stock_info.get("市場・商品区分", "")
+        if market_type == "US":
+            # 米国株の場合、市場区分をそのまま使用（NYSE, NASDAQ, AMEXなど）
+            if not market:
+                # infoから取得を試みる
+                exchange = safe_get_value(info, "exchange", "").upper()
+                if "NASDAQ" in exchange:
+                    market = "NASDAQ"
+                elif "NYSE" in exchange or "NYSEARCA" in exchange:
+                    market = "NYSE"
+                elif "AMEX" in exchange or "AMERICAN" in exchange:
+                    market = "AMEX"
+                else:
+                    market = market or "NASDAQ"  # デフォルト
+
         # データ収集
         result = {
             "会社名": stock_info["銘柄名"] or safe_get_value(info, "longName") or safe_get_value(info, "shortName"),
             "銘柄コード": code,
             "業種": stock_info.get("33業種区分") or safe_get_value(info, "industry") or safe_get_value(info, "sector"),
-            "優先市場": stock_info.get("市場・商品区分", ""),
+            "優先市場": market,
             "決算月": settlement_period,
             # "会計基準": None,  # yfinanceでは詳細不明 - コメントアウト
-            "都道府県": get_prefecture_from_zip(safe_get_value(info, "zip")) or None,
+            "市場タイプ": market_type,
+            "都道府県": get_prefecture_from_zip(safe_get_value(info, "zip")) or None if market_type == "JP" else None,
             "時価総額": safe_get_value(info, "marketCap"),
             "PBR": safe_get_value(info, "priceToBook"),
             "PER(会予)": forward_pe,
@@ -631,7 +673,7 @@ def main(json_filename="stocks_sample.json"):
     overall_start_datetime = datetime.now()
 
     logger.info("=" * 80)
-    logger.info(f"日本株財務データ取得プロセス開始 - 開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"株式財務データ取得プロセス開始 - 開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"処理対象ファイル: {json_filename}")
     logger.info("=" * 80)
 
@@ -648,7 +690,7 @@ def main(json_filename="stocks_sample.json"):
         return None
 
     logger.info("=" * 60)
-    logger.info("日本株財務データ取得開始")
+    logger.info("株式財務データ取得開始")
     logger.info("=" * 60)
 
     results = []
@@ -674,6 +716,7 @@ def main(json_filename="stocks_sample.json"):
             "銘柄コード",
             "業種",
             "優先市場",
+            "市場タイプ",
             "決算月",
             # "会計基準",  # コメントアウト
             "都道府県",
@@ -719,9 +762,15 @@ def main(json_filename="stocks_sample.json"):
 
         # CSVファイルに保存（Export フォルダに直接保存）
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_name = json_filename.replace(".json", "").replace("stocks_", "")
+        base_name = json_filename.replace(".json", "").replace("stocks_", "").replace("us_stocks_", "")
 
-        filename = f"Export/japanese_stocks_data_{base_name}_{timestamp}.csv"
+        # ファイル名を市場タイプに応じて変更
+        # 最初のデータから市場タイプを判定
+        market_type = results[0].get("市場タイプ", "JP") if results else "JP"
+        if market_type == "US":
+            filename = f"Export/us_stocks_data_{base_name}_{timestamp}.csv"
+        else:
+            filename = f"Export/japanese_stocks_data_{base_name}_{timestamp}.csv"
         df.to_csv(filename, index=False, encoding="utf-8-sig")
         logger.info(f"\nデータをCSVファイルに保存しました: {filename}")
 
@@ -731,7 +780,7 @@ def main(json_filename="stocks_sample.json"):
 
         # 全体の実行時間をログ出力
         logger.info("=" * 80)
-        logger.info("日本株財務データ取得プロセス完了")
+        logger.info("株式財務データ取得プロセス完了")
         logger.info(f"開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"終了時刻: {overall_end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"総実行時間: {format_duration(overall_duration)}")
@@ -750,7 +799,7 @@ def main(json_filename="stocks_sample.json"):
 
         logger.error("\n❌ データが取得できませんでした")
         logger.error("=" * 80)
-        logger.error("日本株財務データ取得プロセス失敗")
+        logger.error("株式財務データ取得プロセス失敗")
         logger.error(f"開始時刻: {overall_start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.error(f"終了時刻: {overall_end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.error(f"総実行時間: {format_duration(overall_duration)}")
@@ -778,7 +827,7 @@ def parse_arguments():
         'stocks_sample.json'
     """
     parser = argparse.ArgumentParser(
-        description="日本株の財務データを取得してCSVファイルに保存します",
+        description="株式の財務データを取得してCSVファイルに保存します（日本株・米国株対応）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用例:

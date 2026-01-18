@@ -15,16 +15,20 @@
 ## 📘 概要
 
 [わが投資術](https://amzn.to/3IEVRkq) の考え方をもとに、
-**日本株をシンプルに分析・可視化**するためのツールです。
+**日本株・米国株をシンプルに分析・可視化**するためのツールです。
 
 - 📈 GitHub Actions による自動データ収集
 - 🔍 Web 上でのスクリーニング・可視化
 - 📂 ドラッグ&ドロップで CSV ファイルアップロード（完全クライアントサイド）
 - ⚙️ JPX 公式データ対応・簡易データ分割機能
+- 🌍 **米国株対応(ベータ)**（S&P500、NASDAQ、NYSE）
+  - 市場タイプフィルター（日本株/米国株の選択）
+  - 市場タイプに応じた市場区分の動的表示
+  - 都道府県フィルターは日本株のみ表示
 
 ## 🌐 オンラインデモ
 
-**以下 URL 上でCSV分析用のアプリケーション**にアクセスできます:
+**以下 URL 上で CSV 分析用のアプリケーション**にアクセスできます:
 
 👉 **<https://yfinance-jp-screener-serach.vercel.app/>**
 
@@ -107,9 +111,16 @@ cd yfinance-jp-screener/stock_list
 uv sync
 
 # 3. 株式リスト取得（初回のみ）
+
+# 日本株リスト取得
 uv run get_jp_stocklist.py
 
+# 米国株リスト取得（オプション）
+uv run get_us_stocklist.py
+
 # 4. データ取得を実行
+
+# 日本株データ取得
 uv run sumalize.py stocks_sample.json   #ダウンロードテスト用
 
 #===約1000社ずつダウンロード(推奨)===
@@ -121,8 +132,15 @@ uv run sumalize.py stocks_sample.json   #ダウンロードテスト用
 #===すべての銘柄を対象にしたダウロード===
 # uv run sumalize.py stocks_all.json
 
-# 6. CSV結合
-uv run combine_latest_csv.py
+# 米国株データ取得（オプション）
+# uv run sumalize.py us_stocks_all.json
+# または分割ファイルを使用
+# uv run sumalize.py us_stocks_1.json
+
+# 5. CSV結合
+uv run combine_latest_csv.py                      # 両方の市場タイプを結合
+# uv run combine_latest_csv.py --market-type JP   # 日本株のみ
+# uv run combine_latest_csv.py --market-type US   # 米国株のみ
 ```
 
 #### フロントエンド環境のセットアップ
@@ -178,6 +196,8 @@ GitHub Actions でワークフローを使用する前に、以下の設定変�
 
 実行後、`stock_list/Export/` ディレクトリに以下のファイルが生成されます：
 
+### 日本株データ
+
 ```
 Export/
 ├── japanese_stocks_data_1_YYYYMMDD_HHMMSS.csv  # stocks_1.json のデータ
@@ -187,6 +207,20 @@ Export/
 └── YYYYMMDD_combined.csv                       # 結合されたデータ（オプション）
 ```
 
+### 米国株データ
+
+```
+Export/
+├── us_stocks_data_1_YYYYMMDD_HHMMSS.csv        # us_stocks_1.json のデータ
+├── us_stocks_data_2_YYYYMMDD_HHMMSS.csv        # us_stocks_2.json のデータ
+└── YYYYMMDD_us_combined.csv                   # 米国株の結合データ（オプション）
+```
+
+### データ構造
+
+- **市場タイプ列**: 各 CSV ファイルに`市場タイプ`列が追加され、`JP`（日本株）または`US`（米国株）が記録されます
+- **後方互換性**: 既存の日本株 CSV ファイルも正常に動作します（市場タイプが未指定の場合は自動判定）
+
 ---
 
 ## 📚 参考/出典 / 🙏 お礼
@@ -195,6 +229,7 @@ Export/
 - [Yahoo Finance](https://finance.yahoo.com/)
 - [日本取引所グループ（JPX）](https://www.jpx.co.jp/)
 - [わが投資術](https://amzn.to/3IEVRkq)
+- [sec.gov (ティッカー json)](https://www.sec.gov/files/company_tickers.json)
 
 ※使わせていただいている JPX のデータや yfinance の作成者に感謝申し上げます。
 

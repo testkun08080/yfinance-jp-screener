@@ -28,13 +28,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_latest_csv_files(export_dir="./Export", target_date=None):
+def get_latest_csv_files(export_dir="./Export", target_date=None, market_type=None):
     """
     Exportディレクトリから最新のCSVファイルを取得
 
     Args:
         export_dir (str): CSVファイルが格納されているディレクトリ（デフォルト: "./Export"）
         target_date (str): 対象日付 (YYYYMMDD形式、Noneの場合は今日の日付を使用)
+        market_type (str, optional): 市場タイプ（"JP" または "US"）
+            - Noneの場合は両方のファイルを取得
 
     Returns:
         list: 最新のCSVファイルのリスト（対象日付のもののみ）
@@ -42,7 +44,7 @@ def get_latest_csv_files(export_dir="./Export", target_date=None):
             - 空リストの場合は該当ファイルなし
 
     Note:
-        - ファイル名パターン: "japanese_stocks_data_*.csv"
+        - ファイル名パターン: "japanese_stocks_data_*.csv" または "us_stocks_data_*.csv"
         - 対象日付が含まれるファイルのみを抽出
         - 各ファイルの詳細情報（更新日時）をログ出力
 
@@ -53,8 +55,45 @@ def get_latest_csv_files(export_dir="./Export", target_date=None):
         >>> files[0]
         './Export/japanese_stocks_data_1_20251020_123456.csv'
     """
-    # CSVファイルのパターンを定義
-    pattern = os.path.join(export_dir, "japanese_stocks_data_*.csv")
+    # CSVファイルのパターンを定義（市場タイプに応じて）
+    if market_type == "US":
+        pattern = os.path.join(export_dir, "us_stocks_data_*.csv")
+    elif market_type == "JP":
+        pattern = os.path.join(export_dir, "japanese_stocks_data_*.csv")
+    else:
+        # 両方のパターンを検索
+        pattern_jp = os.path.join(export_dir, "japanese_stocks_data_*.csv")
+        pattern_us = os.path.join(export_dir, "us_stocks_data_*.csv")
+        all_csv_files = glob.glob(pattern_jp) + glob.glob(pattern_us)
+        
+        if not all_csv_files:
+            logger.warning(f"CSVファイルが見つかりません: {pattern_jp} または {pattern_us}")
+            return []
+        
+        # 対象日付を決定
+        if target_date is None:
+            target_date = datetime.now().strftime("%Y%m%d")
+        
+        logger.info(f"対象日付: {target_date}")
+        
+        # 今日の日付のファイルのみをフィルタリング
+        csv_files = [f for f in all_csv_files if target_date in os.path.basename(f)]
+        
+        if not csv_files:
+            logger.warning(f"⚠️  {target_date} のCSVファイルが見つかりません")
+            logger.info(f"全{len(all_csv_files)}個のファイルから検索しましたが、該当なし")
+            return []
+        
+        # ファイルの更新日時でソート（最新順）
+        csv_files.sort(key=os.path.getmtime, reverse=True)
+        
+        # 各ファイルの情報をログ出力
+        logger.info(f"✅ {target_date} のCSVファイル: {len(csv_files)}個")
+        for i, file in enumerate(csv_files):
+            mod_time = datetime.fromtimestamp(os.path.getmtime(file))
+            logger.info(f"  {i + 1}. {os.path.basename(file)} (更新日時: {mod_time})")
+        
+        return csv_files
     all_csv_files = glob.glob(pattern)
 
     if not all_csv_files:
@@ -235,6 +274,12 @@ def main():
         default=None,
         help="使用する日付 (YYYYMMDD形式、未指定の場合は今日の日付)",
     )
+    parser.add_argument(
+        "--market-type",
+        choices=["JP", "US"],
+        default=None,
+        help="市場タイプ (JP: 日本株, US: 米国株, 未指定: 両方)",
+    )
 
     args = parser.parse_args()
 
@@ -247,14 +292,19 @@ def main():
     target_date = args.date if args.date else get_today_date()
 
     # 指定日付のCSVファイルを取得
-    csv_files = get_latest_csv_files(args.export_dir, target_date)
+    csv_files = get_latest_csv_files(args.export_dir, target_date, args.market_type)
 
     if not csv_files:
         logger.error(f"❌ {target_date} のCSVファイルが見つかりません")
         return False
 
-    # 出力ファイル名を生成
-    output_filename = f"{target_date}_combined.csv"
+    # 出力ファイル名を生成（市場タイプに応じて）
+    if args.market_type == "US":
+        output_filename = f"{target_date}_us_combined.csv"
+    elif args.market_type == "JP":
+        output_filename = f"{target_date}_jp_combined.csv"
+    else:
+        output_filename = f"{target_date}_combined.csv"
     output_path = os.path.join(args.output_dir, output_filename)
 
     logger.info(f"📁 出力ファイル: {output_path}")

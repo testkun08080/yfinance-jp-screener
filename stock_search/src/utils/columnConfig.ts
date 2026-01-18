@@ -17,6 +17,7 @@ export const getDefaultColumns = (
     コード: { label: "コード", category: "basic" },
     業種: { label: "業種", category: "basic" },
     優先市場: { label: "優先市場", category: "basic" },
+    市場タイプ: { label: "市場タイプ", category: "basic" },
     都道府県: { label: "都道府県", category: "basic" },
     決算月: { label: "決算月", category: "basic" },
 
@@ -67,6 +68,6 @@ export const getDefaultColumns = (
   return availableColumns.map((col) => ({
     key: col,
     ...(columnDefinitions[col] || { label: col, category: "basic" }),
-    visible: true,
+    visible: col === "市場タイプ" ? false : true,
   }));
 };

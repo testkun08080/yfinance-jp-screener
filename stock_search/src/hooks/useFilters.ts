@@ -7,11 +7,37 @@ import {
   generateShareUrl,
 } from "../utils/urlParams";
 
+/**
+ * ティッカーシンボルから市場タイプを判定
+ */
+function detectMarketTypeFromTicker(ticker: string): "JP" | "US" {
+  if (!ticker) return "JP"; // デフォルトは日本株
+
+  const tickerStr = String(ticker).trim();
+
+  // 日本株判定: .Tで終わる、または4桁の数値コード
+  if (tickerStr.endsWith(".T")) {
+    return "JP";
+  }
+  if (/^\d{4}$/.test(tickerStr)) {
+    return "JP";
+  }
+
+  // 米国株判定: 1-5文字の英字（.Tで終わらない）
+  if (/^[A-Z]{1,5}$/i.test(tickerStr)) {
+    return "US";
+  }
+
+  // デフォルトは日本株（後方互換性のため）
+  return "JP";
+}
+
 const initialFilters: SearchFilters = {
   companyName: "",
   stockCode: "",
   industries: [],
   market: [],
+  marketType: ["JP", "US"], // デフォルトは両方選択
   prefecture: [],
   marketCapMin: null,
   marketCapMax: null,
@@ -106,6 +132,14 @@ export const useFilters = (data: StockData[]) => {
         return false;
       }
 
+      // 市場タイプフィルター（複数選択）
+      if (filters.marketType && filters.marketType.length > 0) {
+        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        if (!filters.marketType.includes(stockMarketType as "JP" | "US")) {
+          return false;
+        }
+      }
+
       // 市場フィルター（複数選択）
       if (
         filters.market.length > 0 &&
@@ -114,12 +148,15 @@ export const useFilters = (data: StockData[]) => {
         return false;
       }
 
-      // 都道府県フィルター（複数選択）
+      // 都道府県フィルター（複数選択、日本株のみ）
       if (
-        filters.prefecture.length > 0 &&
-        !filters.prefecture.includes(stock.都道府県 || "")
+        filters.prefecture.length > 0
       ) {
-        return false;
+        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        // 日本株の場合のみ都道府県フィルターを適用
+        if (stockMarketType === "JP" && !filters.prefecture.includes(stock.都道府県 || "")) {
+          return false;
+        }
       }
 
       // PBRフィルター（データがnull/undefinedの場合は含める）
@@ -730,9 +767,19 @@ export const useFilters = (data: StockData[]) => {
     return industries;
   }, [data]);
 
-  // ユニークな市場一覧を取得
+  // ユニークな市場一覧を取得（選択された市場タイプに応じてフィルタリング）
   const availableMarkets = useMemo(() => {
-    const markets = data
+    let filteredData = data;
+
+    // 市場タイプフィルターが適用されている場合、該当する市場タイプのデータのみを対象にする
+    if (filters.marketType && filters.marketType.length > 0) {
+      filteredData = data.filter((stock) => {
+        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        return filters.marketType!.includes(stockMarketType as "JP" | "US");
+      });
+    }
+
+    const markets = filteredData
       .map((stock) => stock.優先市場)
       .filter(
         (market): market is string =>
@@ -741,11 +788,17 @@ export const useFilters = (data: StockData[]) => {
       .filter((market, index, arr) => arr.indexOf(market) === index)
       .sort();
     return markets;
-  }, [data]);
+  }, [data, filters.marketType]);
 
-  // ユニークな都道府県一覧を取得
+  // ユニークな都道府県一覧を取得（日本株のみ）
   const availablePrefectures = useMemo(() => {
-    const prefectures = data
+    // 日本株のみを対象にする
+    const jpStocks = data.filter((stock) => {
+      const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+      return stockMarketType === "JP";
+    });
+
+    const prefectures = jpStocks
       .map((stock) => stock.都道府県)
       .filter(
         (prefecture): prefecture is string =>

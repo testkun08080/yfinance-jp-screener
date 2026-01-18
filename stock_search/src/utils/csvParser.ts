@@ -3,6 +3,31 @@ import type { StockData } from "../types/stock";
 import { CSV_PARSER_CONFIG, CSV_NUMERIC_FIELDS } from "../constants/csv";
 import { CURRENCY_FORMAT, PERCENTAGE_FORMAT } from "../constants/formatting";
 
+/**
+ * ティッカーシンボルから市場タイプを判定
+ */
+function detectMarketTypeFromTicker(ticker: string | number | null | undefined): "JP" | "US" {
+  if (!ticker) return "JP"; // デフォルトは日本株
+
+  const tickerStr = String(ticker).trim();
+
+  // 日本株判定: .Tで終わる、または4桁の数値コード
+  if (tickerStr.endsWith(".T")) {
+    return "JP";
+  }
+  if (/^\d{4}$/.test(tickerStr)) {
+    return "JP";
+  }
+
+  // 米国株判定: 1-5文字の英字（.Tで終わらない）
+  if (/^[A-Z]{1,5}$/i.test(tickerStr)) {
+    return "US";
+  }
+
+  // デフォルトは日本株（後方互換性のため）
+  return "JP";
+}
+
 export const parseCSVFile = (file: File): Promise<StockData[]> => {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
@@ -43,7 +68,16 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
 
         try {
           const stockData = results.data as StockData[];
-          resolve(stockData.filter((row) => row.会社名 && row.銘柄コード));
+          
+          // 市場タイプが未指定の場合、ティッカー形式から自動判定
+          const processedData = stockData.map((row) => {
+            if (!row.市場タイプ) {
+              row.市場タイプ = detectMarketTypeFromTicker(row.銘柄コード || row.コード);
+            }
+            return row;
+          });
+          
+          resolve(processedData.filter((row) => row.会社名 && (row.銘柄コード || row.コード)));
         } catch (error) {
           reject(new Error("データの変換中にエラーが発生しました"));
         }

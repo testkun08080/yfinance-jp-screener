@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
+// import { MARKET_TYPE_OPTIONS } from "../types/stock"; // 市場タイプ選択をコメントアウトしたため不要
 
 // NumberRangeInputコンポーネントを独立して定義
 interface NumberRangeInputProps {
@@ -159,6 +160,21 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
     }
   };
 
+  // 市場タイプ選択をコメントアウトしたため不要
+  // const handleMarketTypeChange = (marketType: "JP" | "US", checked: boolean) => {
+  //   const currentMarketTypes = filters.marketType || [];
+  //   if (checked) {
+  //     // 既に選択されている場合は追加しない
+  //     if (!currentMarketTypes.includes(marketType)) {
+  //       onFilterChange("marketType", [...currentMarketTypes, marketType]);
+  //     }
+  //   } else {
+  //     // 選択を外す
+  //     const newMarketTypes = currentMarketTypes.filter((mt) => mt !== marketType);
+  //     onFilterChange("marketType", newMarketTypes);
+  //   }
+  // };
+
   // 全選択・全クリア機能
   const handleSelectAllIndustries = () => {
     onFilterChange("industries", availableIndustries);
@@ -207,6 +223,28 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
         </div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 市場タイプ選択 - コメントアウト */}
+            {/* <div className="form-control">
+              <label className="label">
+                <span className="label-text">市場タイプ</span>
+              </label>
+              <div className="flex gap-2">
+                {MARKET_TYPE_OPTIONS.map((mt) => (
+                  <label key={mt} className="label cursor-pointer justify-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-sm"
+                      checked={filters.marketType?.includes(mt) || false}
+                      onChange={(e) => handleMarketTypeChange(mt, e.target.checked)}
+                    />
+                    <span className="label-text text-sm">
+                      {mt === "JP" ? "日本株" : "米国株"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div> */}
+
             {/* 会社名検索 */}
             <div className="form-control">
               <label className="label">
@@ -215,7 +253,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               <input
                 type="text"
                 className="input input-bordered input-sm"
-                placeholder="例: トヨタ、ソフトバンク"
+                placeholder="例: トヨタ、Apple"
                 value={filters.companyName}
                 onChange={(e) => onFilterChange("companyName", e.target.value)}
               />
@@ -355,59 +393,63 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
           </div>
 
-          {/* 都道府県選択（複数選択） */}
-          <div className="form-control mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="label-text">都道府県選択（複数選択可）</span>
-                <span className="label-text-alt">
-                  {filters.prefecture.length > 0
-                    ? `${filters.prefecture.length}件選択中`
-                    : ""}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-xs btn-outline"
-                  onClick={handleSelectAllPrefectures}
-                  disabled={
-                    filters.prefecture.length === availablePrefectures.length
-                  }
-                >
-                  ✅ 全選択
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-xs btn-outline"
-                  onClick={handleClearAllPrefectures}
-                  disabled={filters.prefecture.length === 0}
-                >
-                  ❌ 全クリア
-                </button>
-              </div>
-            </div>
-            <div className="bg-base-100 border border-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {availablePrefectures.map((prefecture) => (
-                  <label
-                    key={prefecture}
-                    className="label cursor-pointer justify-start"
+          {/* 都道府県選択（複数選択、日本株のみ） */}
+          {filters.marketType?.includes("JP") && (
+            <React.Fragment>
+              <div className="form-control mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="label-text">都道府県選択（複数選択可、日本株のみ）</span>
+                    <span className="label-text-alt">
+                      {filters.prefecture.length > 0
+                        ? `${filters.prefecture.length}件選択中`
+                        : ""}
+                    </span>
+                  </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-outline"
+                    onClick={handleSelectAllPrefectures}
+                    disabled={
+                      filters.prefecture.length === availablePrefectures.length
+                    }
                   >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm mr-2"
-                      checked={filters.prefecture.includes(prefecture)}
-                      onChange={(e) =>
-                        handlePrefectureChange(prefecture, e.target.checked)
-                      }
-                    />
-                    <span className="label-text text-sm">{prefecture}</span>
-                  </label>
-                ))}
+                    ✅ 全選択
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-outline"
+                    onClick={handleClearAllPrefectures}
+                    disabled={filters.prefecture.length === 0}
+                  >
+                    ❌ 全クリア
+                  </button>
+                </div>
+              </div>
+              <div className="bg-base-100 border border-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {availablePrefectures.map((prefecture) => (
+                    <label
+                      key={prefecture}
+                      className="label cursor-pointer justify-start"
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm mr-2"
+                        checked={filters.prefecture.includes(prefecture)}
+                        onChange={(e) =>
+                          handlePrefectureChange(prefecture, e.target.checked)
+                        }
+                      />
+                      <span className="label-text text-sm">{prefecture}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+            </React.Fragment>
+          )}
         </div>
       </div>
 

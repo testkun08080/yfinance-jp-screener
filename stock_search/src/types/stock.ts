@@ -4,6 +4,7 @@ export interface StockData {
   コード?: string;
   業種?: string;
   優先市場?: string;
+  市場タイプ?: "JP" | "US";
   決算月?: string | null;
   // "会計基準"?: string | null;
   都道府県?: string | null;
@@ -43,6 +44,7 @@ export interface SearchFilters {
   stockCode?: string; // 銘柄コード検索
   industries: string[]; // 複数業種選択
   market: string[]; // 複数市場選択
+  marketType?: ("JP" | "US")[]; // 市場タイプ選択（日本株/米国株）
   prefecture: string[]; // 複数都道府県選択
 
   // 既存のフィルター
@@ -116,5 +118,13 @@ export const MARKET_OPTIONS = [
   "スタンダード（内国株式）",
   "グロース（内国株式）",
 ] as const;
+
+export const US_MARKET_OPTIONS = [
+  "NYSE",
+  "NASDAQ",
+  "AMEX",
+] as const;
+
+export const MARKET_TYPE_OPTIONS = ["JP", "US"] as const;
 
 export const ITEMS_PER_PAGE_OPTIONS = [50, 100, 200] as const;

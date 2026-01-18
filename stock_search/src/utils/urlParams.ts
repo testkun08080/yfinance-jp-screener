@@ -17,6 +17,9 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
   if (filters.industries.length > 0) {
     params.set("industries", filters.industries.join(","));
   }
+  if (filters.marketType && filters.marketType.length > 0) {
+    params.set("marketType", filters.marketType.join(","));
+  }
 
   // 数値フィルター
   const numericFilters: Array<{ key: keyof SearchFilters; param: string }> = [
@@ -106,6 +109,14 @@ export const urlParamsToFilters = (
   const industries = searchParams.get("industries");
   if (industries) {
     filters.industries = industries.split(",").filter(Boolean);
+  }
+
+  const marketType = searchParams.get("marketType");
+  if (marketType) {
+    const marketTypes = marketType.split(",").filter(Boolean) as ("JP" | "US")[];
+    if (marketTypes.length > 0) {
+      filters.marketType = marketTypes;
+    }
   }
 
   // 数値フィルター

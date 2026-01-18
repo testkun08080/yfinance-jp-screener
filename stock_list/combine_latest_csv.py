@@ -28,13 +28,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_latest_csv_files(export_dir="./Export", target_date=None):
+def get_latest_csv_files(export_dir="./Export", target_date=None, market_type=None):
     """
     Exportディレクトリから最新のCSVファイルを取得
 
     Args:
         export_dir (str): CSVファイルが格納されているディレクトリ（デフォルト: "./Export"）
         target_date (str): 対象日付 (YYYYMMDD形式、Noneの場合は今日の日付を使用)
+        market_type (str, optional): 市場タイプ（"JP" または "US"）
+            - Noneの場合は両方のファイルを取得
 
     Returns:
         list: 最新のCSVファイルのリスト（対象日付のもののみ）
@@ -42,7 +44,7 @@ def get_latest_csv_files(export_dir="./Export", target_date=None):
             - 空リストの場合は該当ファイルなし
 
     Note:
-        - ファイル名パターン: "japanese_stocks_data_*.csv"
+        - ファイル名パターン: "japanese_stocks_data_*.csv" または "us_stocks_data_*.csv"
         - 対象日付が含まれるファイルのみを抽出
         - 各ファイルの詳細情報（更新日時）をログ出力
 
@@ -53,12 +55,26 @@ def get_latest_csv_files(export_dir="./Export", target_date=None):
         >>> files[0]
         './Export/japanese_stocks_data_1_20251020_123456.csv'
     """
-    # CSVファイルのパターンを定義
-    pattern = os.path.join(export_dir, "japanese_stocks_data_*.csv")
-    all_csv_files = glob.glob(pattern)
+    # CSVファイルのパターンを定義（市場タイプに応じて）
+    if market_type == "US":
+        patterns = [os.path.join(export_dir, "us_stocks_data_*.csv")]
+    elif market_type == "JP":
+        patterns = [os.path.join(export_dir, "japanese_stocks_data_*.csv")]
+    else:
+        # 両方のパターンを検索
+        patterns = [
+            os.path.join(export_dir, "japanese_stocks_data_*.csv"),
+            os.path.join(export_dir, "us_stocks_data_*.csv"),
+        ]
+
+    # すべてのパターンからCSVファイルを取得
+    all_csv_files = []
+    for pattern in patterns:
+        all_csv_files.extend(glob.glob(pattern))
 
     if not all_csv_files:
-        logger.warning(f"CSVファイルが見つかりません: {pattern}")
+        pattern_str = " または ".join(patterns)
+        logger.warning(f"CSVファイルが見つかりません: {pattern_str}")
         return []
 
     # 対象日付を決定
@@ -142,9 +158,7 @@ def combine_csv_files(csv_files, output_file):
 
             # BOM（Byte Order Mark）を除去
             if df.columns[0].startswith("\ufeff"):
-                df.columns = [df.columns[0].replace("\ufeff", "")] + df.columns[
-                    1:
-                ].tolist()
+                df.columns = [df.columns[0].replace("\ufeff", "")] + df.columns[1:].tolist()
 
             # データの基本情報をログ出力
             logger.info(f"  - 行数: {len(df)}, 列数: {len(df.columns)}")
@@ -163,13 +177,9 @@ def combine_csv_files(csv_files, output_file):
         # 重複データの除去（銘柄コードベース）
         if "銘柄コード" in combined_df.columns:
             before_dedup = len(combined_df)
-            combined_df = combined_df.drop_duplicates(
-                subset=["銘柄コード"], keep="last"
-            )
+            combined_df = combined_df.drop_duplicates(subset=["銘柄コード"], keep="last")
             after_dedup = len(combined_df)
-            logger.info(
-                f"重複除去: {before_dedup} → {after_dedup} 行 ({before_dedup - after_dedup}行を除去)"
-            )
+            logger.info(f"重複除去: {before_dedup} → {after_dedup} 行 ({before_dedup - after_dedup}行を除去)")
 
         # 出力ディレクトリを作成
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -180,9 +190,7 @@ def combine_csv_files(csv_files, output_file):
         logger.info(f"✅ 結合完了: {output_file}")
         logger.info(f"   - 総行数: {len(combined_df)}")
         logger.info(f"   - 総列数: {len(combined_df.columns)}")
-        logger.info(
-            f"   - ファイルサイズ: {os.path.getsize(output_file) / (1024 * 1024):.2f} MB"
-        )
+        logger.info(f"   - ファイルサイズ: {os.path.getsize(output_file) / (1024 * 1024):.2f} MB")
 
         return True
 
@@ -217,9 +225,7 @@ def main():
         0: 成功
         1: 失敗
     """
-    parser = argparse.ArgumentParser(
-        description="最新のCSVファイルを結合して日付付きファイルを生成"
-    )
+    parser = argparse.ArgumentParser(description="最新のCSVファイルを結合して日付付きファイルを生成")
     parser.add_argument(
         "--export-dir",
         default="./Export",
@@ -235,6 +241,12 @@ def main():
         default=None,
         help="使用する日付 (YYYYMMDD形式、未指定の場合は今日の日付)",
     )
+    parser.add_argument(
+        "--market-type",
+        choices=["JP", "US"],
+        default=None,
+        help="市場タイプ (JP: 日本株, US: 米国株, 未指定: 両方)",
+    )
 
     args = parser.parse_args()
 
@@ -247,14 +259,19 @@ def main():
     target_date = args.date if args.date else get_today_date()
 
     # 指定日付のCSVファイルを取得
-    csv_files = get_latest_csv_files(args.export_dir, target_date)
+    csv_files = get_latest_csv_files(args.export_dir, target_date, args.market_type)
 
     if not csv_files:
         logger.error(f"❌ {target_date} のCSVファイルが見つかりません")
         return False
 
-    # 出力ファイル名を生成
-    output_filename = f"{target_date}_combined.csv"
+    # 出力ファイル名を生成（市場タイプに応じて）
+    if args.market_type == "US":
+        output_filename = f"{target_date}_us_combined.csv"
+    elif args.market_type == "JP":
+        output_filename = f"{target_date}_jp_combined.csv"
+    else:
+        output_filename = f"{target_date}_combined.csv"
     output_path = os.path.join(args.output_dir, output_filename)
 
     logger.info(f"📁 出力ファイル: {output_path}")

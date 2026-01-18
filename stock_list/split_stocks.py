@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 
 def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
     """
-    stocks_all.jsonを指定されたサイズのチャンクに分割
+    stocks_all.jsonまたはus_stocks_all.jsonを指定されたサイズのチャンクに分割
 
     Args:
-        input_file (str): 入力JSONファイル名
+        input_file (str): 入力JSONファイル名（stocks_all.json または us_stocks_all.json）
         chunk_size (int): 1ファイルあたりの企業数
     """
     try:
@@ -44,8 +44,11 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
             end_idx = min((i + 1) * chunk_size, total_companies)
             chunk_data = stock_data[start_idx:end_idx]
 
-            # ファイル名を生成（stocks_1.json, stocks_2.json, ...）
-            output_filename = f"stocks_{i + 1}.json"
+            # ファイル名を生成（市場タイプに応じて変更）
+            if "us_stocks" in input_file.lower():
+                output_filename = f"us_stocks_{i + 1}.json"
+            else:
+                output_filename = f"stocks_{i + 1}.json"
 
             # JSON形式で保存
             with open(output_filename, "w", encoding="utf-8") as f:
@@ -74,7 +77,7 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="日本株リストJSONファイルを指定されたサイズのチャンクに分割します",
+        description="株式リストJSONファイルを指定されたサイズのチャンクに分割します（日本株・米国株対応）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用例:
@@ -110,7 +113,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     logger.info("=" * 60)
-    logger.info("📊 stocks_all.json分割ツール")
+    logger.info("📊 株式リスト分割ツール")
     logger.info("=" * 60)
     logger.info(f"入力ファイル: {args.input}")
     logger.info(f"チャンクサイズ: {args.size}社")

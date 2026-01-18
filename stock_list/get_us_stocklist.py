@@ -36,6 +36,7 @@ SECの公開データから米国上場企業リストを取得し、JSON形式�
 
 import json
 import logging
+import os
 import time
 import requests
 import yfinance as yf
@@ -59,12 +60,22 @@ def get_us_ticker_list() -> List[str]:
     Note:
         - SECのcompany_tickers.jsonからティッカーシンボルを取得
         - User-Agentヘッダーに連絡先を含める必要がある
+        - 連絡先は環境変数 SEC_USER_AGENT_CONTACT から読み込む
+        - 環境変数が設定されていない場合はデフォルト値を使用
     """
     try:
         url = "https://www.sec.gov/files/company_tickers.json"
         # SECのAPI使用規約に従い、User-Agentに連絡先を含める
+        # 環境変数から連絡先を取得（uvで設定された環境変数またはシステム環境変数）
+        contact_email = os.getenv("SEC_USER_AGENT_CONTACT", "your@email.com")
+        if contact_email == "your@email.com":
+            logger.warning(
+                "⚠️  SEC_USER_AGENT_CONTACT環境変数が設定されていません。"
+                "デフォルト値を使用します。"
+                "環境変数を設定するには: export SEC_USER_AGENT_CONTACT=your@email.com"
+            )
         headers = {
-            "User-Agent": "yfinance-jp-screener (contact: your@email.com)",
+            "User-Agent": f"yfinance-jp-screener (contact: {contact_email})",
             "Accept-Encoding": "gzip, deflate",
             "Host": "www.sec.gov",
         }
@@ -174,9 +185,6 @@ def main():
     stock_list = []
     success_count = 0
     fail_count = 0
-
-    # テスト用: 最初の100社のみ取得（コメントアウトすると全社取得）
-    tickers = tickers[:100]
 
     for i, ticker in enumerate(tickers, 1):
         if i % 100 == 0:

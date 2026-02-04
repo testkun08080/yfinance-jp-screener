@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import type { FC } from "react";
+import { MdClose, MdViewColumn } from "react-icons/md";
 
 export interface ColumnConfig {
   key: string;
@@ -64,7 +65,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
           onClick={closeModal}
           aria-label="閉じる"
         >
-          <span className="material-symbols-outlined">close</span>
+          <MdClose />
         </button>
       </div>
 
@@ -144,7 +145,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
       >
-        <span className="material-symbols-outlined text-lg">view_column</span>
+        <MdViewColumn className="text-lg" />
         <span className="whitespace-nowrap">
           表示列 ({visibleCount}/{totalCount})
         </span>

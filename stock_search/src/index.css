@@ -14,7 +14,7 @@
 }
 
 body {
-  font-family: "Inter", "Noto Sans JP", sans-serif;
+  font-family: ui-sans-serif, system-ui, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   @apply text-slate-900 bg-white antialiased;
 }
 

@@ -1,3 +1,9 @@
+import {
+  MdClose,
+  MdFolderOpen,
+  MdExpandMore,
+  MdFilterList,
+} from "react-icons/md";
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
@@ -157,7 +163,7 @@ export const Sidebar = ({
             onClick={onClose}
             aria-label="閉じる"
           >
-            <span className="material-symbols-outlined">close</span>
+            <MdClose />
           </button>
         </div>
       )}
@@ -190,9 +196,7 @@ export const Sidebar = ({
               title="データセットを変更"
               aria-label="データセットを変更"
             >
-              <span className="material-symbols-outlined text-lg">
-                folder_open
-              </span>
+              <MdFolderOpen className="text-lg" />
             </button>
             <p
               className="text-[11px] font-semibold text-slate-600 truncate pr-6"
@@ -248,9 +252,7 @@ export const Sidebar = ({
               <span className="text-xs font-bold text-slate-700">
                 基本フィルター
               </span>
-              <span className="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">
-                expand_more
-              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
               <div>
@@ -339,9 +341,7 @@ export const Sidebar = ({
               <span className="text-xs font-bold text-slate-700">
                 バリュエーション
               </span>
-              <span className="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">
-                expand_more
-              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
               <NumRange
@@ -374,9 +374,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">業績</span>
-              <span className="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">
-                expand_more
-              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-3">
               <NumRange
@@ -396,9 +394,7 @@ export const Sidebar = ({
               <span className="text-xs font-bold text-slate-700">
                 バランスシート
               </span>
-              <span className="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">
-                expand_more
-              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-3">
               <NumRange
@@ -418,9 +414,7 @@ export const Sidebar = ({
               <span className="text-xs font-bold text-slate-700">
                 キャッシュ
               </span>
-              <span className="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">
-                expand_more
-              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-3">
               <NumRange
@@ -442,7 +436,7 @@ export const Sidebar = ({
           className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold py-2.5 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 text-sm"
           onClick={onClearFilters}
         >
-          <span className="material-symbols-outlined text-lg">filter_list</span>
+          <MdFilterList className="text-lg" />
           フィルターをクリア
         </button>
       </div>

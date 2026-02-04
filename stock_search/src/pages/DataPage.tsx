@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import {
+  MdFilterList,
+  MdTableChart,
+  MdError,
+  MdDescription,
+} from "react-icons/md";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
 import { useCSVParser } from "../hooks/useCSVParser";
@@ -163,9 +169,7 @@ export const DataPage = () => {
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               onClick={() => setSidebarOpen(true)}
             >
-              <span className="material-symbols-outlined text-lg">
-                filter_list
-              </span>
+              <MdFilterList className="text-lg" />
               フィルター・データセット
             </button>
           </div>
@@ -186,9 +190,7 @@ export const DataPage = () => {
               }}
               onClick={openFileSelect}
             >
-              <span className="material-symbols-outlined text-6xl text-slate-300 group-hover:text-[var(--primary)] mb-4 transition-colors">
-                table_chart
-              </span>
+              <MdTableChart className="text-6xl text-slate-300 group-hover:text-[var(--primary)] mb-4 transition-colors" />
               <h2 className="text-xl font-bold text-slate-700 mb-2">
                 CSV を読み込んでください
               </h2>
@@ -220,7 +222,7 @@ export const DataPage = () => {
           {selectedFile && error && (
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="alert alert-error max-w-md">
-                <span className="material-symbols-outlined">error</span>
+                <MdError />
                 <span>{error}</span>
               </div>
               <button
@@ -235,9 +237,7 @@ export const DataPage = () => {
 
           {selectedFile && !loading && !error && data.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">
-                description
-              </span>
+              <MdDescription className="text-6xl text-slate-300 mb-4" />
               <h3 className="text-lg font-bold text-slate-700 mb-2">
                 データがありません
               </h3>

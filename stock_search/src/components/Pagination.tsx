@@ -1,4 +1,10 @@
 import React from "react";
+import {
+  MdFirstPage,
+  MdChevronLeft,
+  MdChevronRight,
+  MdLastPage,
+} from "react-icons/md";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
 
@@ -58,7 +64,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === 1}
         aria-label="最初のページへ"
       >
-        <span className="material-symbols-outlined text-lg">first_page</span>
+        <MdFirstPage className="text-lg" />
       </button>
       <button
         type="button"
@@ -67,7 +73,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === 1}
         aria-label="前のページへ"
       >
-        <span className="material-symbols-outlined text-lg">chevron_left</span>
+        <MdChevronLeft className="text-lg" />
       </button>
       <div className="flex items-center gap-1 px-2">
         {getPageNumbers().map((page) => (
@@ -94,7 +100,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === totalPages}
         aria-label="次のページへ"
       >
-        <span className="material-symbols-outlined text-lg">chevron_right</span>
+        <MdChevronRight className="text-lg" />
       </button>
       <button
         type="button"
@@ -103,7 +109,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === totalPages}
         aria-label="最後のページへ"
       >
-        <span className="material-symbols-outlined text-lg">last_page</span>
+        <MdLastPage className="text-lg" />
       </button>
     </div>
   );

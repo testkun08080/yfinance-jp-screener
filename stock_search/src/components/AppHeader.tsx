@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { MdAnalytics, MdMenu } from "react-icons/md";
 import { NAVIGATION_ITEMS } from "../constants/ui";
 
 export const AppHeader = () => {
@@ -29,9 +30,7 @@ export const AppHeader = () => {
         aria-label="ホーム"
       >
         <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white">
-          <span className="material-symbols-outlined text-xl" aria-hidden>
-            analytics
-          </span>
+          <MdAnalytics className="text-xl" aria-hidden />
         </div>
         <h1 className="font-bold text-lg tracking-tight text-slate-800">
           <span className="text-[var(--primary)]">yfsc</span>
@@ -47,7 +46,7 @@ export const AppHeader = () => {
           aria-haspopup="true"
           aria-label="メニューを開く"
         >
-          <span className="material-symbols-outlined text-xl">menu</span>
+          <MdMenu className="text-xl" />
         </button>
         {menuOpen && (
           <nav

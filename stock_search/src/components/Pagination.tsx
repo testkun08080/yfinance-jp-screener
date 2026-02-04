@@ -6,12 +6,15 @@ interface PaginationProps {
   config: PaginationConfig;
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
+  /** When true, only render page nav buttons (for new-design footer) */
+  variant?: "default" | "compact";
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
   config,
   onPageChange,
   onItemsPerPageChange,
+  variant = "default",
 }) => {
   const { currentPage, itemsPerPage, totalItems } = config;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -46,75 +49,76 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   if (totalItems === 0) return null;
 
+  const navButtons = (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        className="p-1.5 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+        onClick={() => onPageChange(1)}
+        disabled={currentPage === 1}
+        aria-label="最初のページへ"
+      >
+        <span className="material-symbols-outlined text-lg">first_page</span>
+      </button>
+      <button
+        type="button"
+        className="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        aria-label="前のページへ"
+      >
+        <span className="material-symbols-outlined text-lg">chevron_left</span>
+      </button>
+      <div className="flex items-center gap-1 px-2">
+        {getPageNumbers().map((page) => (
+          <button
+            key={page}
+            type="button"
+            className={`w-8 h-8 rounded-md text-xs font-semibold transition-colors ${
+              page === currentPage
+                ? "bg-[var(--primary)] text-white"
+                : "hover:bg-slate-100 text-slate-600"
+            }`}
+            onClick={() => onPageChange(page)}
+            aria-label={`ページ ${page} へ`}
+            aria-current={page === currentPage ? "page" : undefined}
+          >
+            {page}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        aria-label="次のページへ"
+      >
+        <span className="material-symbols-outlined text-lg">chevron_right</span>
+      </button>
+      <button
+        type="button"
+        className="p-1.5 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+        onClick={() => onPageChange(totalPages)}
+        disabled={currentPage === totalPages}
+        aria-label="最後のページへ"
+      >
+        <span className="material-symbols-outlined text-lg">last_page</span>
+      </button>
+    </div>
+  );
+
+  if (variant === "compact") {
+    return <>{navButtons}</>;
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-        {/* アイテム数表示 */}
         <div className="text-sm text-base-content/70">
           {startIndex} - {endIndex} 件 / 全 {totalItems} 件
         </div>
-
-        {/* ページネーション */}
-        <div className="flex items-center gap-2">
-          {/* 最初のページ */}
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onPageChange(1)}
-            disabled={currentPage === 1}
-            aria-label="最初のページへ"
-          >
-            ⏮️
-          </button>
-
-          {/* 前のページ */}
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            aria-label="前のページへ"
-          >
-            ⬅️
-          </button>
-
-          {/* ページ番号 */}
-          <div className="flex gap-1 overflow-x-auto">
-            {getPageNumbers().map((page) => (
-              <button
-                key={page}
-                className={`btn btn-sm min-w-[2.5rem] ${
-                  page === currentPage ? "btn-primary" : "btn-ghost"
-                }`}
-                onClick={() => onPageChange(page)}
-                aria-label={`ページ ${page} へ`}
-                aria-current={page === currentPage ? "page" : undefined}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-
-          {/* 次のページ */}
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            aria-label="次のページへ"
-          >
-            ➡️
-          </button>
-
-          {/* 最後のページ */}
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onPageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            aria-label="最後のページへ"
-          >
-            ⏭️
-          </button>
-        </div>
-
-        {/* 表示件数選択 */}
+        <div className="flex items-center gap-2">{navButtons}</div>
         <div className="form-control">
           <div className="flex items-center gap-2">
             <span className="text-sm text-base-content/70">表示件数:</span>

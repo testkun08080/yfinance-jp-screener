@@ -134,7 +134,9 @@ export const useFilters = (data: StockData[]) => {
 
       // 市場タイプフィルター（複数選択）
       if (filters.marketType && filters.marketType.length > 0) {
-        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        const stockMarketType =
+          stock.市場タイプ ||
+          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         if (!filters.marketType.includes(stockMarketType as "JP" | "US")) {
           return false;
         }
@@ -149,12 +151,15 @@ export const useFilters = (data: StockData[]) => {
       }
 
       // 都道府県フィルター（複数選択、日本株のみ）
-      if (
-        filters.prefecture.length > 0
-      ) {
-        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+      if (filters.prefecture.length > 0) {
+        const stockMarketType =
+          stock.市場タイプ ||
+          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         // 日本株の場合のみ都道府県フィルターを適用
-        if (stockMarketType === "JP" && !filters.prefecture.includes(stock.都道府県 || "")) {
+        if (
+          stockMarketType === "JP" &&
+          !filters.prefecture.includes(stock.都道府県 || "")
+        ) {
           return false;
         }
       }
@@ -640,22 +645,24 @@ export const useFilters = (data: StockData[]) => {
         return false;
       }
 
-      // ネットキャッシュフィルター（データがnull/undefinedの場合は含める）
+      // ネットキャッシュフィルター（キーは ネットキャッシュ または ネットキャッシュ（流動資産-負債））
+      const netCashValue =
+        stock.ネットキャッシュ ?? stock["ネットキャッシュ（流動資産-負債）"];
       if (
         filters.netCashMin !== null &&
-        stock.ネットキャッシュ !== null &&
-        stock.ネットキャッシュ !== undefined &&
-        typeof stock.ネットキャッシュ === "number" &&
-        stock.ネットキャッシュ < filters.netCashMin * 1000000
+        netCashValue !== null &&
+        netCashValue !== undefined &&
+        typeof netCashValue === "number" &&
+        netCashValue < filters.netCashMin * 1000000
       ) {
         return false;
       }
       if (
         filters.netCashMax !== null &&
-        stock.ネットキャッシュ !== null &&
-        stock.ネットキャッシュ !== undefined &&
-        typeof stock.ネットキャッシュ === "number" &&
-        stock.ネットキャッシュ > filters.netCashMax * 1000000
+        netCashValue !== null &&
+        netCashValue !== undefined &&
+        typeof netCashValue === "number" &&
+        netCashValue > filters.netCashMax * 1000000
       ) {
         return false;
       }
@@ -774,7 +781,9 @@ export const useFilters = (data: StockData[]) => {
     // 市場タイプフィルターが適用されている場合、該当する市場タイプのデータのみを対象にする
     if (filters.marketType && filters.marketType.length > 0) {
       filteredData = data.filter((stock) => {
-        const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        const stockMarketType =
+          stock.市場タイプ ||
+          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         return filters.marketType!.includes(stockMarketType as "JP" | "US");
       });
     }
@@ -794,7 +803,9 @@ export const useFilters = (data: StockData[]) => {
   const availablePrefectures = useMemo(() => {
     // 日本株のみを対象にする
     const jpStocks = data.filter((stock) => {
-      const stockMarketType = stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+      const stockMarketType =
+        stock.市場タイプ ||
+        detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
       return stockMarketType === "JP";
     });
 

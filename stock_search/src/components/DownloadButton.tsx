@@ -65,7 +65,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       const remaining = COOLDOWN_DURATION - timeSinceLastDownload;
       setCooldownRemaining(remaining);
       setDownloadMessage(
-        `⏱️ ${Math.ceil(remaining / 1000)}秒後に再度お試しください`,
+        `⏱️ ${Math.ceil(remaining / 1000)}秒後に再度お試しください`
       );
       setTimeout(() => setDownloadMessage(null), remaining + 500);
       return;
@@ -82,7 +82,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       const downloadFileName = generateFileNameWithFilters(
         fileName,
         data.length,
-        totalCount || data.length,
+        totalCount || data.length
       );
 
       // ダウンロード実行
@@ -118,11 +118,11 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     isDownloading || data.length === 0 || cooldownRemaining > 0;
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative flex-shrink-0 ${className}`}>
       <button
         onClick={handleDownload}
         disabled={isDisabled}
-        className={`btn btn-outline btn-sm gap-2 ${
+        className={`btn btn-outline btn-sm gap-1.5 md:gap-2 min-h-10 px-3 md:px-4 whitespace-nowrap inline-flex items-center ${
           data.length === 0 ? "btn-disabled" : ""
         } ${cooldownRemaining > 0 ? "btn-disabled opacity-60" : ""}`}
         title={

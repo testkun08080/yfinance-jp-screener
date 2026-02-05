@@ -1,10 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CSVViewer } from "../components/CSVViewer";
-import { Breadcrumb } from "../components/Breadcrumb";
-import { FileUpload } from "../components/FileUpload";
-// import { EXTERNAL_URLS } from "../constants/urls";
-import { FILE_SIZE } from "../constants/formatting";
+import {
+  MdFilterList,
+  MdTableChart,
+  MdError,
+  MdDescription,
+} from "react-icons/md";
+import { CSV_FILE_CONFIG } from "../constants/csv";
+import { Sidebar } from "../components/Sidebar";
+import { useCSVParser } from "../hooks/useCSVParser";
+import { useFilters } from "../hooks/useFilters";
+import { DataTable } from "../components/DataTable";
+import { Pagination } from "../components/Pagination";
+import {
+  ColumnSelector,
+  type ColumnConfig,
+} from "../components/ColumnSelector";
+import { getDefaultColumns } from "../utils/columnConfig";
+import { DownloadButton } from "../components/DownloadButton";
+import type { PaginationConfig } from "../types/stock";
+import { PAGINATION } from "../constants/ui";
 
 interface CSVFile {
   name: string;
@@ -16,154 +31,322 @@ interface CSVFile {
 
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mainFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (file: File) => {
-    setUploadError(null);
-
-    // アップロードされたファイルをCSVFile形式に変換
-    const uploadedCSVFile: CSVFile = {
+    setSelectedFile({
       name: file.name,
       displayName: file.name,
       size: file.size,
       lastModified: new Date(file.lastModified).toISOString(),
       url: URL.createObjectURL(file),
-    };
-
-    setSelectedFile(uploadedCSVFile);
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < FILE_SIZE.kilobyte) return `${bytes} B`;
-    if (bytes < FILE_SIZE.megabyte)
-      return `${(bytes / FILE_SIZE.kilobyte).toFixed(2)} KB`;
-    return `${(bytes / FILE_SIZE.megabyte).toFixed(2)} MB`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <Breadcrumb />
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-base-content mb-2">
-          📊 データビューア
-        </h1>
-        <p className="text-base-content/70">
-          CSVファイルをドラッグ&ドロップして分析開始
-        </p>
-      </div>
+  const { data, loading, error, reload } = useCSVParser(selectedFile);
+  const {
+    filters,
+    filteredData,
+    sortConfig,
+    availableIndustries,
+    availableMarkets,
+    availablePrefectures,
+    updateFilter,
+    clearFilters,
+    handleSort,
+  } = useFilters(data);
 
-      {/* 法的注意事項バナー */}
-      <div className="alert alert-warning mb-6">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+  const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
+    currentPage: 1,
+    itemsPerPage: PAGINATION.defaultItemsPerPage,
+    totalItems: 0,
+  });
+  const [columns, setColumns] = useState<ColumnConfig[]>([]);
+
+  useEffect(() => {
+    if (data.length > 0) {
+      const availableColumns = Object.keys(data[0]).filter(
+        (key) => !key.startsWith("_")
+      );
+      setColumns(getDefaultColumns(availableColumns));
+    }
+  }, [data]);
+
+  useEffect(() => {
+    setPaginationConfig((prev) => ({
+      ...prev,
+      currentPage: 1,
+      totalItems: filteredData.length,
+    }));
+  }, [filteredData.length]);
+
+  const handlePageChange = (page: number) => {
+    setPaginationConfig((prev) => ({ ...prev, currentPage: page }));
+  };
+  const handleItemsPerPageChange = (itemsPerPage: number) => {
+    setPaginationConfig((prev) => ({
+      ...prev,
+      currentPage: 1,
+      itemsPerPage,
+    }));
+  };
+  const handleColumnChange = (key: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.key === key ? { ...col, visible } : col))
+    );
+  };
+  const handleCategoryToggle = (category: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.category === category && !col.essential ? { ...col, visible } : col
+      )
+    );
+  };
+
+  const openFileSelect = () => mainFileInputRef.current?.click();
+
+  const sidebarProps = {
+    hasFile: !!selectedFile,
+    fileInfo: selectedFile
+      ? { name: selectedFile.name, size: selectedFile.size }
+      : null,
+    onFileSelect: handleFileUpload,
+    onClear: () => setSelectedFile(null),
+    onOpenFileSelect: openFileSelect,
+    filters,
+    onFilterChange: updateFilter,
+    onClearFilters: clearFilters,
+    availableIndustries: selectedFile ? availableIndustries : [],
+    availableMarkets: selectedFile ? availableMarkets : [],
+    availablePrefectures: selectedFile ? availablePrefectures : [],
+  };
+
+  return (
+    <div className="flex flex-1 overflow-hidden flex-col h-full">
+      {/* 常にDOMに置き、メインD&Dとサイドバー「データセットを変更」の両方で使用 */}
+      <input
+        ref={mainFileInputRef}
+        type="file"
+        accept={CSV_FILE_CONFIG.acceptAttribute}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(file);
+          e.target.value = "";
+        }}
+        className="hidden"
+      />
+      {/* モバイル: サイドバーをドロワーで表示 */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" role="presentation">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="閉じる"
+            onClick={() => setSidebarOpen(false)}
           />
-        </svg>
-        <div>
-          <div className="font-bold">個人利用目的のみでご利用ください</div>
-          <div className="text-sm">
-            Yahoo Financeデータの二次配布は禁止されています。
-            <a href="/about" className="link link-primary ml-2">
-              詳細はこちら
-            </a>
+          <div className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white z-50">
+            <Sidebar
+              {...sidebarProps}
+              onClose={() => setSidebarOpen(false)}
+              isDrawer
+            />
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="space-y-6">
-        {/* ファイルアップロード領域 */}
-        <FileUpload
-          onFileSelect={handleFileUpload}
-          loading={false}
-          error={uploadError}
-        />
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* デスクトップ: 常に表示 / モバイル: 非表示（ドロワーで開く） */}
+        <div className="hidden md:block flex-shrink-0">
+          <Sidebar {...sidebarProps} />
+        </div>
 
-        {/* 読み込み済みファイル情報 */}
-        {selectedFile && (
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="card-title text-lg">📄 {selectedFile.name}</h2>
-                  <div className="text-sm text-base-content/70 mt-1">
-                    サイズ: {formatFileSize(selectedFile.size)} | 更新日:{" "}
-                    {formatDate(selectedFile.lastModified)}
+        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
+          {/* モバイル: フィルターを開くボタン */}
+          <div className="md:hidden flex-shrink-0 px-3 py-2 border-b border-[var(--border)] bg-white flex items-center gap-2">
+            <button
+              type="button"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <MdFilterList className="text-lg" />
+              フィルター・データセット
+            </button>
+          </div>
+          {!selectedFile && (
+            <div
+              className="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-xl mx-4 md:mx-6 bg-slate-50/50 hover:border-[var(--primary)] hover:bg-indigo-50/20 transition-colors cursor-pointer group"
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === CSV_FILE_CONFIG.mimeType) {
+                  handleFileUpload(file);
+                }
+              }}
+              onClick={openFileSelect}
+            >
+              <MdTableChart className="text-6xl text-slate-300 group-hover:text-[var(--primary)] mb-4 transition-colors" />
+              <h2 className="text-xl font-bold text-slate-700 mb-2">
+                CSV を読み込んでください
+              </h2>
+              <p className="text-sm text-slate-500 mb-4">
+                ここに CSV をドロップするかクリックしてファイルを選択
+              </p>
+              <p className="text-xs text-slate-400 mb-6">
+                読み込み後はサイドバーから別のファイルに差し替えできます
+              </p>
+              <Link
+                to="/usage"
+                className="text-sm text-[var(--primary)] font-semibold hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                使い方 →
+              </Link>
+            </div>
+          )}
+
+          {selectedFile && loading && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="loading loading-spinner loading-lg text-[var(--primary)]" />
+              <p className="mt-4 text-sm text-slate-600">
+                CSV データを読み込み中...
+              </p>
+            </div>
+          )}
+
+          {selectedFile && error && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="alert alert-error max-w-md">
+                <MdError />
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary mt-4"
+                onClick={reload}
+              >
+                再読み込み
+              </button>
+            </div>
+          )}
+
+          {selectedFile && !loading && !error && data.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+              <MdDescription className="text-6xl text-slate-300 mb-4" />
+              <h3 className="text-lg font-bold text-slate-700 mb-2">
+                データがありません
+              </h3>
+              <p className="text-sm text-slate-500">
+                CSV に有効なデータが含まれていません
+              </p>
+            </div>
+          )}
+
+          {selectedFile && !loading && !error && data.length > 0 && (
+            <>
+              {/* Main toolbar: stats + buttons */}
+              <div className="px-3 md:px-6 py-3 md:py-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+                <div className="flex items-center gap-6 md:gap-10">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                      総件数
+                    </p>
+                    <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                      {data.length.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-[1px] h-10 bg-slate-100" />
+                  <div>
+                    <p className="text-[11px] font-bold text-[var(--primary)] uppercase tracking-tight">
+                      絞り込み結果
+                    </p>
+                    <p className="text-2xl md:text-3xl font-bold text-[var(--primary)]">
+                      {filteredData.length.toLocaleString()}
+                    </p>
                   </div>
                 </div>
-                <button
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setSelectedFile(null)}
-                  aria-label="ファイルを閉じる"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-3">
+                  <ColumnSelector
+                    columns={columns}
+                    onColumnChange={handleColumnChange}
+                    onCategoryToggle={handleCategoryToggle}
+                  />
+                  <DownloadButton
+                    data={filteredData}
+                    columns={columns}
+                    fileName={selectedFile.name.replace(/\.[^/.]+$/, "")}
+                    totalCount={data.length}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* CSVビューア */}
-        {selectedFile ? (
-          <CSVViewer file={selectedFile} />
-        ) : (
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body text-center py-12">
-              <div className="text-6xl mb-4">📊</div>
-              <h3 className="text-2xl font-bold mb-2">
-                CSVファイルを読み込んでください
-              </h3>
-              <p className="text-base-content/70 mb-4">
-                上のエリアにCSVファイルをドラッグ&ドロップ
-                <br />
-                またはクリックしてファイルを選択
-              </p>
+              {/* Table area */}
+              <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
+                <DataTable
+                  data={filteredData}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  currentPage={paginationConfig.currentPage}
+                  itemsPerPage={paginationConfig.itemsPerPage}
+                  visibleColumns={columns}
+                />
+              </div>
 
-              <div className="divider my-8">使い方</div>
-
-              <div className="max-w-2xl mx-auto">
-                <Link
-                  to="/usage"
-                  className="btn btn-primary btn-lg gap-2 w-full sm:w-auto"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              {/* Footer: pagination（スマホで見切れないよう下に余白） */}
+              <footer className="min-h-14 border-t border-[var(--border)] bg-white px-4 md:px-6 py-3 pb-8 md:pb-3 flex flex-wrap items-center justify-center md:justify-between gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 md:gap-4">
+                  <span className="text-xs font-semibold text-slate-500">
+                    表示件数
+                  </span>
+                  <select
+                    className="text-xs border border-slate-200 rounded py-1 pl-2 pr-8 focus:ring-[var(--primary)]"
+                    value={paginationConfig.itemsPerPage}
+                    onChange={(e) =>
+                      handleItemsPerPageChange(parseInt(e.target.value))
+                    }
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  使い方ページへ
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+                    {PAGINATION.itemsPerPageOptions.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <nav className="flex items-center gap-1">
+                  <Pagination
+                    variant="compact"
+                    config={{
+                      ...paginationConfig,
+                      totalItems: filteredData.length,
+                    }}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </nav>
+                <div className="text-[11px] font-medium text-slate-400 whitespace-nowrap">
+                  表示中:{" "}
+                  {filteredData.length === 0
+                    ? "0 - 0"
+                    : `${
+                        (paginationConfig.currentPage - 1) *
+                          paginationConfig.itemsPerPage +
+                        1
+                      } - ${Math.min(
+                        paginationConfig.currentPage *
+                          paginationConfig.itemsPerPage,
+                        filteredData.length
+                      )}`}{" "}
+                  / {filteredData.length.toLocaleString()} 件
+                </div>
+              </footer>
+            </>
+          )}
+        </main>
       </div>
     </div>
   );

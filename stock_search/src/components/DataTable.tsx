@@ -38,16 +38,17 @@ export const DataTable: FC<DataTableProps> = ({
   const SortableHeader: FC<{
     label: string;
     sortKey: keyof StockData;
+    align?: "left" | "right";
     className?: string;
-  }> = ({ label, sortKey, className = "" }) => (
+  }> = ({ label, sortKey, align = "left", className = "" }) => (
     <th
-      className={`cursor-pointer hover:bg-base-200 transition-colors ${className}`}
+      className={`px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-[var(--border)] cursor-pointer hover:bg-slate-100 transition-colors ${
+        align === "right" ? "text-right" : "text-left"
+      } ${className}`}
       onClick={() => onSort(sortKey)}
     >
-      <div className="flex items-center justify-center gap-1">
-        {label}
-        <span className="text-xs opacity-60">{getSortIcon(sortKey)}</span>
-      </div>
+      <span>{label}</span>
+      <span className="ml-1 opacity-60">{getSortIcon(sortKey)}</span>
     </th>
   );
 
@@ -134,100 +135,91 @@ export const DataTable: FC<DataTableProps> = ({
     }
   };
 
-  // 金額フィールドが表示されているかチェック
-  const hasCurrencyFields = columns.some((col) => isCurrencyField(col.key));
+  const isNumericColumn = (format: string) => format !== "string";
 
   return (
     <div
-      className="overflow-x-auto bg-white rounded-lg shadow-sm"
-      style={{ maxWidth: "100vw" }}
+      className="overflow-x-auto custom-scrollbar"
+      style={{ maxWidth: "100%" }}
     >
-      {/* 単位表示 */}
-      {hasCurrencyFields && (
-        <div className="px-2 sm:px-4 py-2 bg-base-100  text-xs sm:text-sm text-base-content/70">
-          💰 金額単位: 百万円
-        </div>
-      )}
-      <table className="table table-zebra w-full min-w-max">
-        <thead className="bg-base-200">
-          <tr className="text-center">
+      <table className="w-full border-separate border-spacing-0 min-w-max">
+        <thead className="sticky top-0 z-10 bg-slate-50 border-b border-[var(--border)]">
+          <tr>
             {columns.map((column, index) => (
               <SortableHeader
                 key={column.key}
                 label={column.label}
                 sortKey={column.key}
-                className={`min-w-24 ${
-                  index === 0 || index === 1 ? " z-10 bg-base-200" : ""
-                } ${
-                  index === 0
-                    ? "left-0 min-w-20 max-w-20"
-                    : index === 1
-                    ? "left-20 min-w-16 max-w-16"
-                    : ""
-                }`}
+                align={isNumericColumn(column.format) ? "right" : "left"}
+                className={index === 0 ? "min-w-[4rem]" : ""}
               />
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-100">
           {currentData.map((stock, index) => (
             <tr
-              key={`${stock.銘柄コード}-${index}`}
-              className="hover:bg-base-50"
+              key={`${stock.銘柄コード ?? stock.コード}-${index}`}
+              className={`transition-colors group ${
+                index % 2 === 1 ? "bg-slate-50/50" : ""
+              } hover:bg-indigo-50/30`}
             >
-              {columns.map((column, colIndex) => {
+              {columns.map((column) => {
                 const value = stock[column.key];
                 const isNetCash =
-                  column.key === "ネットキャッシュ（流動資産-負債）";
-                // const isSticky = colIndex === 0 || colIndex === 1;
-                const isSticky = false;
-                const stickyClass = isSticky
-                  ? `sticky z-10 bg-white ${
-                      colIndex === 0
-                        ? "left-0 min-w-20 max-w-20"
-                        : "left-20 min-w-16 max-w-16"
-                    }`
-                  : "";
+                  column.key === "ネットキャッシュ（流動資産-負債）" ||
+                  column.key === "ネットキャッシュ";
 
                 return (
                   <td
                     key={column.key}
-                    className={`text-xs ${
+                    className={`px-4 py-3 text-sm ${
                       column.format === "string" ? "text-left" : "text-right"
-                    } ${stickyClass} px-1`}
+                    }`}
                   >
                     {column.format === "string" && column.key === "会社名" ? (
-                      <div
-                        className="max-w-20 truncate font-medium text-xs"
+                      <span
+                        className="font-bold text-slate-800 group-hover:text-[var(--primary)] transition-colors truncate block max-w-[12rem]"
                         title={String(value)}
                       >
                         {String(value || "-")}
-                      </div>
+                      </span>
                     ) : column.format === "string" &&
-                      column.key === "銘柄コード" ? (
-                      <span className="font-mono text-xs">
+                      (column.key === "銘柄コード" ||
+                        column.key === "コード") ? (
+                      <span className="font-mono font-medium text-slate-500">
                         {String(value || "-")}
                       </span>
                     ) : column.format === "string" &&
                       (column.key === "業種" || column.key === "優先市場") ? (
-                      <div
-                        className="max-w-20 truncate text-xs"
+                      <span
+                        className="font-medium text-slate-600 text-xs truncate block max-w-[8rem]"
                         title={String(value)}
                       >
                         {String(value || "-").replace("（内国株式）", "")}
-                      </div>
+                      </span>
                     ) : isNetCash ? (
                       <span
                         className={
-                          value && typeof value === "number" && value > 0
-                            ? "text-success"
-                            : "text-error"
+                          value != null &&
+                          typeof value === "number" &&
+                          value > 0
+                            ? "font-bold text-emerald-600"
+                            : "font-bold text-rose-600"
                         }
                       >
                         {formatValue(value, column.format)}
                       </span>
                     ) : (
-                      formatValue(value, column.format)
+                      <span
+                        className={
+                          column.key === "時価総額"
+                            ? "font-semibold"
+                            : "text-slate-600"
+                        }
+                      >
+                        {formatValue(value, column.format)}
+                      </span>
                     )}
                   </td>
                 );
@@ -238,7 +230,7 @@ export const DataTable: FC<DataTableProps> = ({
       </table>
 
       {currentData.length === 0 && (
-        <div className="text-center py-8 text-base-content/60">
+        <div className="text-center py-12 text-slate-500 text-sm">
           データがありません
         </div>
       )}

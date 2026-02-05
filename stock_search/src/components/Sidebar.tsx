@@ -225,7 +225,7 @@ export const Sidebar = ({
         {/* 検索 */}
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">
-            検索
+            🔍 検索
           </label>
           <div className="space-y-2">
             <input
@@ -250,7 +250,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2" open>
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">
-                基本フィルター
+                📋 基本フィルター
               </span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
@@ -347,7 +347,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">
-                バリュエーション
+                📊 バリュエーション
               </span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
@@ -440,7 +440,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">
-                業績・収益性
+                💹 業績・収益性
               </span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
@@ -492,7 +492,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">
-                バランスシート
+                🏛️ バランスシート
               </span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
@@ -544,7 +544,7 @@ export const Sidebar = ({
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
               <span className="text-xs font-bold text-slate-700">
-                キャッシュ
+                💰 キャッシュ
               </span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
@@ -585,7 +585,7 @@ export const Sidebar = ({
           onClick={onClearFilters}
         >
           <MdFilterList className="text-lg" />
-          フィルターをクリア
+          🗑️ フィルターをクリア
         </button>
       </div>
     </aside>

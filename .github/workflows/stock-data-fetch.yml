@@ -18,10 +18,6 @@ on:
           - "stocks_3.json"
           - "stocks_4.json"
           - "stocks_sample.json"
-          - "us_stocks_1.json"
-          - "us_stocks_2.json"
-          - "us_stocks_3.json"
-          - "us_stocks_4.json"
 
 jobs:
   fetch-stock-data:

@@ -17,15 +17,6 @@ on:
         required: false
         default: "Latest CSV files combination"
         type: string
-      market_type:
-        description: "市場 (JP: 日本株, US: 米国株, both: 両方)"
-        required: false
-        default: "JP"
-        type: choice
-        options:
-          - "JP"
-          - "US"
-          - "both"
 
 jobs:
   combine-csv:
@@ -53,7 +44,6 @@ jobs:
         run: |
           echo "Target date: ${{ github.event.inputs.custom_date || 'today' }}"
           echo "Reason: ${{ github.event.inputs.reason || 'Auto-triggered after deployment' }}"
-          echo "Market type: ${{ github.event.inputs.market_type || 'JP' }}"
           echo "Working directory: $(pwd)"
           echo "Current CSV files in Export directory:"
           ls -la stock_list/Export/ 2>/dev/null || echo "No files in Export directory"
@@ -61,44 +51,30 @@ jobs:
       - name: 🔍 Check existing CSV files
         working-directory: ./stock_list
         run: |
-          echo "📄 Existing CSV files (JP):"
-          find Export/ -name "japanese_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No JP CSV files found"
+          echo "📄 Existing CSV files:"
+          find Export/ -name "japanese_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No CSV files found"
           echo ""
-          echo "📄 Existing CSV files (US):"
-          find Export/ -name "us_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No US CSV files found"
-          echo ""
-          echo "📊 File statistics (JP):"
-          find Export/ -name "japanese_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || true
-          echo "📊 File statistics (US):"
-          find Export/ -name "us_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || true
+          echo "📊 File statistics:"
+          find Export/ -name "japanese_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || echo "No files for statistics"
 
       - name: 🔗 Combine latest CSV files
         working-directory: ./stock_list
         run: |
           echo "🚀 Starting CSV combination..."
           echo "Timestamp: $(date)"
-          echo "Market type: ${{ github.event.inputs.market_type || 'JP' }}"
 
           # Pythonスクリプトの引数を準備
           ARGS=""
           if [ -n "${{ github.event.inputs.custom_date }}" ]; then
-            ARGS="$ARGS --date ${{ github.event.inputs.custom_date }}"
+            ARGS="--date ${{ github.event.inputs.custom_date }}"
             echo "Target date: ${{ github.event.inputs.custom_date }}"
           else
             echo "Target date: today ($(date +'%Y%m%d'))"
           fi
 
-          MT="${{ github.event.inputs.market_type || 'JP' }}"
-          if [ "$MT" = "JP" ] || [ "$MT" = "US" ]; then
-            ARGS="$ARGS --market-type $MT"
-            echo "Market: $MT only"
-          else
-            echo "Market: both (JP + US)"
-          fi
-
           echo "Arguments: $ARGS"
 
-          # CSV結合スクリプトを実行（指定日付・市場のファイルを結合）
+          # CSV結合スクリプトを実行（指定日付のファイルのみを結合）
           python combine_latest_csv.py $ARGS
 
           echo "✅ CSV combination completed"

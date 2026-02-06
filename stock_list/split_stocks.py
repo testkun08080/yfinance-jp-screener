@@ -62,7 +62,10 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
         # 各ファイルの情報を表示
         logger.info("\n作成されたファイル:")
         for i in range(total_files):
-            filename = f"stocks_{i + 1}.json"
+            if "us_stocks" in input_file.lower():
+                filename = f"us_stocks_{i + 1}.json"
+            else:
+                filename = f"stocks_{i + 1}.json"
             with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
             logger.info(f"  {filename}: {len(data)}社")

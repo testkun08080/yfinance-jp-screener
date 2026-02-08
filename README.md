@@ -77,7 +77,7 @@ cd yfinance-jp-screener
 
 # 2. 環境変数を設定
 cp .env.example .env
-# STOCK_FILEはデフォルトでは"stocks_sample.json"になっています。 必ず全て取得したい場合は"stocks_all.json"へ変えて下さい
+# デフォルト: MARKET=JP で stocks_1.json（約1000銘柄）。米国株は MARKET=US で us_stocks_1.json。STOCK_FILE で上書き可。
 
 # 3. Docker起動（データ収集 → ビルド → プレビュー）
 
@@ -186,8 +186,8 @@ GitHub Actions でワークフローを使用する前に、以下の設定変�
 1. このリポジトリを**プライベートリポジトリとしてクローン、もしくはフォーク**します
    - パブリックリポジトリで使用すると、データの二次配布に当たる可能性があると考えられます
 2. フォークしたプライベートリポジトリの **Actions** タブに移動
-3. **""Stock List Update"** を実行して、リストを取得
-4. **" Sequential Stock Fetch - Part 1"** を実行しデータのダウンロード（自動的に終われば次のワークフローが起動するはずです...3~4 時間ほどかかります(日本株の場合)）
+3. **""Stock List Update"** を実行して、リストを取得(米国は2時間ぐらいかかります)
+4. **"Sequential Stock Fetch"** を実行しデータのダウンロード（Part 1 から開始し、分割ファイル数に応じて Part 2, 3, … が自動で連鎖します。日本株 4 分割の場合で 3〜4 時間ほど、米国株は、14時間ほど）
 5. 実行完了後、`stock_list/Export/` ディレクトリにデータファイルが生成されます
 
 ---

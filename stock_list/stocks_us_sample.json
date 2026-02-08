@@ -1,0 +1,23 @@
+[
+  {
+    "コード": "AACB",
+    "銘柄名": "Artius II Acquisition Inc.",
+    "市場・商品区分": "NASDAQ",
+    "33業種区分": "Financial Services",
+    "市場タイプ": "US"
+  },
+  {
+    "コード": "AAPI",
+    "銘柄名": "Apple iSports Group, Inc.",
+    "市場・商品区分": "NASDAQ",
+    "33業種区分": "Consumer Cyclical",
+    "市場タイプ": "US"
+  },
+  {
+    "コード": "AAPL",
+    "銘柄名": "Apple Inc.",
+    "市場・商品区分": "NASDAQ",
+    "33業種区分": "Technology",
+    "市場タイプ": "US"
+  }
+]

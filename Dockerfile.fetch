@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 株式データ処理スクリプトをコピー
 COPY stock_list/*.py ./
+COPY stock_list/run_fetch.sh ./
 COPY stock_list/stocks_sample.json ./
 
 # データディレクトリを作成
@@ -26,13 +27,13 @@ RUN mkdir -p Export
 
 # 非rootユーザーで実行
 RUN useradd -m -u 1000 stockuser && \
-    chown -R stockuser:stockuser /app
+    chown -R stockuser:stockuser /app && \
+    chmod +x /app/run_fetch.sh
 USER stockuser
 
-# 環境変数のデフォルト値を設定
-ENV STOCK_FILE=stocks_sample.json
+# 環境変数: MARKET=JP|US, STOCK_FILE未指定時は stocks_1.json(JP) / us_stocks_1.json(US)
+ENV MARKET=JP
 ENV CHUNK_SIZE=1000
 
-# デフォルトコマンド（株式リスト取得 → 分割 → データ収集）
-# 環境変数を使用して動的に設定
-CMD ["sh", "-c", "python get_jp_stocklist.py && python split_stocks.py --input stocks_all.json --size ${CHUNK_SIZE} && python sumalize.py ${STOCK_FILE} && python combine_latest_csv.py"]
+# デフォルトコマンド（run_fetch.sh が市場に応じてリスト取得→分割→収集→結合）
+CMD ["sh", "./run_fetch.sh"]

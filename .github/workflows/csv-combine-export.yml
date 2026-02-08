@@ -17,6 +17,15 @@ on:
         required: false
         default: "Latest CSV files combination"
         type: string
+      market_type:
+        description: "市場 (JP: 日本株, US: 米国株, both: 両方)"
+        required: false
+        default: "JP"
+        type: choice
+        options:
+          - "JP"
+          - "US"
+          - "both"
 
 jobs:
   combine-csv:
@@ -44,6 +53,7 @@ jobs:
         run: |
           echo "Target date: ${{ github.event.inputs.custom_date || 'today' }}"
           echo "Reason: ${{ github.event.inputs.reason || 'Auto-triggered after deployment' }}"
+          echo "Market type: ${{ github.event.inputs.market_type || 'JP' }}"
           echo "Working directory: $(pwd)"
           echo "Current CSV files in Export directory:"
           ls -la stock_list/Export/ 2>/dev/null || echo "No files in Export directory"
@@ -51,44 +61,69 @@ jobs:
       - name: 🔍 Check existing CSV files
         working-directory: ./stock_list
         run: |
-          echo "📄 Existing CSV files:"
-          find Export/ -name "japanese_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No CSV files found"
+          echo "📄 Existing CSV files (JP):"
+          find Export/ -name "japanese_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No JP CSV files found"
           echo ""
-          echo "📊 File statistics:"
-          find Export/ -name "japanese_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || echo "No files for statistics"
+          echo "📄 Existing CSV files (US):"
+          find Export/ -name "us_stocks_data_*.csv" -type f | sort -r | head -10 || echo "No US CSV files found"
+          echo ""
+          echo "📊 File statistics (JP):"
+          find Export/ -name "japanese_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || true
+          echo "📊 File statistics (US):"
+          find Export/ -name "us_stocks_data_*.csv" -type f -exec ls -lh {} \; | head -5 || true
 
       - name: 🔗 Combine latest CSV files
         working-directory: ./stock_list
         run: |
-          echo "🚀 Starting CSV combination..."
+          # Security: read inputs once into variables; validate before use to prevent injection
+          DATE_INPUT="${{ github.event.inputs.custom_date }}"
+          MT="${{ github.event.inputs.market_type || 'JP' }}"
+
+          echo "🚀 Starting CSV combination (market_type=$MT)..."
           echo "Timestamp: $(date)"
 
-          # Pythonスクリプトの引数を準備
-          ARGS=""
-          if [ -n "${{ github.event.inputs.custom_date }}" ]; then
-            ARGS="--date ${{ github.event.inputs.custom_date }}"
-            echo "Target date: ${{ github.event.inputs.custom_date }}"
+          # Validate custom_date: if provided, must be exactly YYYYMMDD (8 digits)
+          if [ -n "$DATE_INPUT" ]; then
+            if ! echo "$DATE_INPUT" | grep -qE '^[0-9]{8}$'; then
+              echo "❌ Invalid custom_date: must be YYYYMMDD (8 digits), got: $DATE_INPUT"
+              exit 1
+            fi
+            echo "Target date: $DATE_INPUT"
           else
             echo "Target date: today ($(date +'%Y%m%d'))"
           fi
 
-          echo "Arguments: $ARGS"
+          # Whitelist market_type (choice input already restricts; enforce in script)
+          case "$MT" in
+            JP|US|both) ;;
+            *) echo "⚠️ Invalid market_type, defaulting to JP"; MT=JP ;;
+          esac
 
-          # CSV結合スクリプトを実行（指定日付のファイルのみを結合）
-          python combine_latest_csv.py $ARGS
+          # Base args (date only); run combination per market so "both" produces JP + US files
+          ARGS=()
+          if [ -n "$DATE_INPUT" ]; then
+            ARGS+=(--date "$DATE_INPUT")
+          fi
+
+          if [ "$MT" = "JP" ] || [ "$MT" = "both" ]; then
+            echo "Combining JP market: ${ARGS[*]} --market-type JP"
+            python combine_latest_csv.py "${ARGS[@]}" --market-type JP
+          fi
+          if [ "$MT" = "US" ] || [ "$MT" = "both" ]; then
+            echo "Combining US market: ${ARGS[*]} --market-type US"
+            python combine_latest_csv.py "${ARGS[@]}" --market-type US
+          fi
 
           echo "✅ CSV combination completed"
           echo "📄 Generated files:"
-          ls -la Export/*_combined.csv 2>/dev/null || echo "No combined files generated"
+          ls -la Export/*_combined.csv Export/*_jp_combined.csv Export/*_us_combined.csv 2>/dev/null || echo "No combined files generated"
 
       - name: 📊 Show combination results
         working-directory: ./stock_list
         run: |
           echo "🎯 Combination Results:"
           echo "===================="
-
-          # 結合ファイルの情報表示
-          for file in Export/*_combined.csv; do
+          for file in Export/*_combined.csv Export/*_jp_combined.csv Export/*_us_combined.csv; do
             if [ -f "$file" ]; then
               echo "📁 File: $(basename "$file")"
               echo "📏 Size: $(ls -lh "$file" | awk '{print $5}')"
@@ -97,9 +132,6 @@ jobs:
               echo "--------------------"
             fi
           done
-
-          # Export ディレクトリの全体状況
-          echo ""
           echo "📂 Export Directory Status:"
           ls -lah Export/ | head -20
 
@@ -113,6 +145,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: |
-            📊 CSV結合ファイル生成 ($(date +'%Y年%m月%d日'))
+            📊 CSV結合ファイル生成 ($(date +'%Y年%m月%d日')) market=${{ github.event.inputs.market_type || 'JP' }}
 
 

@@ -108,12 +108,12 @@ export const useFilters = (data: StockData[]) => {
 
   const filteredData = useMemo(() => {
     const filtered = data.filter((stock) => {
-      // 会社名フィルター
-      if (
-        filters.companyName &&
-        !stock.会社名?.toLowerCase().includes(filters.companyName.toLowerCase())
-      ) {
-        return false;
+      // 会社名フィルター（数値など非文字列が入る場合に対応）
+      if (filters.companyName) {
+        const companyNameStr = String(stock.会社名 ?? "").toLowerCase();
+        if (!companyNameStr.includes(filters.companyName.toLowerCase())) {
+          return false;
+        }
       }
 
       // 銘柄コードフィルター

@@ -14,8 +14,10 @@ services:
       - ./stock_list/Export:/app/Export:rw
     environment:
       - PYTHONUNBUFFERED=1
-      - STOCK_FILE=${STOCK_FILE:-stocks_sample.json}
+      - MARKET=${MARKET:-JP}
+      - STOCK_FILE=${STOCK_FILE:-}
       - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+      - SEC_USER_AGENT_CONTACT=${SEC_USER_AGENT_CONTACT:-}
     restart: "no"
 
   # React フロントエンドサービス

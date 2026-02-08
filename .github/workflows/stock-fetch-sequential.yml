@@ -1,0 +1,191 @@
+# 可変 Part 対応: リポジトリ内の stocks_*.json / us_stocks_*.json の数に応じて
+# Part 1 → 2 → ... → N と連鎖し、最後に CSV Combine をトリガーする
+name: 📊 Sequential Stock Fetch
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "市場 (日本株=JP / 米国株=US)"
+        required: true
+        default: "JP"
+        type: choice
+        options:
+          - "JP"
+          - "US"
+      part_number:
+        description: "Part 番号 (1 から開始。通常は未指定で Part 1 のみ実行し、以降は自動連鎖)"
+        required: false
+        default: "1"
+        type: string
+      reason:
+        description: "開始理由（オプション）"
+        required: false
+        default: "Sequential stock data collection"
+        type: string
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      total_parts: ${{ steps.outputs.outputs.total_parts }}
+      current_file: ${{ steps.outputs.outputs.current_file }}
+      next_part: ${{ steps.outputs.outputs.next_part }}
+      trigger_next: ${{ steps.outputs.outputs.trigger_next }}
+      trigger_combine: ${{ steps.outputs.outputs.trigger_combine }}
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📂 Discover stock files
+        id: outputs
+        run: |
+          MARKET="${{ github.event.inputs.market }}"
+          PART_NUMBER="${{ github.event.inputs.part_number }}"
+          PART=${PART_NUMBER:-1}
+
+          if [ "$MARKET" = "US" ]; then
+            PREFIX=us_stocks_
+          else
+            PREFIX=stocks_
+          fi
+
+          # ソート済みでファイル一覧を取得（stocks_1.json, stocks_2.json, ...）
+          FILES=$(ls stock_list/${PREFIX}[0-9]*.json 2>/dev/null | sort -V)
+          TOTAL_PARTS=$(echo "$FILES" | grep -c . || echo "0")
+          if [ "$TOTAL_PARTS" = "0" ]; then
+            echo "::error::No files found: stock_list/${PREFIX}[0-9]*.json"
+            exit 1
+          fi
+
+          CURRENT_FILE=$(echo "$FILES" | sed -n "${PART}p" | xargs basename)
+          if [ -z "$CURRENT_FILE" ] || [ ! -f "stock_list/$CURRENT_FILE" ]; then
+            echo "::error::Part $PART not found. total_parts=$TOTAL_PARTS"
+            exit 1
+          fi
+
+          NEXT_PART=$((PART + 1))
+          TRIGGER_NEXT="false"
+          TRIGGER_COMBINE="false"
+          if [ "$NEXT_PART" -le "$TOTAL_PARTS" ]; then
+            TRIGGER_NEXT="true"
+          else
+            TRIGGER_COMBINE="true"
+          fi
+
+          echo "total_parts=$TOTAL_PARTS" >> $GITHUB_OUTPUT
+          echo "current_file=$CURRENT_FILE" >> $GITHUB_OUTPUT
+          echo "next_part=$NEXT_PART" >> $GITHUB_OUTPUT
+          echo "trigger_next=$TRIGGER_NEXT" >> $GITHUB_OUTPUT
+          echo "trigger_combine=$TRIGGER_COMBINE" >> $GITHUB_OUTPUT
+          echo "Part $PART / $TOTAL_PARTS → file=$CURRENT_FILE, trigger_next=$TRIGGER_NEXT, trigger_combine=$TRIGGER_COMBINE"
+
+  fetch:
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    outputs:
+      success: ${{ steps.process.outcome == 'success' }}
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stock_list/requirements.txt
+
+      - name: 📋 Show process info
+        run: |
+          echo "🚀 Sequential Stock Fetch - Part ${{ github.event.inputs.part_number }} / ${{ needs.discover.outputs.total_parts }} (market=${{ github.event.inputs.market }})"
+          echo "Processing file: ${{ needs.discover.outputs.current_file }}"
+          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo "Timestamp: $(date)"
+          ls -la stock_list/
+
+      - name: 🏃 Process current part
+        id: process
+        working-directory: ./stock_list
+        run: |
+          echo "🚀 Starting stock data collection for ${{ needs.discover.outputs.current_file }}..."
+          echo "Timestamp: $(date)"
+          python sumalize.py "${{ needs.discover.outputs.current_file }}"
+          echo "✅ Part ${{ github.event.inputs.part_number }} completed successfully"
+          ls -la Export/ 2>/dev/null || echo "No files in Export directory"
+
+      - name: Git config and pull
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
+
+      - name: 💾 Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📊 Sequential Stock Fetch - Part ${{ github.event.inputs.part_number }}/${{ needs.discover.outputs.total_parts }} 完了 ($(date +'%Y年%m月%d日 %H:%M'))"
+          push_options: --force
+
+  trigger-next:
+    needs: [discover, fetch]
+    runs-on: ubuntu-latest
+    if: needs.discover.outputs.trigger_next == 'true' && needs.fetch.outputs.success == 'true'
+    steps:
+      - name: 🚀 Trigger next part
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const market = '${{ github.event.inputs.market }}' || 'JP';
+            const nextPart = '${{ needs.discover.outputs.next_part }}';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'stock-fetch-sequential.yml',
+              ref: 'main',
+              inputs: {
+                market: market,
+                part_number: nextPart,
+                reason: 'Auto-triggered: Part ' + nextPart
+              }
+            });
+            console.log('✅ Triggered Part ' + nextPart + ' (market=' + market + ')');
+
+  trigger-combine:
+    needs: [discover, fetch]
+    runs-on: ubuntu-latest
+    if: needs.discover.outputs.trigger_combine == 'true' && needs.fetch.outputs.success == 'true'
+    steps:
+      - name: 📊 Summary
+        run: |
+          echo "🎉 All ${{ needs.discover.outputs.total_parts }} parts completed (market=${{ github.event.inputs.market }})"
+          echo "🔄 Triggering CSV Combine & Export..."
+
+      - name: 🚀 Trigger CSV Combine & Export
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const market = '${{ github.event.inputs.market }}' || 'JP';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'csv-combine-export.yml',
+              ref: 'main',
+              inputs: {
+                reason: 'Auto-triggered after Sequential Stock Fetch (all parts)',
+                market_type: market
+              }
+            });
+            console.log('✅ Triggered: CSV Combine & Export (market_type=' + market + ')');

@@ -67,12 +67,12 @@ def get_us_ticker_list() -> List[str]:
         url = "https://www.sec.gov/files/company_tickers.json"
         # SECのAPI使用規約に従い、User-Agentに連絡先を含める
         # 環境変数から連絡先を取得（uvで設定された環境変数またはシステム環境変数）
-        contact_email = os.getenv("SEC_USER_AGENT_CONTACT", "your@email.com")
+        # 空文字は未設定扱い（GHA で secret 未設定だと "" が渡る）
+        contact_email = (os.getenv("SEC_USER_AGENT_CONTACT") or "").strip() or "your@email.com"
         if contact_email == "your@email.com":
             logger.warning(
-                "⚠️  SEC_USER_AGENT_CONTACT環境変数が設定されていません。"
-                "デフォルト値を使用します。"
-                "環境変数を設定するには: export SEC_USER_AGENT_CONTACT=your@email.com"
+                "⚠️  SEC_USER_AGENT_CONTACT が未設定です。SEC が 403 を返す場合があります。"
+                "GitHub Actions: リポジトリ Settings → Secrets → SEC_USER_AGENT_CONTACT にメールアドレスを追加してください。"
             )
         headers = {
             "User-Agent": f"yfinance-jp-screener (contact: {contact_email})",
@@ -97,6 +97,16 @@ def get_us_ticker_list() -> List[str]:
 
         logger.info(f"SECからティッカーリストを取得: {len(tickers)}社")
         return tickers
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 403:
+            logger.error(
+                "SEC が 403 Forbidden を返しました。User-Agent の連絡先が必須です。"
+                "GitHub Actions の場合: リポジトリの Settings → Secrets and variables → Actions で "
+                "SEC_USER_AGENT_CONTACT にあなたのメールアドレスを追加してください。"
+            )
+        else:
+            logger.error(f"SECからのティッカーリスト取得に失敗: {e}")
+        return []
     except Exception as e:
         logger.error(f"SECからのティッカーリスト取得に失敗: {e}")
         return []

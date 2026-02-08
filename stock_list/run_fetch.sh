@@ -3,13 +3,14 @@
 # 環境変数: MARKET (JP|US), STOCK_FILE, CHUNK_SIZE, SEC_USER_AGENT_CONTACT (US時推奨)
 
 set -e
+set -o pipefail
 
 # 前後の空白・CRを除去し大文字に正規化（.env の "MARKET = US" / "us" / Windows改行にも対応）
 MARKET=$(echo "${MARKET:-JP}" | tr -d '[:space:]' | tr -d '\r' | tr '[:lower:]' '[:upper:]')
 CHUNK_SIZE=${CHUNK_SIZE:-1000}
 
-# STOCK_FILE未指定時は市場ごとのデフォルト（実用リスト）
-if [ -z "$STOCK_FILE" ] || [ "$STOCK_FILE" = " " ]; then
+# STOCK_FILE未指定時は市場ごとのデフォルト（実用リスト）（空白のみも未指定扱い）
+if [ -z "$(echo "$STOCK_FILE" | tr -d '[:space:]')" ]; then
   if [ "$MARKET" = "US" ]; then
     STOCK_FILE=us_stocks_1.json
   else

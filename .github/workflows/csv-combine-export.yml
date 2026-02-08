@@ -75,27 +75,44 @@ jobs:
       - name: 🔗 Combine latest CSV files
         working-directory: ./stock_list
         run: |
+          # Security: read inputs once into variables; validate before use to prevent injection
+          DATE_INPUT="${{ github.event.inputs.custom_date }}"
           MT="${{ github.event.inputs.market_type || 'JP' }}"
+
           echo "🚀 Starting CSV combination (market_type=$MT)..."
           echo "Timestamp: $(date)"
 
-          ARGS=""
-          if [ -n "${{ github.event.inputs.custom_date }}" ]; then
-            ARGS="$ARGS --date ${{ github.event.inputs.custom_date }}"
-            echo "Target date: ${{ github.event.inputs.custom_date }}"
+          # Validate custom_date: if provided, must be exactly YYYYMMDD (8 digits)
+          if [ -n "$DATE_INPUT" ]; then
+            if ! echo "$DATE_INPUT" | grep -qE '^[0-9]{8}$'; then
+              echo "❌ Invalid custom_date: must be YYYYMMDD (8 digits), got: $DATE_INPUT"
+              exit 1
+            fi
+            echo "Target date: $DATE_INPUT"
           else
             echo "Target date: today ($(date +'%Y%m%d'))"
           fi
 
-          if [ "$MT" = "JP" ] || [ "$MT" = "US" ]; then
-            ARGS="$ARGS --market-type $MT"
-            echo "Market: $MT only"
-          else
-            echo "Market: both (JP + US)"
+          # Whitelist market_type (choice input already restricts; enforce in script)
+          case "$MT" in
+            JP|US|both) ;;
+            *) echo "⚠️ Invalid market_type, defaulting to JP"; MT=JP ;;
+          esac
+
+          # Base args (date only); run combination per market so "both" produces JP + US files
+          ARGS=()
+          if [ -n "$DATE_INPUT" ]; then
+            ARGS+=(--date "$DATE_INPUT")
           fi
 
-          echo "Arguments: $ARGS"
-          python combine_latest_csv.py $ARGS
+          if [ "$MT" = "JP" ] || [ "$MT" = "both" ]; then
+            echo "Combining JP market: ${ARGS[*]} --market-type JP"
+            python combine_latest_csv.py "${ARGS[@]}" --market-type JP
+          fi
+          if [ "$MT" = "US" ] || [ "$MT" = "both" ]; then
+            echo "Combining US market: ${ARGS[*]} --market-type US"
+            python combine_latest_csv.py "${ARGS[@]}" --market-type US
+          fi
 
           echo "✅ CSV combination completed"
           echo "📄 Generated files:"

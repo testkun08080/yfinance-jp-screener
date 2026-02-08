@@ -7,8 +7,16 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
+      market:
+        description: "市場 (日本株=JP / 米国株=US)"
+        required: true
+        default: "JP"
+        type: choice
+        options:
+          - "JP"
+          - "US"
       stock_file:
-        description: "Stock JSON file to process"
+        description: "処理するJSONファイル (市場に合わせて選択)"
         required: true
         default: "stocks_1.json"
         type: choice
@@ -18,6 +26,10 @@ on:
           - "stocks_3.json"
           - "stocks_4.json"
           - "stocks_sample.json"
+          - "us_stocks_1.json"
+          - "us_stocks_2.json"
+          - "us_stocks_3.json"
+          - "us_stocks_4.json"
 
 jobs:
   fetch-stock-data:
@@ -43,6 +55,7 @@ jobs:
 
       - name: 📋 Show input parameters
         run: |
+          echo "Market: ${{ github.event.inputs.market }}"
           echo "Processing file: ${{ github.event.inputs.stock_file }}"
           echo "Working directory: $(pwd)"
           ls -la stock_list/

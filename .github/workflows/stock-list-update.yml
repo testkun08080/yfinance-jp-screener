@@ -7,6 +7,14 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
+      market:
+        description: "市場 (日本株=JP / 米国株=US)"
+        required: true
+        default: "JP"
+        type: choice
+        options:
+          - "JP"
+          - "US"
       reason:
         description: "Update reason (optional)"
         required: false
@@ -16,7 +24,8 @@ on:
 jobs:
   update-stock-list:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    env:
+      SEC_USER_AGENT_CONTACT: ${{ secrets.SEC_USER_AGENT_CONTACT }}
 
     steps:
       - name: 🔄 Checkout repository
@@ -35,50 +44,69 @@ jobs:
 
       - name: 📋 Show input parameters
         run: |
+          echo "Market: ${{ github.event.inputs.market }}"
           echo "Update reason: ${{ github.event.inputs.reason }}"
           echo "Timestamp: $(date)"
           echo "Working directory: $(pwd)"
           ls -la stock_list/
 
-      - name: 🌐 Fetch latest stock list (stocks_all.json)
+      - name: 🔐 Check SEC_USER_AGENT_CONTACT (required for US)
+        if: github.event.inputs.market == 'US'
+        run: |
+          if [ -z "${{ secrets.SEC_USER_AGENT_CONTACT }}" ]; then
+            echo "::error::米国株リスト取得には SEC_USER_AGENT_CONTACT が必要です。"
+            echo "リポジトリの Settings → Secrets and variables → Actions で SEC_USER_AGENT_CONTACT を追加し、あなたのメールアドレスを設定してください。"
+            echo "参考: https://www.sec.gov/os/accessing-edgar-data"
+            exit 1
+          fi
+          echo "✅ SEC_USER_AGENT_CONTACT が設定されています"
+
+      - name: 🌐 Fetch latest stock list
         working-directory: ./stock_list
         run: |
-          echo "🚀 Starting stock list download..."
+          MARKET="${{ github.event.inputs.market }}"
+          echo "🚀 Starting stock list download (market=$MARKET)..."
           echo "Timestamp: $(date)"
 
-          # Run the Python script to fetch all stocks
-          python get_jp_stocklist.py
+          if [ "$MARKET" = "US" ]; then
+            python get_us_stocklist.py
+            MASTER=us_stocks_all.json
+          else
+            python get_jp_stocklist.py
+            MASTER=stocks_all.json
+          fi
 
           echo "✅ Stock list download completed"
-
-          # Check if stocks_all.json was created
-          if [ -f "stocks_all.json" ]; then
-            echo "📊 stocks_all.json created successfully"
-            echo "File size: $(ls -lh stocks_all.json | awk '{print $5}')"
-            echo "Total companies: $(cat stocks_all.json | jq length)"
+          if [ -f "$MASTER" ]; then
+            echo "📊 $MASTER created successfully"
+            echo "File size: $(ls -lh "$MASTER" | awk '{print $5}')"
+            echo "Total companies: $(cat "$MASTER" | jq length)"
           else
-            echo "❌ Error: stocks_all.json not found"
+            echo "❌ Error: $MASTER not found"
             exit 1
           fi
 
-      - name: ✂️ Split stocks_all.json into chunks
+      - name: ✂️ Split into chunks
         working-directory: ./stock_list
         run: |
-          echo "🔀 Starting stock list splitting..."
+          MARKET="${{ github.event.inputs.market }}"
+          echo "🔀 Starting stock list splitting (market=$MARKET)..."
           echo "Timestamp: $(date)"
 
-          # Use the improved split_stocks.py script
-          python split_stocks.py --input stocks_all.json --size 1000
+          if [ "$MARKET" = "US" ]; then
+            python split_stocks.py --input us_stocks_all.json --size 1000
+            PREFIX=us_stocks_
+          else
+            python split_stocks.py --input stocks_all.json --size 1000
+            PREFIX=stocks_
+          fi
 
-          echo "✅ Stock list splitting completed"
-
-          # List all generated files
+          echo "✅ Splitting completed"
           echo "📄 Generated files:"
-          ls -la stocks_*.json
+          ls -la ${PREFIX}*.json 2>/dev/null || true
 
-          # Verify each split file contains valid JSON data
           echo "🔍 Verifying split files..."
-          for file in stocks_[0-9]*.json; do
+          for file in ${PREFIX}[0-9]*.json; do
             if [ -f "$file" ]; then
               companies=$(cat "$file" | jq length 2>/dev/null)
               if [ $? -eq 0 ]; then
@@ -91,41 +119,54 @@ jobs:
           done
 
       - name: 📊 Generate update summary
+        working-directory: ./stock_list
         run: |
-          cd stock_list
-          echo "# 📋 Stock List Update Report" > stock_list_update_report.md
-          echo "" >> stock_list_update_report.md
-          echo "**Generated:** $(date)" >> stock_list_update_report.md
-          echo "**Reason:** ${{ github.event.inputs.reason }}" >> stock_list_update_report.md
-          echo "**Workflow:** ${{ github.workflow }}" >> stock_list_update_report.md
-          echo "" >> stock_list_update_report.md
-
-          if [ -f "stocks_all.json" ]; then
-            total_companies=$(cat stocks_all.json | jq length)
-            size=$(ls -lh stocks_all.json | awk '{print $5}')
-            echo "## 📊 Master Stock List" >> stock_list_update_report.md
-            echo "- **File:** stocks_all.json" >> stock_list_update_report.md
-            echo "- **Size:** $size" >> stock_list_update_report.md
-            echo "- **Total Companies:** $total_companies" >> stock_list_update_report.md
-            echo "" >> stock_list_update_report.md
+          MARKET="${{ github.event.inputs.market }}"
+          if [ "$MARKET" = "US" ]; then
+            MASTER=us_stocks_all.json
+            PREFIX=us_stocks_
+            REPORT=us_stock_list_update_report.md
+            TITLE="US Stock List Update Report"
+          else
+            MASTER=stocks_all.json
+            PREFIX=stocks_
+            REPORT=stock_list_update_report.md
+            TITLE="Stock List Update Report"
           fi
 
-          echo "## 📂 Split Files" >> stock_list_update_report.md
-          echo "" >> stock_list_update_report.md
+          echo "# 📋 $TITLE" > "$REPORT"
+          echo "" >> "$REPORT"
+          echo "**Market:** $MARKET" >> "$REPORT"
+          echo "**Generated:** $(date)" >> "$REPORT"
+          echo "**Reason:** ${{ github.event.inputs.reason }}" >> "$REPORT"
+          echo "**Workflow:** ${{ github.workflow }}" >> "$REPORT"
+          echo "" >> "$REPORT"
 
-          for file in stocks_[0-9]*.json; do
+          if [ -f "$MASTER" ]; then
+            total_companies=$(cat "$MASTER" | jq length)
+            size=$(ls -lh "$MASTER" | awk '{print $5}')
+            echo "## 📊 Master List" >> "$REPORT"
+            echo "- **File:** $MASTER" >> "$REPORT"
+            echo "- **Size:** $size" >> "$REPORT"
+            echo "- **Total Companies:** $total_companies" >> "$REPORT"
+            echo "" >> "$REPORT"
+          fi
+
+          echo "## 📂 Split Files" >> "$REPORT"
+          echo "" >> "$REPORT"
+          for file in ${PREFIX}[0-9]*.json; do
             if [ -f "$file" ]; then
               size=$(ls -lh "$file" | awk '{print $5}')
               count=$(cat "$file" | jq length)
-              echo "- **$file** - Size: $size, Companies: $count" >> stock_list_update_report.md
+              echo "- **$file** - Size: $size, Companies: $count" >> "$REPORT"
             fi
           done
 
-          echo "" >> stock_list_update_report.md
-          echo "## 🤖 Automation Info" >> stock_list_update_report.md
-          echo "- **GitHub Action:** [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> stock_list_update_report.md
-          echo "- **Commit SHA:** ${{ github.sha }}" >> stock_list_update_report.md
-          echo "- **Repository:** ${{ github.repository }}" >> stock_list_update_report.md
+          echo "" >> "$REPORT"
+          echo "## 🤖 Automation Info" >> "$REPORT"
+          echo "- **GitHub Action:** [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> "$REPORT"
+          echo "- **Commit SHA:** ${{ github.sha }}" >> "$REPORT"
+          echo "- **Repository:** ${{ github.repository }}" >> "$REPORT"
 
       - name: 🔧 Configure Git
         run: |
@@ -134,29 +175,31 @@ jobs:
 
       - name: 💾 Commit and push changes
         run: |
-          # Add all updated JSON files
-          git add stock_list/stocks_*.json
-          git add stock_list/stock_list_update_report.md
+          MARKET="${{ github.event.inputs.market }}"
+          if [ "$MARKET" = "US" ]; then
+            git add stock_list/us_stocks_*.json
+            git add stock_list/us_stock_list_update_report.md
+            LABEL="米国株式"
+          else
+            git add stock_list/stocks_*.json
+            git add stock_list/stock_list_update_report.md
+            LABEL="日本株式"
+          fi
 
-          # Check if there are any changes to commit
           if git diff --staged --quiet; then
             echo "ℹ️ No changes to commit"
           else
-            # Get current date for commit message
             CURRENT_DATE=$(date '+%Y年%m月%d日')
+            git commit -m "📋 ${LABEL}のリストを更新($CURRENT_DATE)
 
-            # Commit with descriptive message
-            git commit -m "📋 日本株式のリストを更新($CURRENT_DATE)
-
+            - 市場: $MARKET
             - 更新理由: ${{ github.event.inputs.reason }}
             - 実行日時: $(date)
             - ワークフロー: ${{ github.workflow }}
 
             🤖 Generated by GitHub Action"
 
-            # Push changes
             git push
-
             echo "✅ Changes committed and pushed successfully"
           fi
 
@@ -164,8 +207,10 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stock-list-update-$(date +%Y%m%d-%H%M%S)
+          name: stock-list-update-${{ github.event.inputs.market }}-$(date +%Y%m%d-%H%M%S)
           path: |
             stock_list/stocks_*.json
             stock_list/stock_list_update_report.md
+            stock_list/us_stocks_*.json
+            stock_list/us_stock_list_update_report.md
           retention-days: 30

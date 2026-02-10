@@ -113,6 +113,12 @@ export interface PaginationConfig {
   totalItems: number;
 }
 
+/** お気に入り銘柄（ブラウザの localStorage に保存） */
+export interface FavoriteItem {
+  code: string;
+  name?: string;
+}
+
 export const MARKET_OPTIONS = [
   "プライム（内国株式）",
   "スタンダード（内国株式）",

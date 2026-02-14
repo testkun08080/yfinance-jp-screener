@@ -112,6 +112,7 @@ jobs:
       - name: 💾 Commit and push combined CSV
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "📊 CSV結合ファイル生成"
+          commit_message: |
+            📊 CSV結合ファイル生成 ($(date +'%Y年%m月%d日'))
 
 

@@ -28,6 +28,7 @@ import json
 import time
 import argparse
 from datetime import datetime
+from urllib.error import HTTPError
 import warnings
 import logging
 import requests
@@ -651,11 +652,21 @@ def get_stock_data(stock_info):
         )
         return result
 
+    except HTTPError as e:
+        # 404 = 銘柄がYahooに存在しない（上場廃止・シンボル変更等）→ スキップして続行
+        if e.code == 404:
+            logger.warning(f"  ⚠️ 銘柄が見つかりません (404): {ticker_symbol} - スキップします")
+        else:
+            logger.error(f"  ❌ HTTPエラー: {ticker_symbol} - {e}")
+        return None
     except Exception as e:
+        # yfinanceがHTTPErrorをラップする場合、__cause__をチェックして404を判定
+        if isinstance(getattr(e, "__cause__", None), HTTPError) and getattr(e.__cause__, "code", None) == 404:
+            logger.warning(f"  ⚠️ 銘柄が見つかりません (wrapped 404): {ticker_symbol} - スキップします")
+            return None
         end_time = time.time()
         end_datetime = datetime.now()
         duration = end_time - start_time
-
         logger.error(f"  ❌ エラー: {ticker_symbol} - {e}")
         logger.error(
             f"データ取得エラー: {stock_info['銘柄名']} ({ticker_symbol}) - 終了時刻: {end_datetime.strftime('%Y-%m-%d %H:%M:%S')} - 実行時間: {format_duration(duration)} - エラー: {e}"

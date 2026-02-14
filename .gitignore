@@ -5,3 +5,4 @@ claudecodes
 node_modules
 .claudecodes
 .serena
+__pycache__

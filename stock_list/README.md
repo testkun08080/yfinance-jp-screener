@@ -162,7 +162,7 @@ uv run combine_latest_csv.py
 
 ### Sequential Stock Fetch（順次実行）
 
-- Part 1-4 が順次実行され、各パートで約 1000 社ずつ処理
+- Part 1 から開始し、stocks_*.json / us_stocks_*.json の数に応じて Part 2, 3, … が自動連鎖（各パート約 1000 社ずつ）
 - 各パート完了後に自動的に次のパートをトリガー
 - 全パート完了後に CSV 結合を自動実行
 

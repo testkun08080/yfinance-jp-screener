@@ -1,0 +1,160 @@
+# 単一 run 内で matrix により全 Part を処理（self-trigger 廃止）
+# リポジトリ内の stocks_*.json / us_stocks_*.json の数に応じて並列 fetch → 1 回で combine & commit
+name: 📊 Sequential Stock Fetch
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "市場 (日本株=JP / 米国株=US)"
+        required: true
+        default: "JP"
+        type: choice
+        options:
+          - "JP"
+          - "US"
+      reason:
+        description: "開始理由（オプション）"
+        required: false
+        default: "Sequential stock data collection"
+        type: string
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.outputs.outputs.files }}
+      market: ${{ steps.outputs.outputs.market }}
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📂 Discover stock files
+        id: outputs
+        run: |
+          MARKET="${{ github.event.inputs.market }}"
+          if [ "$MARKET" = "US" ]; then
+            PREFIX=us_stocks_
+          else
+            PREFIX=stocks_
+          fi
+
+          # ソート済みでファイル一覧を取得し JSON 配列で出力
+          FILES=$(ls stock_list/${PREFIX}[0-9]*.json 2>/dev/null | sort -V)
+          TOTAL=$(echo "$FILES" | grep -c . || echo "0")
+          if [ "$TOTAL" = "0" ]; then
+            echo "::error::No files found: stock_list/${PREFIX}[0-9]*.json"
+            exit 1
+          fi
+
+          # basename のみの JSON 配列 (e.g. ["stocks_1.json","stocks_2.json"])
+          LIST=$(echo "$FILES" | xargs -I {} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "files=$LIST" >> $GITHUB_OUTPUT
+          echo "market=$MARKET" >> $GITHUB_OUTPUT
+          echo "Discovered $TOTAL parts (market=$MARKET): $LIST"
+
+  fetch:
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        stock_file: ${{ fromJson(needs.discover.outputs.files) }}
+    permissions:
+      contents: read
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stock_list/requirements.txt
+
+      - name: 📋 Show process info
+        run: |
+          echo "🚀 Stock Fetch - ${{ matrix.stock_file }} (market=${{ needs.discover.outputs.market }})"
+          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo "Timestamp: $(date)"
+          ls -la stock_list/
+
+      - name: 🏃 Process part
+        id: process
+        working-directory: ./stock_list
+        run: |
+          echo "🚀 Starting stock data collection for ${{ matrix.stock_file }}..."
+          echo "Timestamp: $(date)"
+          python sumalize.py "${{ matrix.stock_file }}"
+          echo "✅ ${{ matrix.stock_file }} completed successfully"
+          ls -la Export/ 2>/dev/null || echo "No files in Export directory"
+
+      - name: 📤 Upload Export artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-${{ matrix.stock_file }}
+          path: stock_list/Export/
+          retention-days: 1
+
+  combine-and-commit:
+    needs: [discover, fetch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Download all Export artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: export-*
+          merge-multiple: true
+          path: stock_list/Export
+
+      - name: 📋 Show merged Export
+        run: |
+          echo "Merged Export directory:"
+          ls -la stock_list/Export/ 2>/dev/null || echo "No Export directory"
+          find stock_list/Export -name "*.csv" -type f 2>/dev/null | head -20
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install pandas for combine
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas
+
+      - name: 🔗 Combine latest CSV files
+        working-directory: ./stock_list
+        run: |
+          MARKET="${{ needs.discover.outputs.market }}"
+          python combine_latest_csv.py --market-type "$MARKET"
+          echo "Combined CSV files:"
+          ls -la Export/*combined*.csv 2>/dev/null || true
+
+      - name: Git config and pull
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
+
+      - name: 💾 Commit and push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📊 Stock Fetch (matrix) - ${{ needs.discover.outputs.market }} 全 Part 完了"
+          push_options: --force

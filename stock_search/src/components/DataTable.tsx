@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { MdStar, MdStarBorder } from "react-icons/md";
 import type { StockData, SortConfig } from "../types/stock";
 import {
   formatNumber,
@@ -7,6 +8,11 @@ import {
 } from "../utils/csvParser";
 import type { ColumnConfig } from "./ColumnSelector";
 
+function getStockCode(stock: StockData): string {
+  const raw = stock.銘柄コード ?? stock.コード ?? "";
+  return String(raw).trim();
+}
+
 interface DataTableProps {
   data: StockData[];
   sortConfig: SortConfig | null;
@@ -14,7 +20,17 @@ interface DataTableProps {
   currentPage: number;
   itemsPerPage: number;
   visibleColumns: ColumnConfig[];
+  /** お気に入り銘柄コード（表示・ハイライト用） */
+  favoriteCodes?: Set<string>;
+  /** お気に入りトグル（指定時のみ星列を表示） */
+  onToggleFavorite?: (code: string, name?: string) => void;
 }
+
+const normalizeCode = (code: string) => {
+  const s = String(code).trim();
+  if (/^\d{1,4}$/.test(s)) return s.padStart(4, "0");
+  return s;
+};
 
 export const DataTable: FC<DataTableProps> = ({
   data,
@@ -23,7 +39,14 @@ export const DataTable: FC<DataTableProps> = ({
   currentPage,
   itemsPerPage,
   visibleColumns,
+  favoriteCodes,
+  onToggleFavorite,
 }) => {
+  const isFavorite = (stock: StockData) => {
+    if (!favoriteCodes) return false;
+    const code = getStockCode(stock);
+    return favoriteCodes.has(normalizeCode(code));
+  };
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = data.slice(startIndex, endIndex);
@@ -145,6 +168,11 @@ export const DataTable: FC<DataTableProps> = ({
       <table className="w-full border-separate border-spacing-0 min-w-max">
         <thead className="sticky top-0 z-10 bg-slate-50 border-b border-[var(--border)]">
           <tr>
+            {onToggleFavorite && (
+              <th className="w-10 px-2 py-3 border-b border-[var(--border)] text-center text-amber-500" title="お気に入り">
+                <MdStar className="text-base inline" />
+              </th>
+            )}
             {columns.map((column, index) => (
               <SortableHeader
                 key={column.key}
@@ -157,13 +185,34 @@ export const DataTable: FC<DataTableProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {currentData.map((stock, index) => (
+          {currentData.map((stock, index) => {
+            const fav = isFavorite(stock);
+            const code = getStockCode(stock);
+            const name = stock.会社名 != null ? String(stock.会社名) : undefined;
+            return (
             <tr
               key={`${stock.銘柄コード ?? stock.コード}-${index}`}
               className={`transition-colors group ${
                 index % 2 === 1 ? "bg-slate-50/50" : ""
-              } hover:bg-indigo-50/30`}
+              } hover:bg-indigo-50/30 ${fav ? "bg-amber-50/50" : ""}`}
             >
+              {onToggleFavorite && (
+                <td className="px-2 py-3 text-center align-middle">
+                  <button
+                    type="button"
+                    className="p-1 rounded hover:bg-amber-100 text-amber-500 hover:text-amber-600 transition-colors"
+                    onClick={() => onToggleFavorite(code, name)}
+                    aria-label={fav ? "お気に入りから外す" : "お気に入りに追加"}
+                    title={fav ? "お気に入りから外す" : "お気に入りに追加"}
+                  >
+                    {fav ? (
+                      <MdStar className="text-lg" />
+                    ) : (
+                      <MdStarBorder className="text-lg text-slate-300 hover:text-amber-500" />
+                    )}
+                  </button>
+                </td>
+              )}
               {columns.map((column) => {
                 const value = stock[column.key];
                 const isNetCash =
@@ -225,7 +274,8 @@ export const DataTable: FC<DataTableProps> = ({
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
 

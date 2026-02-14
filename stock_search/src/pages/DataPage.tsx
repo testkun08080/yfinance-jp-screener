@@ -1,15 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   MdFilterList,
   MdTableChart,
   MdError,
   MdDescription,
+  MdStar,
 } from "react-icons/md";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
 import { useCSVParser } from "../hooks/useCSVParser";
 import { useFilters } from "../hooks/useFilters";
+import { useFavorites } from "../hooks/useFavorites";
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
 import {
@@ -56,6 +58,26 @@ export const DataPage = () => {
     clearFilters,
     handleSort,
   } = useFilters(data);
+  const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
+
+  /** 現在のデータに含まれるお気に入り銘柄のみ */
+  const favoritesInData = useMemo(() => {
+    const normalize = (c: string) => {
+      const s = String(c).trim();
+      return /^\d{1,4}$/.test(s) ? s.padStart(4, "0") : s;
+    };
+    return filteredData.filter((row) => {
+      const code = row.銘柄コード ?? row.コード;
+      if (code == null) return false;
+      const n = normalize(String(code));
+      return favoriteCodesSet.has(n) || favoriteCodesSet.has(String(code).trim());
+    });
+  }, [filteredData, favoriteCodesSet]);
+
+  /** タブ: すべて / お気に入りのみ */
+  const [listTab, setListTab] = useState<"all" | "favorites">("all");
+  const displayData =
+    listTab === "favorites" ? favoritesInData : filteredData;
 
   const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
     currentPage: 1,
@@ -74,12 +96,14 @@ export const DataPage = () => {
   }, [data]);
 
   useEffect(() => {
+    const total =
+      listTab === "favorites" ? favoritesInData.length : filteredData.length;
     setPaginationConfig((prev) => ({
       ...prev,
       currentPage: 1,
-      totalItems: filteredData.length,
+      totalItems: total,
     }));
-  }, [filteredData.length]);
+  }, [listTab, filteredData.length, favoritesInData.length]);
 
   const handlePageChange = (page: number) => {
     setPaginationConfig((prev) => ({ ...prev, currentPage: page }));
@@ -249,25 +273,63 @@ export const DataPage = () => {
 
           {selectedFile && !loading && !error && data.length > 0 && (
             <>
-              {/* Main toolbar: stats + buttons */}
+              {/* タブ: すべて / お気に入りのみ ＋ Main toolbar */}
               <div className="px-3 md:px-6 py-3 md:py-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-                <div className="flex items-center gap-6 md:gap-10">
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
-                      総件数
-                    </p>
-                    <p className="text-2xl md:text-3xl font-bold text-slate-900">
-                      {data.length.toLocaleString()}
-                    </p>
+                <div className="flex items-center gap-4 md:gap-6">
+                  {/* リスト表示タブ */}
+                  <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+                    <button
+                      type="button"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        listTab === "all"
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-600 hover:text-slate-800"
+                      }`}
+                      onClick={() => setListTab("all")}
+                    >
+                      すべて
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                        listTab === "favorites"
+                          ? "bg-white text-amber-700 shadow-sm"
+                          : "text-slate-600 hover:text-slate-800"
+                      }`}
+                      onClick={() => setListTab("favorites")}
+                    >
+                      <MdStar className="text-amber-500 text-base" />
+                      お気に入りのみ
+                      {favoritesInData.length > 0 && (
+                        <span className="text-xs">
+                          ({favoritesInData.length})
+                        </span>
+                      )}
+                    </button>
                   </div>
-                  <div className="w-[1px] h-10 bg-slate-100" />
-                  <div>
-                    <p className="text-[11px] font-bold text-[var(--primary)] uppercase tracking-tight">
-                      絞り込み結果
-                    </p>
-                    <p className="text-2xl md:text-3xl font-bold text-[var(--primary)]">
-                      {filteredData.length.toLocaleString()}
-                    </p>
+                  <div className="w-[1px] h-10 bg-slate-100 hidden sm:block" />
+                  <div className="flex items-center gap-6 md:gap-10">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                        {listTab === "all" ? "総件数" : "お気に入り"}
+                      </p>
+                      <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                        {displayData.length.toLocaleString()}
+                      </p>
+                    </div>
+                    {listTab === "all" && (
+                      <>
+                        <div className="w-[1px] h-10 bg-slate-100" />
+                        <div>
+                          <p className="text-[11px] font-bold text-[var(--primary)] uppercase tracking-tight">
+                            絞り込み結果
+                          </p>
+                          <p className="text-2xl md:text-3xl font-bold text-[var(--primary)]">
+                            {filteredData.length.toLocaleString()}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -277,7 +339,7 @@ export const DataPage = () => {
                     onCategoryToggle={handleCategoryToggle}
                   />
                   <DownloadButton
-                    data={filteredData}
+                    data={displayData}
                     columns={columns}
                     fileName={selectedFile.name.replace(/\.[^/.]+$/, "")}
                     totalCount={data.length}
@@ -288,16 +350,18 @@ export const DataPage = () => {
               {/* Table area */}
               <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                 <DataTable
-                  data={filteredData}
+                  data={displayData}
                   sortConfig={sortConfig}
                   onSort={handleSort}
                   currentPage={paginationConfig.currentPage}
                   itemsPerPage={paginationConfig.itemsPerPage}
                   visibleColumns={columns}
+                  favoriteCodes={favoriteCodesSet}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </div>
 
-              {/* Footer: pagination（スマホで見切れないよう下に余白） */}
+              {/* Footer: pagination */}
               <footer className="min-h-14 border-t border-[var(--border)] bg-white px-4 md:px-6 py-3 pb-8 md:pb-3 flex flex-wrap items-center justify-center md:justify-between gap-2 flex-shrink-0">
                 <div className="flex items-center gap-2 md:gap-4">
                   <span className="text-xs font-semibold text-slate-500">
@@ -322,7 +386,7 @@ export const DataPage = () => {
                     variant="compact"
                     config={{
                       ...paginationConfig,
-                      totalItems: filteredData.length,
+                      totalItems: displayData.length,
                     }}
                     onPageChange={handlePageChange}
                     onItemsPerPageChange={handleItemsPerPageChange}
@@ -330,7 +394,7 @@ export const DataPage = () => {
                 </nav>
                 <div className="text-[11px] font-medium text-slate-400 whitespace-nowrap">
                   表示中:{" "}
-                  {filteredData.length === 0
+                  {displayData.length === 0
                     ? "0 - 0"
                     : `${
                         (paginationConfig.currentPage - 1) *
@@ -339,9 +403,9 @@ export const DataPage = () => {
                       } - ${Math.min(
                         paginationConfig.currentPage *
                           paginationConfig.itemsPerPage,
-                        filteredData.length
+                        displayData.length
                       )}`}{" "}
-                  / {filteredData.length.toLocaleString()} 件
+                  / {displayData.length.toLocaleString()} 件
                 </div>
               </footer>
             </>

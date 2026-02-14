@@ -156,5 +156,5 @@ jobs:
       - name: 💾 Commit and push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "📊 Stock Fetch (matrix) - ${{ needs.discover.outputs.market }} 全 Part 完了 ($(date +'%Y年%m月%d日 %H:%M'))"
+          commit_message: "📊 Stock Fetch (matrix) - ${{ needs.discover.outputs.market }} 全 Part 完了"
           push_options: --force

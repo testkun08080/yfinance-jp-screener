@@ -6,6 +6,7 @@ import {
   MdError,
   MdDescription,
   MdStar,
+  MdChevronRight,
 } from "react-icons/md";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
@@ -31,10 +32,29 @@ interface CSVFile {
   url: string;
 }
 
+const SIDEBAR_STORAGE_KEY = "sidebarCollapsed";
+
+function getInitialSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarCollapsed));
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarCollapsed]);
 
   const handleFileUpload = (file: File) => {
     setSelectedFile({
@@ -180,10 +200,31 @@ export const DataPage = () => {
       )}
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* デスクトップ: 常に表示 / モバイル: 非表示（ドロワーで開く） */}
-        <div className="hidden md:block flex-shrink-0">
-          <Sidebar {...sidebarProps} />
-        </div>
+        {/* デスクトップ: 開閉可能 / モバイル: 非表示（ドロワーで開く） */}
+        {!sidebarCollapsed && (
+          <div className="hidden md:block flex-shrink-0">
+            <Sidebar
+              {...sidebarProps}
+              onCollapse={() => setSidebarCollapsed(true)}
+            />
+          </div>
+        )}
+
+        {/* デスクトップ: 折りたたみ時に表示する展開タブ */}
+        {sidebarCollapsed && (
+          <div className="hidden md:flex w-12 flex-shrink-0 flex-col items-center border-r border-[var(--border)] bg-slate-50/50 py-4">
+            <button
+              type="button"
+              className="p-2 rounded-lg hover:bg-slate-200/80 text-slate-600 transition-colors"
+              onClick={() => setSidebarCollapsed(false)}
+              aria-label="サイドバーを開く"
+              title="フィルター・データセットを開く"
+            >
+              <MdChevronRight className="text-xl" />
+            </button>
+            <span className="mt-2 text-[10px] text-slate-500">開く</span>
+          </div>
+        )}
 
         <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
           {/* モバイル: フィルターを開くボタン */}

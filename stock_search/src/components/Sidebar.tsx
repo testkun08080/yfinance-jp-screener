@@ -1,5 +1,6 @@
 import {
   MdClose,
+  MdChevronLeft,
   MdFolderOpen,
   MdExpandMore,
   MdFilterList,
@@ -40,6 +41,8 @@ interface SidebarProps {
   onClose?: () => void;
   /** モバイル用ドロワーとして表示する場合 true */
   isDrawer?: boolean;
+  /** デスクトップでサイドバーを折りたたむコールバック（指定時は折りたたみボタンを表示） */
+  onCollapse?: () => void;
 }
 
 function NumRange({
@@ -108,6 +111,7 @@ export const Sidebar = ({
   availablePrefectures,
   onClose,
   isDrawer = false,
+  onCollapse,
 }: SidebarProps) => {
   const handleDatasetDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -154,17 +158,30 @@ export const Sidebar = ({
         isDrawer ? "shadow-xl" : ""
       }`}
     >
-      {/* モバイルドロワー用: 閉じるボタン */}
-      {onClose && (
-        <div className="flex items-center justify-end p-2 border-b border-[var(--border)] md:hidden">
-          <button
-            type="button"
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-            onClick={onClose}
-            aria-label="閉じる"
-          >
-            <MdClose />
-          </button>
+      {/* ヘッダー: モバイル閉じる / デスクトップ折りたたみ */}
+      {(onClose || onCollapse) && (
+        <div className="flex items-center justify-end gap-1 p-2 border-b border-[var(--border)]">
+          {onClose && (
+            <button
+              type="button"
+              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+              onClick={onClose}
+              aria-label="閉じる"
+            >
+              <MdClose />
+            </button>
+          )}
+          {onCollapse && (
+            <button
+              type="button"
+              className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+              onClick={onCollapse}
+              aria-label="サイドバーを折りたたむ"
+              title="サイドバーを折りたたむ"
+            >
+              <MdChevronLeft className="text-lg" />
+            </button>
+          )}
         </div>
       )}
       {/* データセット */}

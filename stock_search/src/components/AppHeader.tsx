@@ -23,7 +23,7 @@ export const AppHeader = () => {
   }, []);
 
   return (
-    <header className="h-14 border-b border-[var(--border)] bg-white flex items-center justify-between px-6 flex-shrink-0 z-50">
+    <header className="sticky top-0 h-14 border-b border-[var(--border)] bg-white flex items-center justify-between px-6 flex-shrink-0 z-50">
       <Link
         to="/"
         className="flex items-center gap-3 no-underline text-inherit hover:opacity-90"

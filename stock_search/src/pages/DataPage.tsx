@@ -56,6 +56,33 @@ export const DataPage = () => {
     }
   }, [sidebarCollapsed]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+
+    const handleMediaChange = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setSidebarOpen(false);
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
   const handleFileUpload = (file: File) => {
     setSelectedFile({
       name: file.name,
@@ -180,16 +207,21 @@ export const DataPage = () => {
         }}
         className="hidden"
       />
-      {/* モバイル: サイドバーをドロワーで表示 */}
+      {/* モバイル: サイドバーを下から出るモーダルで表示 */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" role="presentation">
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="フィルター・データセット"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-black/50"
             aria-label="閉じる"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white z-50">
+          <div className="absolute inset-x-0 bottom-0 h-[82vh] z-50 mobile-sheet-enter">
             <Sidebar
               {...sidebarProps}
               onClose={() => setSidebarOpen(false)}

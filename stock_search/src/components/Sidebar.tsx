@@ -154,8 +154,10 @@ export const Sidebar = ({
 
   return (
     <aside
-      className={`w-72 flex-shrink-0 border-r border-[var(--border)] bg-white flex flex-col h-full ${
-        isDrawer ? "shadow-xl" : ""
+      className={`flex-shrink-0 bg-white flex flex-col overflow-hidden ${
+        isDrawer
+          ? "w-full h-full rounded-t-2xl border-t border-[var(--border)] shadow-2xl"
+          : "w-72 h-full border-r border-[var(--border)]"
       }`}
     >
       {/* ヘッダー: モバイル閉じる / デスクトップ折りたたみ */}

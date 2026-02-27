@@ -54,3 +54,26 @@ details>summary {
 details>summary::-webkit-details-marker {
   display: none;
 }
+
+@keyframes mobileSheetUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mobile-sheet-enter {
+  animation: mobileSheetUp 0.2s ease-out;
+}
+
+/* iOS Safariの入力フォーカス時ズームを防止 */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

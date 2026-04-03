@@ -77,7 +77,8 @@ export const UsagePage = () => {
                           初心者向け記事（Note）
                         </h3>
                         <p className="text-base-content/70 mb-4">
-                          プログラミング初心者の方でも理解しやすいように、基本的な使い方から丁寧に説明しています。
+                          プログラミング初心者の方でも理解しやすいように、基本的な使い方から丁寧に説明しています(Github
+                          Actionsの使い方はこちらが詳しいです)。
                         </p>
                         <a
                           href={EXTERNAL_URLS.documentation.noteArticle}

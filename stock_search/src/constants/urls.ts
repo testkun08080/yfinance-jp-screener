@@ -41,7 +41,7 @@ export const EXTERNAL_URLS = {
   documentation: {
     zennArticle:
       "https://zenn.dev/testkun08080/articles/python-yfinance-4c4331412bc50f",
-    noteArticle: "https://note.com/testkun08080/n/n6af1ee248ea6",
+    noteArticle: "https://note.com/testkun08080/n/n0dce5617d24a",
     readme: "https://github.com/testkun08080/yfinance-jp-screener#readme",
   },
 } as const;

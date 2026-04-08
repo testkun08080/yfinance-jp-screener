@@ -7,7 +7,10 @@ import {
   MdDescription,
   MdStar,
   MdChevronRight,
+  MdSmartToy,
 } from "react-icons/md";
+import { AIChatPanel } from "../components/AIChatPanel";
+import { useAISettings } from "../hooks/useAISettings";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
 import { useCSVParser } from "../hooks/useCSVParser";
@@ -106,6 +109,8 @@ export const DataPage = () => {
     handleSort,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
+  const { isConfigured } = useAISettings();
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   /** 現在のデータに含まれるお気に入り銘柄のみ */
   const favoritesInData = useMemo(() => {
@@ -406,6 +411,21 @@ export const DataPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
+                    onClick={() => setAiPanelOpen(true)}
+                    title={
+                      isConfigured
+                        ? "AI分析を開く"
+                        : "設定ページでAIを設定してください"
+                    }
+                  >
+                    <MdSmartToy className="text-lg" />
+                    <span className="whitespace-nowrap hidden sm:inline">
+                      AI分析
+                    </span>
+                  </button>
                   <ColumnSelector
                     columns={columns}
                     onColumnChange={handleColumnChange}
@@ -485,6 +505,13 @@ export const DataPage = () => {
           )}
         </main>
       </div>
+
+      <AIChatPanel
+        isOpen={aiPanelOpen}
+        onClose={() => setAiPanelOpen(false)}
+        filteredData={filteredData}
+        isConfigured={isConfigured}
+      />
     </div>
   );
 };

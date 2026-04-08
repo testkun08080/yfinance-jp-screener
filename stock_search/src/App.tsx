@@ -14,6 +14,9 @@ const AboutPage = lazy(() =>
 const NotFound = lazy(() =>
   import("./pages/NotFound").then((m) => ({ default: m.NotFound }))
 );
+const SettingsPage = lazy(() =>
+  import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
+);
 
 function App() {
   return (
@@ -33,6 +36,7 @@ function App() {
                 <Route path="/" element={<DataPage />} />
                 <Route path="/usage" element={<UsagePage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

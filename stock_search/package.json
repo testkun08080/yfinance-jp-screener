@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.156",
     "@tailwindcss/vite": "^4.1.13",
     "@types/papaparse": "^5.3.16",
+    "ai": "^6.0.154",
     "autoprefixer": "^10.4.21",
     "daisyui": "^5.1.9",
     "papaparse": "^5.5.3",

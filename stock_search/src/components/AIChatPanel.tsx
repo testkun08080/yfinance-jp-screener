@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MdClose, MdSend, MdSmartToy, MdSettings } from "react-icons/md";
+import { useChat } from "@ai-sdk/react";
+import { TextStreamChatTransport, isTextUIPart } from "ai";
+import type { UIMessage } from "ai";
 import type { StockData } from "../types/stock";
-import type { ChatMessage } from "../types/ai";
 import { useAISettings } from "../hooks/useAISettings";
-import { callAI } from "../services/aiProviders";
+import { createCustomFetch } from "../services/aiProviders";
 import { buildStockContext } from "../utils/aiContext";
 
 interface AIChatPanelProps {
@@ -14,12 +16,14 @@ interface AIChatPanelProps {
   isConfigured: boolean;
 }
 
-function genId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+function getMessageText(msg: UIMessage): string {
+  return msg.parts.filter(isTextUIPart).map((p) => p.text).join("");
 }
 
-function MessageBubble({ msg }: { msg: ChatMessage }) {
+function MessageBubble({ msg }: { msg: UIMessage }) {
   const isUser = msg.role === "user";
+  const text = getMessageText(msg);
+  if (!text) return null;
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
       {!isUser && (
@@ -34,7 +38,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
             : "bg-base-200 text-base-content rounded-bl-sm"
         }`}
       >
-        {msg.content}
+        {text}
       </div>
     </div>
   );
@@ -47,19 +51,27 @@ export const AIChatPanel = ({
   isConfigured,
 }: AIChatPanelProps) => {
   const { settings } = useAISettings();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingText, setStreamingText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Scroll to bottom when messages change
+  // settings が変わっても customFetch は安定した参照を保つ（ref で最新を参照）
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const customFetch = useRef<typeof fetch>(
+    (...args: Parameters<typeof fetch>) =>
+      createCustomFetch(settingsRef.current)(...args)
+  ).current;
+
+  const { messages, setMessages, sendMessage, status } = useChat({
+    transport: new TextStreamChatTransport({ fetch: customFetch }),
+  });
+
+  const isActive = status === "streaming" || status === "submitted";
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingText]);
+  }, [messages]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -69,68 +81,21 @@ export const AIChatPanel = ({
     };
   }, [isOpen]);
 
-  const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || isStreaming) return;
+  const handleSend = () => {
+    if (!input.trim() || isActive || !isConfigured) return;
+    sendMessage({ text: input.trim() });
+    setInput("");
+  };
 
-      const userMsg: ChatMessage = {
-        id: genId(),
-        role: "user",
-        content: content.trim(),
-        timestamp: Date.now(),
-      };
-
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setIsStreaming(true);
-      setStreamingText("");
-
-      const history = [
-        ...messages,
-        userMsg,
-      ].map((m) => ({ role: m.role, content: m.content }));
-
-      let accumulated = "";
-
-      try {
-        await callAI(settings, history, (chunk) => {
-          accumulated += chunk;
-          setStreamingText(accumulated);
-        });
-
-        const assistantMsg: ChatMessage = {
-          id: genId(),
-          role: "assistant",
-          content: accumulated,
-          timestamp: Date.now(),
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-      } catch (e) {
-        const errMsg: ChatMessage = {
-          id: genId(),
-          role: "assistant",
-          content: `エラーが発生しました: ${e instanceof Error ? e.message : String(e)}`,
-          timestamp: Date.now(),
-        };
-        setMessages((prev) => [...prev, errMsg]);
-      } finally {
-        setIsStreaming(false);
-        setStreamingText("");
-      }
-    },
-    [messages, settings, isStreaming]
-  );
-
-  const handleSendContext = useCallback(() => {
-    if (filteredData.length === 0) return;
-    const context = buildStockContext(filteredData);
-    sendMessage(context);
-  }, [filteredData, sendMessage]);
+  const handleSendContext = () => {
+    if (!filteredData.length || isActive || !isConfigured) return;
+    sendMessage({ text: buildStockContext(filteredData) });
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage(input);
+      handleSend();
     }
   };
 
@@ -193,7 +158,7 @@ export const AIChatPanel = ({
               type="button"
               className="btn btn-outline btn-primary btn-xs w-full gap-1"
               onClick={handleSendContext}
-              disabled={isStreaming || !isConfigured}
+              disabled={isActive || !isConfigured}
             >
               <MdSmartToy className="text-sm" />
               現在の絞り込み結果 {filteredData.length.toLocaleString()} 件を送信して分析
@@ -203,7 +168,7 @@ export const AIChatPanel = ({
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
-          {messages.length === 0 && !isStreaming && (
+          {messages.length === 0 && !isActive && (
             <div className="flex flex-col items-center justify-center h-full text-center text-base-content/40">
               <MdSmartToy className="text-5xl mb-3" />
               <p className="text-sm font-medium">
@@ -221,18 +186,14 @@ export const AIChatPanel = ({
             <MessageBubble key={msg.id} msg={msg} />
           ))}
 
-          {/* Streaming indicator */}
-          {isStreaming && (
+          {/* Streaming / submitted indicator */}
+          {status === "submitted" && (
             <div className="flex justify-start mb-3">
               <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">
                 <MdSmartToy className="text-primary text-sm" />
               </div>
-              <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-3 py-2 bg-base-200 text-sm leading-relaxed whitespace-pre-wrap break-words">
-                {streamingText || (
-                  <span className="flex gap-1 items-center text-base-content/40">
-                    <span className="loading loading-dots loading-xs" />
-                  </span>
-                )}
+              <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-3 py-2 bg-base-200 text-sm">
+                <span className="loading loading-dots loading-xs text-base-content/40" />
               </div>
             </div>
           )}
@@ -244,7 +205,6 @@ export const AIChatPanel = ({
         <div className="px-3 pb-4 pt-2 border-t border-base-200 flex-shrink-0">
           <div className="flex gap-2 items-end">
             <textarea
-              ref={textareaRef}
               className="textarea textarea-bordered flex-1 resize-none text-sm min-h-[44px] max-h-32 leading-snug"
               placeholder={
                 isConfigured
@@ -254,17 +214,17 @@ export const AIChatPanel = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isStreaming || !isConfigured}
+              disabled={isActive || !isConfigured}
               rows={1}
             />
             <button
               type="button"
               className="btn btn-primary btn-sm flex-shrink-0 h-[44px]"
-              onClick={() => sendMessage(input)}
-              disabled={isStreaming || !input.trim() || !isConfigured}
+              onClick={handleSend}
+              disabled={isActive || !input.trim() || !isConfigured}
               aria-label="送信"
             >
-              {isStreaming ? (
+              {isActive ? (
                 <span className="loading loading-spinner loading-xs" />
               ) : (
                 <MdSend className="text-base" />

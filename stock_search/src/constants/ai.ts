@@ -2,32 +2,29 @@ import type { AISettings } from "../types/ai";
 
 export const AI_STORAGE_KEY = "yfsc-ai-settings";
 
-export const AI_MAX_STOCKS_IN_CONTEXT = 50;
+/**
+ * モデル・ブラウザ保護のための最大行数（絞り込みがこれを超える場合は先頭からこの件数まで）。
+ * 列は CSV の全カラムを TSV で渡す。
+ */
+export const AI_STOCK_CONTEXT_HARD_CAP = 15_000;
 
-export const AI_PROVIDER_DEFAULTS = {
-  openai: {
-    baseUrl: "https://api.openai.com/v1",
-    model: "gpt-4o-mini",
-  },
-  anthropic: {
-    baseUrl: "https://api.anthropic.com",
-    model: "claude-3-5-haiku-20241022",
-  },
-  ollama: {
-    baseUrl: "http://localhost:11434",
-    model: "llama3.2",
-  },
-  custom: {
-    baseUrl: "",
-    model: "",
-  },
+/** @deprecated 互換用。AI_STOCK_CONTEXT_HARD_CAP を参照 */
+export const AI_MAX_STOCKS_IN_CONTEXT = AI_STOCK_CONTEXT_HARD_CAP;
+
+/** データビューアの絞り込み要約（buildStockContext の結果）を保存 — 同一ブラウザの /chat から参照 */
+export const CHAT_STOCK_CONTEXT_STORAGE_KEY = "yfsc-chat-stock-context-v1";
+
+/** OpenAI 互換 `/v1/chat/completions` 用（末尾は `/v1`） */
+export const OLLAMA_DEFAULTS = {
+  baseUrl: "http://localhost:11434/v1",
+  model: "llama3.2",
 } as const;
 
 export const AI_DEFAULT_SETTINGS: AISettings = {
-  provider: "openai",
+  provider: "ollama",
   apiKey: "",
-  baseUrl: AI_PROVIDER_DEFAULTS.openai.baseUrl,
-  model: AI_PROVIDER_DEFAULTS.openai.model,
+  baseUrl: OLLAMA_DEFAULTS.baseUrl,
+  model: OLLAMA_DEFAULTS.model,
 };
 
 export const AI_SYSTEM_PROMPT = `あなたは日本株のスクリーニング分析を支援するAIアシスタントです。

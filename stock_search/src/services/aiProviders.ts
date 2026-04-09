@@ -1,23 +1,31 @@
 import type { AISettings } from "../types/ai";
 import { AI_SYSTEM_PROMPT } from "../constants/ai";
+import { loadChatStockContext } from "../utils/chatStockContextStorage";
+
+/** チャット送信ごとに、ブラウザに保存したスクリーニング要約をシステムプロンプトへ合流（ユーザーが手動で貼らなくてよい） */
+async function getEffectiveSystemPromptForChat(): Promise<string> {
+  const stock = (await loadChatStockContext())?.trim();
+  if (!stock) return AI_SYSTEM_PROMPT;
+  return `${AI_SYSTEM_PROMPT}
+
+【以下はユーザーがこのブラウザで読み込んだスクリーニング結果です（当アプリのサーバーには送信されません）。回答では必ず参照してください。】
+${stock}`;
+}
 
 export interface AIMessage {
   role: "user" | "assistant" | "system";
   content: string;
 }
 
-// ---------- Custom fetch for useChat (TextStreamChatTransport) ----------
-
 /**
  * useChat (TextStreamChatTransport) の fetch オプション用。
- * AI SDK v6 が送る UIMessage[] を受け取り、AI API を直接呼び出し、
+ * AI SDK が送る UIMessage[] を受け取り、Ollama（OpenAI 互換）へ転送し、
  * plain text ReadableStream として返す。
  */
 export function createCustomFetch(settings: AISettings): typeof fetch {
   return async (_url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const body = JSON.parse((init?.body as string) ?? "{}");
 
-    // AI SDK v6 の UIMessage[] → {role, content}[] に変換
     const uiMessages: Array<{ role: string; parts: Array<{ type: string; text?: string }> }> =
       body.messages ?? [];
     const msgs = uiMessages.map((m) => ({
@@ -28,30 +36,20 @@ export function createCustomFetch(settings: AISettings): typeof fetch {
         .join(""),
     }));
 
-    const allMessages = [
-      { role: "system", content: AI_SYSTEM_PROMPT },
-      ...msgs,
-    ];
+    const systemContent = await getEffectiveSystemPromptForChat();
+    const allMessages = [{ role: "system", content: systemContent }, ...msgs];
 
-    if (settings.provider === "anthropic") {
-      return fetchAnthropicTextStream(settings, allMessages);
-    }
-    return fetchOpenAICompatTextStream(settings, allMessages);
+    return fetchOllamaOpenAITextStream(settings, allMessages);
   };
 }
 
-// ---------- OpenAI / Ollama / Custom (OpenAI-compatible) ----------
-
-async function fetchOpenAICompatTextStream(
+async function fetchOllamaOpenAITextStream(
   settings: AISettings,
   messages: { role: string; content: string }[]
 ): Promise<Response> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (settings.apiKey) {
-    headers["Authorization"] = `Bearer ${settings.apiKey}`;
-  }
 
   const aiRes = await fetch(`${settings.baseUrl}/chat/completions`, {
     method: "POST",
@@ -81,61 +79,6 @@ async function fetchOpenAICompatTextStream(
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
 }
-
-// ---------- Anthropic ----------
-
-async function fetchAnthropicTextStream(
-  settings: AISettings,
-  messages: { role: string; content: string }[]
-): Promise<Response> {
-  const system = messages.find((m) => m.role === "system")?.content ?? "";
-  const convMsgs = messages
-    .filter((m) => m.role !== "system")
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
-
-  const aiRes = await fetch(`${settings.baseUrl}/v1/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": settings.apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-allow-browser": "true",
-    },
-    body: JSON.stringify({
-      model: settings.model,
-      max_tokens: 2048,
-      system,
-      messages: convMsgs,
-      stream: true,
-    }),
-  });
-
-  if (!aiRes.ok) {
-    const err = await aiRes.text().catch(() => aiRes.statusText);
-    throw new Error(`API エラー (${aiRes.status}): ${err}`);
-  }
-
-  const textStream = sseToTextStream(aiRes.body!, (line) => {
-    try {
-      const p = JSON.parse(line);
-      if (
-        p.type === "content_block_delta" &&
-        p.delta?.type === "text_delta"
-      ) {
-        return (p.delta.text as string) ?? null;
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  });
-
-  return new Response(textStream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
-}
-
-// ---------- SSE → plain text ReadableStream ----------
 
 function sseToTextStream(
   body: ReadableStream<Uint8Array>,
@@ -167,22 +110,12 @@ function sseToTextStream(
   });
 }
 
-// ---------- Legacy API (for testConnection in SettingsPage) ----------
-
-async function callOpenAICompat(
+async function callOllamaChat(
   baseUrl: string,
-  apiKey: string,
   model: string,
   messages: AIMessage[],
   onChunk?: (text: string) => void
 ): Promise<string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (apiKey) {
-    headers["Authorization"] = `Bearer ${apiKey}`;
-  }
-
   const body = JSON.stringify({
     model,
     messages,
@@ -191,7 +124,7 @@ async function callOpenAICompat(
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body,
   });
 
@@ -215,71 +148,6 @@ async function callOpenAICompat(
       /* ignore malformed lines */
     }
   });
-}
-
-async function callAnthropic(
-  baseUrl: string,
-  apiKey: string,
-  model: string,
-  messages: AIMessage[],
-  onChunk?: (text: string) => void
-): Promise<string> {
-  const systemMsg = messages.find((m) => m.role === "system")?.content ?? AI_SYSTEM_PROMPT;
-  const conversationMsgs = messages
-    .filter((m) => m.role !== "system")
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-api-key": apiKey,
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-allow-browser": "true",
-  };
-
-  const body = JSON.stringify({
-    model,
-    max_tokens: 2048,
-    system: systemMsg,
-    messages: conversationMsgs,
-    stream: !!onChunk,
-  });
-
-  const res = await fetch(`${baseUrl}/v1/messages`, {
-    method: "POST",
-    headers,
-    body,
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => res.statusText);
-    throw new Error(`API エラー (${res.status}): ${errText}`);
-  }
-
-  if (!onChunk) {
-    const json = await res.json();
-    return (json.content?.[0]?.text as string) ?? "";
-  }
-
-  let buffer = "";
-  await readSSEStream(res, (line) => {
-    if (!line) return;
-    try {
-      const parsed = JSON.parse(line);
-      if (
-        parsed.type === "content_block_delta" &&
-        parsed.delta?.type === "text_delta"
-      ) {
-        const text = (parsed.delta.text as string) ?? "";
-        if (text) {
-          buffer += text;
-          onChunk(text);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-  });
-  return buffer;
 }
 
 async function readSSEStream(
@@ -332,23 +200,7 @@ export async function callAI(
     ...messages,
   ];
 
-  if (settings.provider === "anthropic") {
-    return callAnthropic(
-      settings.baseUrl,
-      settings.apiKey,
-      settings.model,
-      msgs,
-      onChunk
-    );
-  }
-
-  return callOpenAICompat(
-    settings.baseUrl,
-    settings.apiKey,
-    settings.model,
-    msgs,
-    onChunk
-  );
+  return callOllamaChat(settings.baseUrl, settings.model, msgs, onChunk);
 }
 
 export async function testConnection(
@@ -366,6 +218,61 @@ export async function testConnection(
     return {
       ok: false,
       message: e instanceof Error ? e.message : "不明なエラー",
+    };
+  }
+}
+
+/** OpenAI 互換ベース URL（例: `http://localhost:11434/v1`）から Ollama ルート（`/api/tags` 用）を得る */
+export function getOllamaRootFromOpenAIBaseUrl(baseUrl: string): string {
+  const u = baseUrl.trim().replace(/\/+$/, "");
+  if (u.endsWith("/v1")) return u.slice(0, -3);
+  return u;
+}
+
+/** Ollama `GET /api/tags` の1モデル */
+export interface OllamaTagModel {
+  name: string;
+  model: string;
+  modified_at?: string;
+  size?: number;
+  digest?: string;
+  remote_model?: string;
+  remote_host?: string;
+  details?: {
+    parameter_size?: string;
+    quantization_level?: string;
+    family?: string;
+  };
+}
+
+/** ブラウザから Ollama の `GET /api/tags` で API 有効確認とモデル一覧取得 */
+export async function fetchOllamaTags(
+  openAiCompatibleBaseUrl: string
+): Promise<{
+  ok: boolean;
+  models: OllamaTagModel[];
+  httpStatus?: number;
+  error?: string;
+}> {
+  const root = getOllamaRootFromOpenAIBaseUrl(openAiCompatibleBaseUrl);
+  const url = `${root}/api/tags`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return {
+        ok: false,
+        models: [],
+        httpStatus: res.status,
+        error: `HTTP ${res.status}`,
+      };
+    }
+    const data = (await res.json()) as { models?: OllamaTagModel[] };
+    return { ok: true, models: data.models ?? [], httpStatus: res.status };
+  } catch (e) {
+    return {
+      ok: false,
+      models: [],
+      error: e instanceof Error ? e.message : "不明なエラー",
     };
   }
 }

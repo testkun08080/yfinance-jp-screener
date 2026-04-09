@@ -17,6 +17,9 @@ const NotFound = lazy(() =>
 const SettingsPage = lazy(() =>
   import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
 );
+const ChatPage = lazy(() =>
+  import("./pages/ChatPage").then((m) => ({ default: m.ChatPage }))
+);
 
 function App() {
   return (
@@ -34,6 +37,7 @@ function App() {
             <div className="flex-1 min-h-0 flex flex-col min-w-0">
               <Routes>
                 <Route path="/" element={<DataPage />} />
+                <Route path="/chat" element={<ChatPage />} />
                 <Route path="/usage" element={<UsagePage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

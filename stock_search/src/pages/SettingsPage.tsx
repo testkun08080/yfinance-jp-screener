@@ -1,35 +1,29 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { MdCheck, MdError, MdWarning, MdInfo } from "react-icons/md";
+import { MdCheck, MdError, MdInfo, MdRefresh, MdWarning } from "react-icons/md";
 import { useAISettings } from "../hooks/useAISettings";
-import { testConnection } from "../services/aiProviders";
-import { AI_PROVIDER_DEFAULTS } from "../constants/ai";
-import type { AIProvider } from "../types/ai";
+import {
+  fetchOllamaTags,
+  getOllamaRootFromOpenAIBaseUrl,
+  type OllamaTagModel,
+  testConnection,
+} from "../services/aiProviders";
+import { OLLAMA_DEFAULTS } from "../constants/ai";
 
 type TestStatus = "idle" | "testing" | "ok" | "error";
 
-const PROVIDERS: { value: AIProvider; label: string; description: string }[] = [
-  {
-    value: "openai",
-    label: "OpenAI (ChatGPT)",
-    description: "GPT-4o, GPT-4o-mini など",
-  },
-  {
-    value: "anthropic",
-    label: "Anthropic (Claude)",
-    description: "Claude 3.5 Haiku, Sonnet など",
-  },
-  {
-    value: "ollama",
-    label: "Ollama（ローカルLLM）",
-    description: "llama3, mistral, gemma など — API キー不要",
-  },
-  {
-    value: "custom",
-    label: "カスタム（OpenAI互換）",
-    description: "LM Studio など OpenAI 互換 API",
-  },
-];
+function formatBytes(n: number | undefined): string {
+  if (n == null || n <= 0) return "—";
+  const k = 1024;
+  const units = ["B", "KB", "MB", "GB", "TB"] as const;
+  const i = Math.min(
+    Math.floor(Math.log(n) / Math.log(k)),
+    units.length - 1
+  );
+  const v = n / Math.pow(k, i);
+  const decimals = i === 0 ? 0 : i <= 2 ? 1 : 2;
+  return `${v.toFixed(decimals)} ${units[i]}`;
+}
 
 export const SettingsPage = () => {
   const { settings, updateSettings, resetSettings } = useAISettings();
@@ -37,21 +31,12 @@ export const SettingsPage = () => {
   const [testMessage, setTestMessage] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const handleProviderChange = (provider: AIProvider) => {
-    const defaults = AI_PROVIDER_DEFAULTS[provider];
-    updateSettings({
-      provider,
-      baseUrl: defaults.baseUrl,
-      model: defaults.model,
-      // Keep apiKey when switching between non-ollama providers
-    });
-    setTestStatus("idle");
-    setTestMessage("");
-  };
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [tagsError, setTagsError] = useState<string | null>(null);
+  const [tagsHttpStatus, setTagsHttpStatus] = useState<number | null>(null);
+  const [tagModels, setTagModels] = useState<OllamaTagModel[]>([]);
 
   const handleSave = () => {
-    // Settings are already saved reactively in useAISettings,
-    // but we show a visual confirmation here.
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -68,118 +53,78 @@ export const SettingsPage = () => {
     resetSettings();
     setTestStatus("idle");
     setTestMessage("");
+    setTagsError(null);
+    setTagsHttpStatus(null);
+    setTagModels([]);
   };
 
-  const isOllama = settings.provider === "ollama";
-  const isAnthropic = settings.provider === "anthropic";
+  const handleFetchTags = async () => {
+    setTagsLoading(true);
+    setTagsError(null);
+    setTagsHttpStatus(null);
+    const result = await fetchOllamaTags(settings.baseUrl);
+    setTagsLoading(false);
+    setTagsHttpStatus(result.httpStatus ?? null);
+    if (result.ok) {
+      setTagModels(result.models);
+      setTagsError(null);
+    } else {
+      setTagModels([]);
+      setTagsError(result.error ?? "取得に失敗しました");
+    }
+  };
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-base-content mb-1">
-              🤖 AI 設定
+              🤖 AI 設定（Ollama）
             </h1>
             <p className="text-base-content/60 text-sm">
-              スクリーニング中に AI と対話するためのプロバイダー設定
+              ローカルの Ollama と連携してスクリーニング結果を分析します
             </p>
           </div>
 
-          {/* Security notice */}
           <div className="alert alert-warning mb-6 text-sm">
             <MdWarning className="text-lg flex-shrink-0" />
             <span>
-              APIキーはこのブラウザの localStorage に保存されます。
-              <strong>個人端末のみ</strong>
-              でご使用ください。
+              接続先はローカルの Ollama のみです。ブラウザから直接リクエストするため、
+              下記の CORS 設定が必要です。
             </span>
           </div>
 
-          {/* Provider selection */}
-          <div className="card bg-base-100 border border-base-200 shadow-sm mb-4">
-            <div className="card-body">
-              <h2 className="card-title text-lg mb-3">プロバイダー選択</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PROVIDERS.map((p) => (
-                  <label
-                    key={p.value}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      settings.provider === p.value
-                        ? "border-primary bg-primary/5"
-                        : "border-base-200 hover:border-base-300 hover:bg-base-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      className="radio radio-primary radio-sm mt-0.5 flex-shrink-0"
-                      checked={settings.provider === p.value}
-                      onChange={() => handleProviderChange(p.value)}
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-base-content">
-                        {p.label}
-                      </p>
-                      <p className="text-xs text-base-content/60">
-                        {p.description}
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Connection settings */}
           <div className="card bg-base-100 border border-base-200 shadow-sm mb-4">
             <div className="card-body">
               <h2 className="card-title text-lg mb-3">接続設定</h2>
               <div className="space-y-4">
-                {/* API Key — hidden for Ollama */}
-                {!isOllama && (
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium">API キー</span>
-                    </label>
-                    <input
-                      type="password"
-                      className="input input-bordered w-full"
-                      placeholder={
-                        isAnthropic
-                          ? "sk-ant-api03-..."
-                          : "sk-..."
-                      }
-                      value={settings.apiKey}
-                      onChange={(e) => updateSettings({ apiKey: e.target.value })}
-                      autoComplete="off"
-                    />
-                  </div>
-                )}
-
-                {/* Base URL */}
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text font-medium">ベース URL</span>
                   </label>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
-                    placeholder="https://api.openai.com/v1"
+                    className="input input-bordered w-full font-mono text-sm"
+                    placeholder={OLLAMA_DEFAULTS.baseUrl}
                     value={settings.baseUrl}
                     onChange={(e) => updateSettings({ baseUrl: e.target.value })}
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/50">
+                      OpenAI 互換 API のベース（例: …/v1 まで）
+                    </span>
+                  </label>
                 </div>
 
-                {/* Model */}
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text font-medium">モデル名</span>
                   </label>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
-                    placeholder="gpt-4o-mini"
+                    className="input input-bordered w-full font-mono text-sm"
+                    placeholder={OLLAMA_DEFAULTS.model}
                     value={settings.model}
                     onChange={(e) => updateSettings({ model: e.target.value })}
                   />
@@ -188,33 +133,108 @@ export const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Provider-specific notes */}
-          {isOllama && (
-            <div className="alert alert-info mb-4 text-sm">
-              <MdInfo className="text-lg flex-shrink-0" />
-              <div>
-                <p className="font-semibold mb-1">Ollama の CORS 設定が必要です</p>
-                <p className="font-mono text-xs bg-base-100/60 px-2 py-1 rounded mt-1 inline-block">
-                  OLLAMA_ORIGINS=* ollama serve
-                </p>
-                <p className="mt-1 text-xs text-base-content/70">
-                  または環境変数 <code>OLLAMA_ORIGINS</code> に使用するサイトの URL を設定してください。
-                </p>
-              </div>
+          <div className="alert alert-info mb-4 text-sm">
+            <MdInfo className="text-lg flex-shrink-0" />
+            <div>
+              <p className="font-semibold mb-1">Ollama の CORS 設定が必要です</p>
+              <p className="font-mono text-xs bg-base-100/60 px-2 py-1 rounded mt-1 inline-block">
+                OLLAMA_ORIGINS=* ollama serve
+              </p>
+              <p className="mt-1 text-xs text-base-content/70">
+                または環境変数 <code>OLLAMA_ORIGINS</code> に使用するサイトの URL を設定してください。
+              </p>
             </div>
-          )}
-          {isAnthropic && (
-            <div className="alert alert-info mb-4 text-sm">
-              <MdInfo className="text-lg flex-shrink-0" />
-              <span>
-                ブラウザから直接 Anthropic API を呼び出すため、
-                <code className="mx-1">anthropic-dangerous-allow-browser: true</code>
-                ヘッダーを使用します。
-              </span>
-            </div>
-          )}
+          </div>
 
-          {/* Connection test */}
+          <div className="card bg-base-100 border border-base-200 shadow-sm mb-4">
+            <div className="card-body">
+              <h2 className="card-title text-lg mb-1">Ollama API（/api/tags）</h2>
+              <p className="text-sm text-base-content/60 mb-3">
+                設定のベース URL から Ollama ルート（
+                <code className="text-xs bg-base-200 px-1 rounded">
+                  {getOllamaRootFromOpenAIBaseUrl(settings.baseUrl) || "—"}
+                </code>
+                ）を求め、<code className="text-xs">GET /api/tags</code>{" "}
+                で API の有効性とモデル一覧を取得します。
+              </p>
+              <div className="flex items-center gap-3 flex-wrap mb-3">
+                <button
+                  type="button"
+                  className={`btn btn-outline btn-sm ${
+                    tagsLoading ? "loading" : ""
+                  }`}
+                  onClick={handleFetchTags}
+                  disabled={tagsLoading}
+                >
+                  {!tagsLoading && (
+                    <>
+                      <MdRefresh className="text-base" />
+                      モデル一覧を取得
+                    </>
+                  )}
+                  {tagsLoading && "取得中..."}
+                </button>
+                {tagsHttpStatus != null && (
+                  <span className="text-sm text-base-content/70">
+                    HTTP {tagsHttpStatus}
+                    {tagsHttpStatus === 200 && (
+                      <span className="text-success ml-2">· API 応答あり</span>
+                    )}
+                  </span>
+                )}
+              </div>
+              {tagsError && (
+                <p className="text-sm bg-error/10 text-error px-3 py-2 rounded-lg mb-3">
+                  {tagsError}
+                </p>
+              )}
+              {tagModels.length > 0 && (
+                <div className="overflow-x-auto rounded-lg border border-base-200">
+                  <table className="table table-sm table-zebra">
+                    <thead>
+                      <tr>
+                        <th>モデル名</th>
+                        <th>サイズ</th>
+                        <th>パラメータ</th>
+                        <th>量子化</th>
+                        <th>備考</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tagModels.map((m) => (
+                        <tr key={m.name}>
+                          <td className="font-mono text-xs whitespace-nowrap">
+                            {m.name}
+                          </td>
+                          <td className="text-xs whitespace-nowrap">
+                            {formatBytes(m.size)}
+                          </td>
+                          <td className="text-xs">
+                            {m.details?.parameter_size ?? "—"}
+                          </td>
+                          <td className="text-xs">
+                            {m.details?.quantization_level ?? "—"}
+                          </td>
+                          <td className="text-xs text-base-content/70">
+                            {m.remote_host ? (
+                              <>
+                                クラウド: {m.remote_model ?? ""}
+                                <br />
+                                <span className="opacity-80">{m.remote_host}</span>
+                              </>
+                            ) : (
+                              "ローカル"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="card bg-base-100 border border-base-200 shadow-sm mb-6">
             <div className="card-body">
               <h2 className="card-title text-lg mb-3">接続テスト</h2>
@@ -258,14 +278,19 @@ export const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleSave}
             >
-              {saved ? <><MdCheck className="text-base" /> 保存しました</> : "保存"}
+              {saved ? (
+                <>
+                  <MdCheck className="text-base" /> 保存しました
+                </>
+              ) : (
+                "保存"
+              )}
             </button>
             <button
               type="button"

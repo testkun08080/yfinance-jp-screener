@@ -229,6 +229,9 @@ export const Sidebar = ({
             <p className="text-[10px] text-slate-400 mt-1">
               ドロップで差し替え
             </p>
+            <p className="text-[9px] text-slate-400/90 mt-1.5 leading-snug">
+              自動保存（このブラウザ内のみ・サーバー送信なし）
+            </p>
           </div>
         ) : (
           <div className="border-2 border-slate-100 rounded-lg p-3 text-center bg-slate-50/50">

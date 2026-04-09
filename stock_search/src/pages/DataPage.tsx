@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   MdFilterList,
@@ -8,8 +8,8 @@ import {
   MdStar,
   MdChevronRight,
   MdSmartToy,
+  MdOpenInNew,
 } from "react-icons/md";
-import { AIChatPanel } from "../components/AIChatPanel";
 import { useAISettings } from "../hooks/useAISettings";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
@@ -26,6 +26,16 @@ import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "../components/DownloadButton";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
+import {
+  savePersistedCsv,
+  loadPersistedCsv,
+  clearPersistedCsv,
+} from "../utils/csvIndexedDb";
+import { buildStockContext } from "../utils/aiContext";
+import {
+  saveChatStockContext,
+  clearChatStockContext,
+} from "../utils/chatStockContextStorage";
 
 interface CSVFile {
   name: string;
@@ -47,9 +57,60 @@ function getInitialSidebarCollapsed(): boolean {
 
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
+  /** IndexedDB からの復元試行が終わるまでメインの空状態を出さない */
+  const [restorePending, setRestorePending] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
+  const releaseObjectUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  }, []);
+
+  const applySelectedFile = useCallback((file: CSVFile | null) => {
+    releaseObjectUrl();
+    if (file) {
+      objectUrlRef.current = file.url;
+    }
+    setSelectedFile(file);
+  }, [releaseObjectUrl]);
+
+  useEffect(() => {
+    return () => {
+      releaseObjectUrl();
+    };
+  }, [releaseObjectUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await loadPersistedCsv();
+        if (cancelled) return;
+        if (saved) {
+          const url = URL.createObjectURL(saved.blob);
+          applySelectedFile({
+            name: saved.name,
+            displayName: saved.name,
+            size: saved.size,
+            lastModified: new Date(saved.lastModified).toISOString(),
+            url,
+          });
+        }
+      } catch {
+        /* プライベートモード等では失敗しうる */
+      } finally {
+        if (!cancelled) setRestorePending(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applySelectedFile]);
 
   useEffect(() => {
     try {
@@ -86,14 +147,34 @@ export const DataPage = () => {
     };
   }, []);
 
-  const handleFileUpload = (file: File) => {
-    setSelectedFile({
+  const handleFileUpload = async (file: File) => {
+    try {
+      await savePersistedCsv(file, {
+        name: file.name,
+        size: file.size,
+        lastModified: file.lastModified,
+      });
+    } catch {
+      /* 保存失敗時も表示は続行 */
+    }
+    const url = URL.createObjectURL(file);
+    applySelectedFile({
       name: file.name,
       displayName: file.name,
       size: file.size,
       lastModified: new Date(file.lastModified).toISOString(),
-      url: URL.createObjectURL(file),
+      url,
     });
+  };
+
+  const handleClearFile = async () => {
+    try {
+      await clearPersistedCsv();
+    } catch {
+      /* ignore */
+    }
+    await clearChatStockContext();
+    applySelectedFile(null);
   };
 
   const { data, loading, error, reload } = useCSVParser(selectedFile);
@@ -110,7 +191,23 @@ export const DataPage = () => {
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
   const { isConfigured } = useAISettings();
-  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+
+  /** AIチャット（/chat 含む）へ渡す絞り込み要約をブラウザに保存（サーバー送信なし） */
+  useEffect(() => {
+    if (!selectedFile) {
+      void clearChatStockContext();
+      return;
+    }
+    if (loading) return;
+    if (data.length === 0) {
+      void clearChatStockContext();
+      return;
+    }
+    const t = window.setTimeout(() => {
+      void saveChatStockContext(buildStockContext(filteredData));
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [selectedFile, loading, data.length, filteredData]);
 
   /** 現在のデータに含まれるお気に入り銘柄のみ */
   const favoritesInData = useMemo(() => {
@@ -188,7 +285,7 @@ export const DataPage = () => {
       ? { name: selectedFile.name, size: selectedFile.size }
       : null,
     onFileSelect: handleFileUpload,
-    onClear: () => setSelectedFile(null),
+    onClear: handleClearFile,
     onOpenFileSelect: openFileSelect,
     filters,
     onFilterChange: updateFilter,
@@ -207,7 +304,7 @@ export const DataPage = () => {
         accept={CSV_FILE_CONFIG.acceptAttribute}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleFileUpload(file);
+          if (file) void handleFileUpload(file);
           e.target.value = "";
         }}
         className="hidden"
@@ -275,7 +372,16 @@ export const DataPage = () => {
               フィルター・データセット
             </button>
           </div>
-          {!selectedFile && (
+          {!selectedFile && restorePending && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="loading loading-spinner loading-lg text-[var(--primary)]" />
+              <p className="mt-4 text-sm text-slate-600">
+                保存済みの CSV を確認しています…
+              </p>
+            </div>
+          )}
+
+          {!selectedFile && !restorePending && (
             <div
               className="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-xl mx-4 md:mx-6 bg-slate-50/50 hover:border-[var(--primary)] hover:bg-indigo-50/20 transition-colors cursor-pointer group"
               onDragOver={(e) => {
@@ -287,7 +393,7 @@ export const DataPage = () => {
                 e.stopPropagation();
                 const file = e.dataTransfer.files[0];
                 if (file && file.type === CSV_FILE_CONFIG.mimeType) {
-                  handleFileUpload(file);
+                  void handleFileUpload(file);
                 }
               }}
               onClick={openFileSelect}
@@ -298,6 +404,9 @@ export const DataPage = () => {
               </h2>
               <p className="text-sm text-slate-500 mb-4">
                 ここに CSV をドロップするかクリックしてファイルを選択
+              </p>
+              <p className="text-xs text-slate-400 mb-2 max-w-md">
+                読み込んだファイルはこのブラウザ内（IndexedDB）にのみ保持され、サーバーには送信されません。別タブを開いたりアプリを閉じたりしても、差し替えまたは「すべてクリア」まで同じデータを再利用できます。
               </p>
               <p className="text-xs text-slate-400 mb-6">
                 読み込み後はサイドバーから別のファイルに差し替えできます
@@ -410,22 +519,28 @@ export const DataPage = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
-                    onClick={() => setAiPanelOpen(true)}
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/chat"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors no-underline flex-shrink-0 min-h-10"
                     title={
                       isConfigured
-                        ? "AI分析を開く"
+                        ? "AI分析チャットを新しいタブで開く"
                         : "設定ページでAIを設定してください"
                     }
+                    aria-label="AI分析を新しいタブで開く"
                   >
                     <MdSmartToy className="text-lg" />
                     <span className="whitespace-nowrap hidden sm:inline">
                       AI分析
                     </span>
-                  </button>
+                    <MdOpenInNew
+                      className="text-base text-slate-400 sm:ml-0.5"
+                      aria-hidden
+                    />
+                  </Link>
                   <ColumnSelector
                     columns={columns}
                     onColumnChange={handleColumnChange}
@@ -505,13 +620,6 @@ export const DataPage = () => {
           )}
         </main>
       </div>
-
-      <AIChatPanel
-        isOpen={aiPanelOpen}
-        onClose={() => setAiPanelOpen(false)}
-        filteredData={filteredData}
-        isConfigured={isConfigured}
-      />
     </div>
   );
 };

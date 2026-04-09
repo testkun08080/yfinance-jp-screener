@@ -59,3 +59,14 @@ export const CSV_FILE_CONFIG = {
   /** <input accept属性用の値 */
   acceptAttribute: ".csv",
 } as const;
+
+/**
+ * 最後に読み込んだ CSV を IndexedDB に保持（同一オリジンのこのブラウザのみ）。
+ * サーバーには送信されない。
+ */
+export const CSV_LOCAL_CACHE = {
+  dbName: "yfsc-csv-local-cache",
+  dbVersion: 1,
+  storeName: "files",
+  recordKey: "last-csv",
+} as const;

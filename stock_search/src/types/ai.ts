@@ -1,7 +1,9 @@
-export type AIProvider = "openai" | "anthropic" | "ollama" | "custom";
+/** 現状はローカル Ollama のみ対応 */
+export type AIProvider = "ollama";
 
 export interface AISettings {
-  provider: AIProvider;
+  provider: "ollama";
+  /** 互換のため残すが未使用（常に空） */
   apiKey: string;
   baseUrl: string;
   model: string;

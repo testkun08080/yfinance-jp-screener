@@ -17,7 +17,6 @@ export const PAGINATION = {
 /** ナビゲーションメニュー項目 */
 export const NAVIGATION_ITEMS = [
   { path: "/", label: "データビューア", icon: "📊" },
-  { path: "/chat", label: "AIチャット", icon: "💬" },
   { path: "/usage", label: "使い方", icon: "📚" },
   { path: "/about", label: "このアプリについて", icon: "📖" },
   { path: "/settings", label: "AI設定", icon: "🤖" },

@@ -8,7 +8,6 @@ import {
   MdStar,
   MdChevronRight,
   MdSmartToy,
-  MdOpenInNew,
 } from "react-icons/md";
 import { useAISettings } from "../hooks/useAISettings";
 import { CSV_FILE_CONFIG } from "../constants/csv";
@@ -36,6 +35,7 @@ import {
   saveChatStockContext,
   clearChatStockContext,
 } from "../utils/chatStockContextStorage";
+import { AIChatView } from "../components/AIChatView";
 
 interface CSVFile {
   name: string;
@@ -61,6 +61,8 @@ export const DataPage = () => {
   const [restorePending, setRestorePending] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
+  /** AI チャット（データビューと同一画面の右パネル / モバイルは全画面） */
+  const [chatOpen, setChatOpen] = useState(false);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
 
@@ -132,6 +134,17 @@ export const DataPage = () => {
   }, [sidebarOpen]);
 
   useEffect(() => {
+    if (!chatOpen) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    if (!mq.matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [chatOpen]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 768px)");
 
     const handleMediaChange = (event: MediaQueryListEvent) => {
@@ -192,7 +205,7 @@ export const DataPage = () => {
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
   const { isConfigured } = useAISettings();
 
-  /** AIチャット（/chat 含む）へ渡す絞り込み要約をブラウザに保存（サーバー送信なし） */
+  /** AIチャットへ渡す絞り込み要約をブラウザに保存（サーバー送信なし） */
   useEffect(() => {
     if (!selectedFile) {
       void clearChatStockContext();
@@ -459,7 +472,13 @@ export const DataPage = () => {
           )}
 
           {selectedFile && !loading && !error && data.length > 0 && (
-            <>
+            <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+              <div className="flex flex-1 min-h-0 min-w-0 flex-col md:flex-row">
+                <div
+                  className={`flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden ${
+                    chatOpen ? "hidden md:flex" : ""
+                  }`}
+                >
               {/* タブ: すべて / お気に入りのみ ＋ Main toolbar */}
               <div className="px-3 md:px-6 py-3 md:py-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
                 <div className="flex items-center gap-4 md:gap-6">
@@ -520,27 +539,29 @@ export const DataPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link
-                    to="/chat"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors no-underline flex-shrink-0 min-h-10"
+                  <button
+                    type="button"
+                    onClick={() => setChatOpen((v) => !v)}
+                    className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors flex-shrink-0 min-h-10 ${
+                      chatOpen
+                        ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
                     title={
                       isConfigured
-                        ? "AI分析チャットを新しいタブで開く"
+                        ? chatOpen
+                          ? "AI分析を閉じる"
+                          : "AI分析を開く"
                         : "設定ページでAIを設定してください"
                     }
-                    aria-label="AI分析を新しいタブで開く"
+                    aria-expanded={chatOpen}
+                    aria-controls="ai-chat-panel"
                   >
                     <MdSmartToy className="text-lg" />
                     <span className="whitespace-nowrap hidden sm:inline">
-                      AI分析
+                      {chatOpen ? "AI分析を閉じる" : "AI分析"}
                     </span>
-                    <MdOpenInNew
-                      className="text-base text-slate-400 sm:ml-0.5"
-                      aria-hidden
-                    />
-                  </Link>
+                  </button>
                   <ColumnSelector
                     columns={columns}
                     onColumnChange={handleColumnChange}
@@ -616,7 +637,32 @@ export const DataPage = () => {
                   / {displayData.length.toLocaleString()} 件
                 </div>
               </footer>
-            </>
+                </div>
+
+                {chatOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[2px] md:hidden"
+                      aria-label="チャットを閉じる"
+                      onClick={() => setChatOpen(false)}
+                    />
+                    <aside
+                      id="ai-chat-panel"
+                      className="fixed inset-0 z-50 flex min-h-0 flex-col bg-[#f4f4f5] md:static md:inset-auto md:z-auto md:w-[min(440px,42vw)] md:min-w-[320px] md:max-w-[520px] md:flex-shrink-0 md:border-l md:border-slate-200/80 md:shadow-none"
+                      aria-label="AI分析チャット"
+                    >
+                      <AIChatView
+                        embedded
+                        isConfigured={isConfigured}
+                        onClose={() => setChatOpen(false)}
+                        className="min-h-0 flex-1"
+                      />
+                    </aside>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </main>
       </div>

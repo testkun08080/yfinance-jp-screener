@@ -11,7 +11,7 @@ export const AI_STOCK_CONTEXT_HARD_CAP = 15_000;
 /** @deprecated 互換用。AI_STOCK_CONTEXT_HARD_CAP を参照 */
 export const AI_MAX_STOCKS_IN_CONTEXT = AI_STOCK_CONTEXT_HARD_CAP;
 
-/** データビューアの絞り込み要約（buildStockContext の結果）を保存 — 同一ブラウザの /chat から参照 */
+/** データビューアの絞り込み要約（buildStockContext の結果）を保存 — 同一ブラウザの AI チャットから参照 */
 export const CHAT_STOCK_CONTEXT_STORAGE_KEY = "yfsc-chat-stock-context-v1";
 
 /** OpenAI 互換 `/v1/chat/completions` 用（末尾は `/v1`） */

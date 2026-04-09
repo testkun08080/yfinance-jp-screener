@@ -98,7 +98,7 @@ function codeComponent(variant: Variant): Components["code"] {
     if (isBlock) {
       return (
         <code
-          className={`block text-[11px] bg-base-300/70 p-2 rounded-md overflow-x-auto my-0.5 font-mono ${variant === "user" ? "text-primary-content" : "text-base-content"}`}
+          className={`block text-[11px] bg-base-300/70 p-2 rounded-md overflow-x-auto my-0.5 font-mono ${variant === "user" ? "bg-black/25 text-white" : "text-base-content"}`}
           {...props}
         >
           {children}
@@ -109,7 +109,7 @@ function codeComponent(variant: Variant): Components["code"] {
       <code
         className={`text-[11px] px-1 py-0.5 rounded font-mono ${
           variant === "user"
-            ? "bg-primary-content/20 text-primary-content"
+            ? "bg-white/20 text-white"
             : "bg-base-300/80 text-base-content"
         }`}
         {...props}
@@ -125,7 +125,7 @@ function anchorComponent(variant: Variant): Components["a"] {
     <a
       className={
         variant === "user"
-          ? "underline text-primary-content break-all opacity-95"
+          ? "underline text-white break-all opacity-95"
           : "underline text-primary break-all"
       }
       target="_blank"

@@ -55,6 +55,8 @@ function getInitialSidebarCollapsed(): boolean {
   }
 }
 
+type ListTab = "all" | "favorites";
+
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
   /** IndexedDB からの復元試行が終わるまでメインの空状態を出さない */
@@ -237,7 +239,7 @@ export const DataPage = () => {
   }, [filteredData, favoriteCodesSet]);
 
   /** タブ: すべて / お気に入りのみ */
-  const [listTab, setListTab] = useState<"all" | "favorites">("all");
+  const [listTab, setListTab] = useState<ListTab>("all");
   const displayData =
     listTab === "favorites" ? favoritesInData : filteredData;
 
@@ -309,7 +311,7 @@ export const DataPage = () => {
   };
 
   return (
-    <div className="flex flex-1 overflow-hidden flex-col h-full">
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
       {/* 常にDOMに置き、メインD&Dとサイドバー「データセットを変更」の両方で使用 */}
       <input
         ref={mainFileInputRef}
@@ -373,18 +375,7 @@ export const DataPage = () => {
           </div>
         )}
 
-        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
-          {/* モバイル: フィルターを開くボタン */}
-          <div className="md:hidden flex-shrink-0 px-3 py-2 border-b border-[var(--border)] bg-white flex items-center gap-2">
-            <button
-              type="button"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <MdFilterList className="text-lg" />
-              フィルター・データセット
-            </button>
-          </div>
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
           {!selectedFile && restorePending && (
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="loading loading-spinner loading-lg text-[var(--primary)]" />
@@ -479,14 +470,23 @@ export const DataPage = () => {
                     chatOpen ? "hidden md:flex" : ""
                   }`}
                 >
-              {/* タブ: すべて / お気に入りのみ ＋ Main toolbar */}
-              <div className="px-3 md:px-6 py-3 md:py-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-                <div className="flex items-center gap-4 md:gap-6">
-                  {/* リスト表示タブ */}
-                  <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+              {/* 一覧タブ・件数・操作（全画面幅で同一のコンパクトレイアウト） */}
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-2 md:px-6">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
+                  <button
+                    type="button"
+                    className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
+                    onClick={() => setSidebarOpen(true)}
+                    title="フィルター・データセットを開く"
+                    aria-label="フィルター・データセット・一覧・件数を開く"
+                  >
+                    <MdFilterList className="text-xl" aria-hidden />
+                  </button>
+                  <div className="flex rounded-md border border-slate-200 bg-slate-50 p-px">
                     <button
                       type="button"
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      title="すべて表示"
+                      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                         listTab === "all"
                           ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-600 hover:text-slate-800"
@@ -497,40 +497,52 @@ export const DataPage = () => {
                     </button>
                     <button
                       type="button"
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                      title="お気に入りのみ"
+                      className={`flex items-center gap-0.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
                         listTab === "favorites"
-                          ? "bg-white text-amber-700 shadow-sm"
+                          ? "bg-white text-amber-800 shadow-sm"
                           : "text-slate-600 hover:text-slate-800"
                       }`}
                       onClick={() => setListTab("favorites")}
                     >
-                      <MdStar className="text-amber-500 text-base" />
-                      お気に入りのみ
+                      <MdStar className="text-amber-500 text-sm" aria-hidden />
+                      <span className="hidden sm:inline">お気に入り</span>
                       {favoritesInData.length > 0 && (
-                        <span className="text-xs">
-                          ({favoritesInData.length})
+                        <span className="tabular-nums text-[10px] opacity-80">
+                          {favoritesInData.length}
                         </span>
                       )}
                     </button>
                   </div>
-                  <div className="w-[1px] h-10 bg-slate-100 hidden sm:block" />
-                  <div className="flex items-center gap-6 md:gap-10">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                  <div className="h-7 w-px flex-shrink-0 bg-slate-100 md:hidden" />
+                  <div className="hidden h-7 w-px bg-slate-100 sm:block" />
+                  <div className="flex items-end gap-4 md:gap-5">
+                    <div
+                      className="leading-none"
+                      title={
+                        listTab === "all"
+                          ? `総件数 ${displayData.length.toLocaleString()}`
+                          : `お気に入り ${displayData.length.toLocaleString()}`
+                      }
+                    >
+                      <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                         {listTab === "all" ? "総件数" : "お気に入り"}
                       </p>
-                      <p className="text-2xl md:text-3xl font-bold text-slate-900">
+                      <p className="text-base font-bold tabular-nums text-slate-900 md:text-lg">
                         {displayData.length.toLocaleString()}
                       </p>
                     </div>
                     {listTab === "all" && (
                       <>
-                        <div className="w-[1px] h-10 bg-slate-100" />
-                        <div>
-                          <p className="text-[11px] font-bold text-[var(--primary)] uppercase tracking-tight">
-                            絞り込み結果
+                        <div className="mb-1 h-6 w-px bg-slate-100" />
+                        <div
+                          className="leading-none"
+                          title={`絞り込み結果 ${filteredData.length.toLocaleString()}`}
+                        >
+                          <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--primary)]">
+                            絞り込み
                           </p>
-                          <p className="text-2xl md:text-3xl font-bold text-[var(--primary)]">
+                          <p className="text-base font-bold tabular-nums text-[var(--primary)] md:text-lg">
                             {filteredData.length.toLocaleString()}
                           </p>
                         </div>
@@ -538,11 +550,11 @@ export const DataPage = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-shrink-0 items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setChatOpen((v) => !v)}
-                    className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors flex-shrink-0 min-h-10 ${
+                    className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border transition-colors ${
                       chatOpen
                         ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
                         : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -557,21 +569,20 @@ export const DataPage = () => {
                     aria-expanded={chatOpen}
                     aria-controls="ai-chat-panel"
                   >
-                    <MdSmartToy className="text-lg" />
-                    <span className="whitespace-nowrap hidden sm:inline">
-                      {chatOpen ? "AI分析を閉じる" : "AI分析"}
-                    </span>
+                    <MdSmartToy className="text-xl" aria-hidden />
                   </button>
                   <ColumnSelector
                     columns={columns}
                     onColumnChange={handleColumnChange}
                     onCategoryToggle={handleCategoryToggle}
+                    compactTrigger
                   />
                   <DownloadButton
                     data={displayData}
                     columns={columns}
                     fileName={selectedFile.name.replace(/\.[^/.]+$/, "")}
                     totalCount={data.length}
+                    compactTrigger
                   />
                 </div>
               </div>

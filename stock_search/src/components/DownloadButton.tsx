@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MdDownload } from "react-icons/md";
 import type { StockData } from "../types/stock";
 import type { ColumnConfig } from "./ColumnSelector";
 import {
@@ -15,6 +16,8 @@ interface DownloadButtonProps {
   fileName?: string;
   totalCount?: number;
   className?: string;
+  /** ツールバー用: ダウンロードアイコンのみ（詳細は title） */
+  compactTrigger?: boolean;
 }
 
 export const DownloadButton: React.FC<DownloadButtonProps> = ({
@@ -23,6 +26,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   fileName = "stock_data",
   totalCount,
   className = "",
+  compactTrigger = false,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
@@ -117,32 +121,52 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   const isDisabled =
     isDownloading || data.length === 0 || cooldownRemaining > 0;
 
+  const downloadTitle =
+    cooldownRemaining > 0
+      ? `クールダウン中: あと${Math.ceil(cooldownRemaining / 1000)}秒`
+      : `CSVをダウンロード（${data.length}件・${visibleColumnCount}列・約${estimatedSize}）`;
+
   return (
     <div className={`relative flex-shrink-0 ${className}`}>
       <button
         onClick={handleDownload}
         disabled={isDisabled}
-        className={`btn btn-outline btn-sm gap-1.5 md:gap-2 min-h-10 px-3 md:px-4 whitespace-nowrap inline-flex items-center ${
-          data.length === 0 ? "btn-disabled" : ""
-        } ${cooldownRemaining > 0 ? "btn-disabled opacity-60" : ""}`}
-        title={
-          cooldownRemaining > 0
-            ? `クールダウン中: あと${Math.ceil(cooldownRemaining / 1000)}秒`
-            : `CSVファイルをダウンロード (${data.length}件, ${visibleColumnCount}列, 約${estimatedSize})`
-        }
+        title={downloadTitle}
+        aria-label={downloadTitle}
+        className={`inline-flex items-center justify-center whitespace-nowrap ${
+          compactTrigger
+            ? `h-9 w-9 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 ${
+                data.length === 0 ? "cursor-not-allowed opacity-40" : ""
+              } ${cooldownRemaining > 0 ? "opacity-60" : ""}`
+            : `btn btn-outline btn-sm min-h-10 gap-1.5 px-3 md:gap-2 md:px-4 ${
+                data.length === 0 ? "btn-disabled" : ""
+              } ${cooldownRemaining > 0 ? "btn-disabled opacity-60" : ""}`
+        }`}
       >
         {isDownloading ? (
-          <>
-            <span className="loading loading-spinner loading-xs"></span>
-            生成中...
-          </>
+          compactTrigger ? (
+            <span className="loading loading-spinner loading-sm text-[var(--primary)]" />
+          ) : (
+            <>
+              <span className="loading loading-spinner loading-xs" />
+              生成中...
+            </>
+          )
         ) : cooldownRemaining > 0 ? (
-          <>
-            ⏱️ CSV
-            <span className="text-xs opacity-70">
-              {Math.ceil(cooldownRemaining / 1000)}秒
+          compactTrigger ? (
+            <span className="text-xs font-bold tabular-nums">
+              {Math.ceil(cooldownRemaining / 1000)}
             </span>
-          </>
+          ) : (
+            <>
+              ⏱️ CSV
+              <span className="text-xs opacity-70">
+                {Math.ceil(cooldownRemaining / 1000)}秒
+              </span>
+            </>
+          )
+        ) : compactTrigger ? (
+          <MdDownload className="text-xl" aria-hidden />
         ) : (
           <>
             📥 CSVダウンロード

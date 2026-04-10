@@ -7,6 +7,12 @@ export interface AISettings {
   apiKey: string;
   baseUrl: string;
   model: string;
+  /**
+   * チャットの system 先頭に使うマスタープロンプト。
+   * 空（または空白のみ）のときは `AI_SYSTEM_PROMPT` 既定を使う。
+   * スクリーニング表は送信時にこの後ろへ自動で付与される。
+   */
+  systemPrompt: string;
 }
 
 export interface ChatMessage {

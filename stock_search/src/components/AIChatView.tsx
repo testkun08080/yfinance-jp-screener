@@ -12,6 +12,7 @@ import { isTextUIPart } from "ai";
 import type { UIMessage } from "ai";
 import { usePersistedScreeningChat } from "../hooks/usePersistedScreeningChat";
 import { useAISettings } from "../hooks/useAISettings";
+import { setOllamaChatRuntimeCallbacks } from "../services/aiProviders";
 import { ChatMarkdown } from "./ChatMarkdown";
 
 function getMessageText(msg: UIMessage): string {
@@ -88,14 +89,31 @@ export const AIChatView = ({
   } = usePersistedScreeningChat();
 
   const [input, setInput] = useState("");
+  const [toolStatus, setToolStatus] = useState<string | null>(null);
+  const [citationUrls, setCitationUrls] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isActive = status === "streaming" || status === "submitted";
 
   useEffect(() => {
+    setOllamaChatRuntimeCallbacks({
+      onToolStatus: setToolStatus,
+      onCitationUrl: (url) => {
+        setCitationUrls((prev) =>
+          prev.includes(url) ? prev : [...prev, url]
+        );
+      },
+    });
+    return () => {
+      setOllamaChatRuntimeCallbacks(null);
+      setToolStatus(null);
+    };
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, status]);
+  }, [messages, status, toolStatus]);
 
   const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
@@ -111,6 +129,7 @@ export const AIChatView = ({
   const handleSend = () => {
     if (!input.trim() || isActive || !isConfigured) return;
     clearError();
+    setCitationUrls([]);
     sendMessage({ text: input.trim() });
     setInput("");
     requestAnimationFrame(resizeTextarea);
@@ -211,6 +230,43 @@ export const AIChatView = ({
               （件数が極端に多い場合は先頭のみ。チャット欄には出しません。サーバーには保存されません）。
             </p>
           )}
+        </div>
+      )}
+
+      {isConfigured && toolStatus && (
+        <div
+          className={`mx-3 mt-3 mb-1 flex flex-shrink-0 items-center gap-2 rounded-xl border border-indigo-200/80 bg-indigo-50/95 px-3 py-2 text-xs text-indigo-950 ${
+            embedded ? "" : ""
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="loading loading-spinner loading-xs text-indigo-600" />
+          <span className="font-medium">{toolStatus}</span>
+        </div>
+      )}
+
+      {isConfigured && citationUrls.length > 0 && !toolStatus && (
+        <div
+          className={`mx-3 mt-3 mb-1 flex flex-shrink-0 flex-col gap-1 rounded-xl border border-slate-200/90 bg-slate-50/95 px-3 py-2 text-[11px] text-slate-700 ${
+            embedded ? "" : ""
+          }`}
+        >
+          <span className="font-semibold text-slate-800">参照したページ（ツール）</span>
+          <ul className="list-inside list-disc space-y-0.5 break-all">
+            {citationUrls.map((u) => (
+              <li key={u}>
+                <a
+                  href={u}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 underline hover:text-indigo-800"
+                >
+                  {u}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

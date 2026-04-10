@@ -1,10 +1,5 @@
-import {
-  MdClose,
-  MdChevronLeft,
-  MdFolderOpen,
-  MdExpandMore,
-  MdFilterList,
-} from "react-icons/md";
+import { MdFolderOpen, MdExpandMore, MdFilterList } from "react-icons/md";
+import { AppSidebarNav } from "./AppSidebarNav";
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
@@ -160,42 +155,21 @@ export const Sidebar = ({
           : "w-72 h-full border-r border-[var(--border)]"
       }`}
     >
-      {/* ヘッダー: モバイル閉じる / デスクトップ折りたたみ */}
-      {(onClose || onCollapse) && (
-        <div className="flex items-center justify-end gap-1 p-2 border-b border-[var(--border)]">
-          {onClose && (
-            <button
-              type="button"
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onClose}
-              aria-label="閉じる"
-            >
-              <MdClose />
-            </button>
-          )}
-          {onCollapse && (
-            <button
-              type="button"
-              className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onCollapse}
-              aria-label="サイドバーを折りたたむ"
-              title="サイドバーを折りたたむ"
-            >
-              <MdChevronLeft className="text-lg" />
-            </button>
-          )}
-        </div>
-      )}
-      {/* データセット */}
-      <div className="p-4 border-b border-[var(--border)]">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+      <AppSidebarNav
+        onClose={onClose}
+        onCollapse={onCollapse}
+        onNavigate={onClose}
+      />
+      {/* データセット（コンパクト） */}
+      <div className="border-b border-[var(--border)] px-3 py-2">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
             データセット
           </span>
           {hasFile && (
             <button
               type="button"
-              className="text-[10px] text-[var(--primary)] font-bold hover:underline"
+              className="text-[9px] font-bold text-[var(--primary)] hover:underline"
               onClick={onClear}
             >
               すべてクリア
@@ -204,40 +178,36 @@ export const Sidebar = ({
         </div>
         {hasFile && fileInfo ? (
           <div
-            className="relative border-2 border-slate-200 rounded-lg p-3 pr-10 text-center bg-slate-50 hover:border-[var(--primary)] transition-colors"
+            className="relative flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50/90 p-2 pr-9 transition-colors hover:border-[var(--primary)]/50"
             onDragOver={handleDatasetDragOver}
             onDrop={handleDatasetDrop}
+            title="自動保存（このブラウザ内のみ・サーバー送信なし）。ドロップでファイルを差し替えられます。"
           >
             <button
               type="button"
-              className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-slate-200/80 text-slate-500 hover:text-[var(--primary)] transition-colors"
+              className="absolute right-1 top-1 rounded p-1 text-slate-500 transition-colors hover:bg-slate-200/80 hover:text-[var(--primary)]"
               onClick={onOpenFileSelect}
               title="データセットを変更"
               aria-label="データセットを変更"
             >
-              <MdFolderOpen className="text-lg" />
+              <MdFolderOpen className="text-base" />
             </button>
-            <p
-              className="text-[11px] font-semibold text-slate-600 truncate pr-6"
-              title={fileInfo.name}
-            >
-              {fileInfo.name}
-            </p>
-            <p className="text-[10px] text-slate-400">
-              {formatFileSize(fileInfo.size)} • 準備完了
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">
-              ドロップで差し替え
-            </p>
-            <p className="text-[9px] text-slate-400/90 mt-1.5 leading-snug">
-              自動保存（このブラウザ内のみ・サーバー送信なし）
-            </p>
+            <div className="min-w-0 flex-1 text-left">
+              <p
+                className="truncate text-[11px] font-semibold leading-tight text-slate-700"
+                title={fileInfo.name}
+              >
+                {fileInfo.name}
+              </p>
+              <p className="mt-0.5 text-[9px] leading-snug text-slate-400">
+                {formatFileSize(fileInfo.size)} · 準備完了 · ドロップで差し替え
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="border-2 border-slate-100 rounded-lg p-3 text-center bg-slate-50/50">
-            <p className="text-[11px] text-slate-400">未読み込み</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              メインエリアでCSVを読み込み
+          <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/60 px-2 py-1.5 text-center">
+            <p className="text-[10px] leading-snug text-slate-400">
+              未読み込み — メインで CSV を読み込み
             </p>
           </div>
         )}

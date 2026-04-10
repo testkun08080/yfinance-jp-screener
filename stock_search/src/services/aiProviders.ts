@@ -1,12 +1,44 @@
 import type { AISettings } from "../types/ai";
 import { AI_SYSTEM_PROMPT } from "../constants/ai";
 import { loadChatStockContext } from "../utils/chatStockContextStorage";
+import {
+  runOllamaChatWithToolsAndStream,
+  type OllamaChatMessage,
+} from "./ollamaAgentLoop";
+
+/** チャット送信時に UI（ツール実行中表示・出典 URL）へ通知するコールバック */
+export type OllamaChatRuntimeCallbacks = {
+  onToolStatus?: (status: string | null) => void;
+  onCitationUrl?: (url: string) => void;
+};
+
+let ollamaChatRuntimeCallbacks: OllamaChatRuntimeCallbacks | null = null;
+
+export function setOllamaChatRuntimeCallbacks(
+  cb: OllamaChatRuntimeCallbacks | null
+): void {
+  ollamaChatRuntimeCallbacks = cb;
+}
+
+/** 設定のマスタープロンプト。空・空白のみなら組み込み既定を使う（末尾改行などは保持） */
+export function getMasterSystemPrompt(settings: AISettings): string {
+  const raw = settings.systemPrompt ?? "";
+  if (raw.trim() === "") return AI_SYSTEM_PROMPT;
+  return raw;
+}
 
 /** チャット送信ごとに、ブラウザに保存したスクリーニング要約をシステムプロンプトへ合流（ユーザーが手動で貼らなくてよい） */
-async function getEffectiveSystemPromptForChat(): Promise<string> {
+async function getEffectiveSystemPromptForChat(
+  settings: AISettings
+): Promise<string> {
+  const base = getMasterSystemPrompt(settings);
   const stock = (await loadChatStockContext())?.trim();
-  if (!stock) return AI_SYSTEM_PROMPT;
-  return `${AI_SYSTEM_PROMPT}
+  const toolHint = `
+
+【ツール】
+モデルが tool calling に対応している場合、必要に応じて get_screening_context（スクリーニング要約の再取得）または fetch_public_page_text（https:// の公開ページ本文・Jina Reader 経由）を使えます。`;
+  if (!stock) return `${base}${toolHint}`;
+  return `${base}${toolHint}
 
 【以下はユーザーがこのブラウザで読み込んだスクリーニング結果です（当アプリのサーバーには送信されません）。回答では必ず参照してください。】
 ${stock}`;
@@ -36,78 +68,25 @@ export function createCustomFetch(settings: AISettings): typeof fetch {
         .join(""),
     }));
 
-    const systemContent = await getEffectiveSystemPromptForChat();
-    const allMessages = [{ role: "system", content: systemContent }, ...msgs];
+    const systemContent = await getEffectiveSystemPromptForChat(settings);
+    const ollamaMessages: OllamaChatMessage[] = [
+      { role: "system", content: systemContent },
+      ...msgs
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+    ];
 
-    return fetchOllamaOpenAITextStream(settings, allMessages);
+    const cb = ollamaChatRuntimeCallbacks;
+    return runOllamaChatWithToolsAndStream(
+      settings,
+      ollamaMessages,
+      cb?.onToolStatus,
+      cb?.onCitationUrl
+    );
   };
-}
-
-async function fetchOllamaOpenAITextStream(
-  settings: AISettings,
-  messages: { role: string; content: string }[]
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  const aiRes = await fetch(`${settings.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model: settings.model,
-      messages,
-      stream: true,
-    }),
-  });
-
-  if (!aiRes.ok) {
-    const err = await aiRes.text().catch(() => aiRes.statusText);
-    throw new Error(`API エラー (${aiRes.status}): ${err}`);
-  }
-
-  const textStream = sseToTextStream(aiRes.body!, (line) => {
-    if (line === "[DONE]") return null;
-    try {
-      return (JSON.parse(line).choices?.[0]?.delta?.content as string) ?? null;
-    } catch {
-      return null;
-    }
-  });
-
-  return new Response(textStream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
-}
-
-function sseToTextStream(
-  body: ReadableStream<Uint8Array>,
-  extractText: (dataLine: string) => string | null
-): ReadableStream<Uint8Array> {
-  return new ReadableStream({
-    async start(controller) {
-      const reader = body.getReader();
-      const decoder = new TextDecoder();
-      const encoder = new TextEncoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith("data: ")) {
-            const text = extractText(trimmed.slice(6));
-            if (text) controller.enqueue(encoder.encode(text));
-          }
-        }
-      }
-      controller.close();
-    },
-  });
 }
 
 async function callOllamaChat(
@@ -196,7 +175,7 @@ export async function callAI(
   onChunk?: (text: string) => void
 ): Promise<string> {
   const msgs: AIMessage[] = [
-    { role: "system", content: AI_SYSTEM_PROMPT },
+    { role: "system", content: getMasterSystemPrompt(settings) },
     ...messages,
   ];
 

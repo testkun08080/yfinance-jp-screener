@@ -8,7 +8,7 @@ import {
   type OllamaTagModel,
   testConnection,
 } from "../services/aiProviders";
-import { OLLAMA_DEFAULTS } from "../constants/ai";
+import { AI_SYSTEM_PROMPT, OLLAMA_DEFAULTS } from "../constants/ai";
 
 type TestStatus = "idle" | "testing" | "ok" | "error";
 
@@ -129,6 +129,47 @@ export const SettingsPage = () => {
                     onChange={(e) => updateSettings({ model: e.target.value })}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-base-100 border border-base-200 shadow-sm mb-4">
+            <div className="card-body">
+              <h2 className="card-title text-lg mb-1">マスターシステムプロンプト</h2>
+              <p className="text-sm text-base-content/60 mb-3">
+                AI
+                チャットで毎回の先頭に送るシステム指示です。データビューアの絞り込み表は、この後ろに自動で付与されます（ここには含めなくて構いません）。
+              </p>
+              <div className="form-control">
+                <label className="label py-1">
+                  <span className="label-text font-medium">プロンプト本文</span>
+                  <span className="label-text-alt text-base-content/50">
+                    {settings.systemPrompt.trim() === ""
+                      ? "空欄 → アプリ既定を使用"
+                      : `${settings.systemPrompt.length} 文字`}
+                  </span>
+                </label>
+                <textarea
+                  className="textarea textarea-bordered w-full font-sans text-sm leading-relaxed min-h-[14rem] max-h-[28rem]"
+                  spellCheck={false}
+                  value={settings.systemPrompt}
+                  onChange={(e) =>
+                    updateSettings({ systemPrompt: e.target.value })
+                  }
+                  placeholder={AI_SYSTEM_PROMPT}
+                  aria-label="マスターシステムプロンプト"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() =>
+                    updateSettings({ systemPrompt: AI_SYSTEM_PROMPT })
+                  }
+                >
+                  アプリ既定の文言に戻す
+                </button>
               </div>
             </div>
           </div>

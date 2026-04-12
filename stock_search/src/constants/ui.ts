@@ -19,7 +19,6 @@ export const NAVIGATION_ITEMS = [
   { path: "/", label: "データビューア", icon: "📊" },
   { path: "/usage", label: "使い方", icon: "📚" },
   { path: "/about", label: "このアプリについて", icon: "📖" },
-  { path: "/settings", label: "AI設定", icon: "🤖" },
 ] as const;
 
 /** ブレッドクラム項目 */

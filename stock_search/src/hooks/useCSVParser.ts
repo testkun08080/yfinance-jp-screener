@@ -37,11 +37,14 @@ export const useCSVParser = (file: CSVFile | null) => {
         );
       }
 
-      const csvText = await response.text();
+      let csvText = await response.text();
+      // UTF-8 BOM 付き CSV だと先頭列名が壊れ、フィルタ・AI 列がずれる
+      csvText = csvText.replace(/^\uFEFF/, "");
 
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
+        transformHeader: (h: string) => h.trim().replace(/^\uFEFF/, ""),
         complete: (results) => {
           if (results.errors.length > 0) {
             console.warn("CSV parsing warnings:", results.errors);

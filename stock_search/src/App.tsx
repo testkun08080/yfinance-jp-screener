@@ -14,13 +14,6 @@ const AboutPage = lazy(() =>
 const NotFound = lazy(() =>
   import("./pages/NotFound").then((m) => ({ default: m.NotFound }))
 );
-const SettingsPage = lazy(() =>
-  import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
-);
-const ChatPage = lazy(() =>
-  import("./pages/ChatPage").then((m) => ({ default: m.ChatPage }))
-);
-
 function App() {
   return (
     <Router>
@@ -36,10 +29,8 @@ function App() {
             <Routes>
               <Route path="/" element={<DataPage />} />
               <Route element={<SecondaryLayout />}>
-                <Route path="chat" element={<ChatPage />} />
                 <Route path="usage" element={<UsagePage />} />
                 <Route path="about" element={<AboutPage />} />
-                <Route path="settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>

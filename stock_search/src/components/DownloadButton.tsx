@@ -124,7 +124,9 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   const downloadTitle =
     cooldownRemaining > 0
       ? `クールダウン中: あと${Math.ceil(cooldownRemaining / 1000)}秒`
-      : `CSVをダウンロード（${data.length}件・${visibleColumnCount}列・約${estimatedSize}）`;
+      : data.length === 0
+        ? "表示するデータがありません（絞り込みを確認してください）"
+        : `CSVをダウンロード（${data.length}件・${visibleColumnCount}列・約${estimatedSize}）`;
 
   return (
     <div className={`relative flex-shrink-0 ${className}`}>
@@ -177,17 +179,15 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
         )}
       </button>
 
-      {/* ダウンロード状況メッセージ */}
+      {/* ダウンロード状況（狭い幅では下方向に広がり下の UI と重なるため、md 未満はボタン上に表示） */}
       {downloadMessage && (
-        <div className="absolute top-full left-0 mt-2 px-3 py-2 bg-base-100 border border-base-300 text-sm rounded-lg shadow-lg whitespace-nowrap z-20 min-w-max">
+        <div
+          role="status"
+          className="absolute z-30 max-w-[min(20rem,calc(100vw-2rem))] px-3 py-2 bg-base-100 border border-base-300 text-sm rounded-lg shadow-lg whitespace-normal text-left
+            max-md:right-0 max-md:left-auto max-md:bottom-full max-md:top-auto max-md:mb-2 max-md:mt-0
+            md:left-0 md:right-auto md:top-full md:bottom-auto md:mt-2"
+        >
           {downloadMessage}
-        </div>
-      )}
-
-      {/* データがない場合の説明 */}
-      {data.length === 0 && (
-        <div className="absolute top-full left-0 mt-2 px-3 py-2 bg-warning/10 border border-warning/30 text-warning-content text-sm rounded-lg shadow-lg whitespace-nowrap z-20">
-          データがありません
         </div>
       )}
 

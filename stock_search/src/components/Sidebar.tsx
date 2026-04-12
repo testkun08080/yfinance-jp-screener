@@ -178,20 +178,24 @@ export const Sidebar = ({
         </div>
         {hasFile && fileInfo ? (
           <div
-            className="relative flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50/90 p-2 pr-9 transition-colors hover:border-[var(--primary)]/50"
+            className={`relative flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50/90 p-2 transition-colors hover:border-[var(--primary)]/50 ${
+              onOpenFileSelect ? "pr-9" : "pr-2"
+            }`}
             onDragOver={handleDatasetDragOver}
             onDrop={handleDatasetDrop}
             title="自動保存（このブラウザ内のみ・サーバー送信なし）。ドロップでファイルを差し替えられます。"
           >
-            <button
-              type="button"
-              className="absolute right-1 top-1 rounded p-1 text-slate-500 transition-colors hover:bg-slate-200/80 hover:text-[var(--primary)]"
-              onClick={onOpenFileSelect}
-              title="データセットを変更"
-              aria-label="データセットを変更"
-            >
-              <MdFolderOpen className="text-base" />
-            </button>
+            {onOpenFileSelect && (
+              <button
+                type="button"
+                className="absolute right-1 top-1 rounded p-1 text-slate-500 transition-colors hover:bg-slate-200/80 hover:text-[var(--primary)]"
+                onClick={onOpenFileSelect}
+                title="データセットを変更"
+                aria-label="データセットを変更"
+              >
+                <MdFolderOpen className="text-base" />
+              </button>
+            )}
             <div className="min-w-0 flex-1 text-left">
               <p
                 className="truncate text-[11px] font-semibold leading-tight text-slate-700"

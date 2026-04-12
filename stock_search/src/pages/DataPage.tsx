@@ -57,6 +57,8 @@ export const DataPage = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
+  /** IndexedDB 復元より先にユーザーがファイルを選んだ場合は復元を適用しない */
+  const userInitiatedSelectionRef = useRef(false);
 
   const releaseObjectUrl = useCallback(() => {
     if (objectUrlRef.current) {
@@ -85,6 +87,7 @@ export const DataPage = () => {
       try {
         const saved = await loadPersistedCsv();
         if (cancelled) return;
+        if (userInitiatedSelectionRef.current) return;
         if (saved) {
           const url = URL.createObjectURL(saved.blob);
           applySelectedFile({
@@ -141,16 +144,8 @@ export const DataPage = () => {
     };
   }, []);
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      await savePersistedCsv(file, {
-        name: file.name,
-        size: file.size,
-        lastModified: file.lastModified,
-      });
-    } catch {
-      /* 保存失敗時も表示は続行 */
-    }
+  const handleFileUpload = (file: File) => {
+    userInitiatedSelectionRef.current = true;
     const url = URL.createObjectURL(file);
     applySelectedFile({
       name: file.name,
@@ -158,6 +153,13 @@ export const DataPage = () => {
       size: file.size,
       lastModified: new Date(file.lastModified).toISOString(),
       url,
+    });
+    void savePersistedCsv(file, {
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+    }).catch(() => {
+      /* 保存失敗時も表示は続行 */
     });
   };
 
@@ -336,6 +338,30 @@ export const DataPage = () => {
         )}
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
+          {selectedFile &&
+            (loading ||
+              error ||
+              (!loading && !error && data.length === 0)) && (
+              <div className="flex-shrink-0 flex items-center gap-2 border-b border-[var(--border)] bg-white px-3 py-2 md:hidden">
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm"
+                  onClick={() => setSidebarOpen(true)}
+                  title="フィルター・データセットを開く"
+                  aria-label="フィルター・データセット・一覧・件数を開く"
+                >
+                  <MdFilterList className="text-xl" aria-hidden />
+                </button>
+                <span className="min-w-0 flex-1 truncate text-xs text-slate-500">
+                  {loading
+                    ? "読み込み中…"
+                    : error
+                      ? "エラー — サイドバーでファイルを差し替えられます"
+                      : "データなし — サイドバーでファイルを差し替えられます"}
+                </span>
+              </div>
+            )}
+
           {!selectedFile && restorePending && (
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="loading loading-spinner loading-lg text-[var(--primary)]" />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   MdFilterList,
@@ -23,6 +23,11 @@ import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "../components/DownloadButton";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
+import {
+  savePersistedCsv,
+  loadPersistedCsv,
+  clearPersistedCsv,
+} from "../utils/csvIndexedDb";
 
 interface CSVFile {
   name: string;
@@ -44,9 +49,66 @@ function getInitialSidebarCollapsed(): boolean {
 
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
+  /** IndexedDB からの復元試行が終わるまでメインの空状態を出さない */
+  const [restorePending, setRestorePending] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  /** IndexedDB 復元より先にユーザーがファイルを選んだ場合は復元を適用しない */
+  const userInitiatedSelectionRef = useRef(false);
+
+  const releaseObjectUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  }, []);
+
+  const applySelectedFile = useCallback(
+    (file: CSVFile | null) => {
+      releaseObjectUrl();
+      if (file) {
+        objectUrlRef.current = file.url;
+      }
+      setSelectedFile(file);
+    },
+    [releaseObjectUrl]
+  );
+
+  useEffect(() => {
+    return () => {
+      releaseObjectUrl();
+    };
+  }, [releaseObjectUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = await loadPersistedCsv();
+        if (cancelled) return;
+        if (userInitiatedSelectionRef.current) return;
+        if (saved) {
+          const url = URL.createObjectURL(saved.blob);
+          applySelectedFile({
+            name: saved.name,
+            displayName: saved.name,
+            size: saved.size,
+            lastModified: new Date(saved.lastModified).toISOString(),
+            url,
+          });
+        }
+      } catch {
+        /* プライベートモード等では失敗しうる */
+      } finally {
+        if (!cancelled) setRestorePending(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applySelectedFile]);
 
   useEffect(() => {
     try {
@@ -84,13 +146,31 @@ export const DataPage = () => {
   }, []);
 
   const handleFileUpload = (file: File) => {
-    setSelectedFile({
+    userInitiatedSelectionRef.current = true;
+    const url = URL.createObjectURL(file);
+    applySelectedFile({
       name: file.name,
       displayName: file.name,
       size: file.size,
       lastModified: new Date(file.lastModified).toISOString(),
-      url: URL.createObjectURL(file),
+      url,
     });
+    void savePersistedCsv(file, {
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+    }).catch(() => {
+      /* 保存失敗時も表示は続行 */
+    });
+  };
+
+  const handleClearFile = async () => {
+    try {
+      await clearPersistedCsv();
+    } catch {
+      /* ignore */
+    }
+    applySelectedFile(null);
   };
 
   const { data, loading, error, reload } = useCSVParser(selectedFile);
@@ -183,7 +263,7 @@ export const DataPage = () => {
       ? { name: selectedFile.name, size: selectedFile.size }
       : null,
     onFileSelect: handleFileUpload,
-    onClear: () => setSelectedFile(null),
+    onClear: handleClearFile,
     onOpenFileSelect: openFileSelect,
     filters,
     onFilterChange: updateFilter,
@@ -270,7 +350,15 @@ export const DataPage = () => {
               フィルター・データセット
             </button>
           </div>
-          {!selectedFile && (
+          {restorePending && !selectedFile && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
+              <p className="mt-4 text-sm text-slate-600">
+                保存したデータを確認しています…
+              </p>
+            </div>
+          )}
+          {!restorePending && !selectedFile && (
             <div
               className="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-xl mx-4 md:mx-6 bg-slate-50/50 hover:border-[var(--primary)] hover:bg-indigo-50/20 transition-colors cursor-pointer group"
               onDragOver={(e) => {

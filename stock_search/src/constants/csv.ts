@@ -59,3 +59,11 @@ export const CSV_FILE_CONFIG = {
   /** <input accept属性用の値 */
   acceptAttribute: ".csv",
 } as const;
+
+/** IndexedDB: 直近アップロード CSV のローカルキャッシュ（同一オリジン内のみ） */
+export const CSV_LOCAL_CACHE = {
+  dbName: "yfinance-jp-screener-csv",
+  dbVersion: 1,
+  storeName: "persistedCsv",
+  recordKey: "latest",
+} as const;

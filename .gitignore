@@ -1,4 +1,4 @@
-/.DS_Store
+
 /.qodo
 claudecodes
 .vscode
@@ -6,3 +6,5 @@ node_modules
 .claudecodes
 .serena
 __pycache__
+.env
+.DS_Store

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   MdFilterList,
@@ -7,6 +7,8 @@ import {
   MdDescription,
   MdStar,
   MdChevronRight,
+  MdInfoOutline,
+  MdClose,
 } from "react-icons/md";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
@@ -23,6 +25,12 @@ import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "../components/DownloadButton";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
+import {
+  savePersistedCsv,
+  loadPersistedCsv,
+  clearPersistedCsv,
+  PersistError,
+} from "../utils/csvIndexedDb";
 
 interface CSVFile {
   name: string;
@@ -44,9 +52,81 @@ function getInitialSidebarCollapsed(): boolean {
 
 export const DataPage = () => {
   const [selectedFile, setSelectedFile] = useState<CSVFile | null>(null);
+  /** IndexedDB からの復元試行が終わるまで小さなバナーを出す（D&D は受け付ける） */
+  const [restorePending, setRestorePending] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialSidebarCollapsed);
+  /** 端末内 IndexedDB 永続化に関するユーザー向けエラーメッセージ */
+  const [persistMessage, setPersistMessage] = useState<string | null>(null);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  /** IndexedDB 復元より先にユーザーがファイルを選んだ場合は復元を適用しない */
+  const userInitiatedSelectionRef = useRef(false);
+
+  const releaseObjectUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  }, []);
+
+  const applySelectedFile = useCallback(
+    (file: CSVFile | null) => {
+      releaseObjectUrl();
+      if (file) {
+        objectUrlRef.current = file.url;
+      }
+      setSelectedFile(file);
+    },
+    [releaseObjectUrl]
+  );
+
+  useEffect(() => {
+    return () => {
+      releaseObjectUrl();
+    };
+  }, [releaseObjectUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = await loadPersistedCsv();
+        // 復元結果を反映する前に最終チェック: アンマウント or 既にユーザーが
+        // ファイルを選択していたら復元は破棄する（race 対策）
+        if (cancelled || userInitiatedSelectionRef.current) return;
+        if (saved) {
+          const url = URL.createObjectURL(saved.blob);
+          // URL 生成と setState の間に新しい選択が来た可能性を再確認
+          if (cancelled || userInitiatedSelectionRef.current) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          applySelectedFile({
+            name: saved.name,
+            displayName: saved.name,
+            size: saved.size,
+            lastModified:
+              saved.lastModified > 0
+                ? new Date(saved.lastModified).toISOString()
+                : "",
+            url,
+          });
+        }
+      } catch (e) {
+        // プライベートモードや権限エラーでは復元できないことがある。
+        // 致命的ではないので UI には出さない（保存失敗時のみメッセージを出す）。
+        if (import.meta.env.DEV) {
+          console.warn("CSV restore failed:", e);
+        }
+      } finally {
+        if (!cancelled) setRestorePending(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applySelectedFile]);
 
   useEffect(() => {
     try {
@@ -84,13 +164,56 @@ export const DataPage = () => {
   }, []);
 
   const handleFileUpload = (file: File) => {
-    setSelectedFile({
+    userInitiatedSelectionRef.current = true;
+    setPersistMessage(null);
+    const url = URL.createObjectURL(file);
+    applySelectedFile({
       name: file.name,
       displayName: file.name,
       size: file.size,
       lastModified: new Date(file.lastModified).toISOString(),
-      url: URL.createObjectURL(file),
+      url,
     });
+    void savePersistedCsv(file, {
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+    }).catch((e: unknown) => {
+      // 表示・解析は継続。永続化のみ失敗を通知する。
+      if (e instanceof PersistError) {
+        if (e.reason === "quota") {
+          setPersistMessage(
+            "ブラウザの保存容量が不足したため、次回の自動復元はできません。"
+          );
+        } else if (e.reason === "blocked") {
+          setPersistMessage(
+            "他のタブが旧バージョンの保存領域を使用中のため、保存をスキップしました。"
+          );
+        } else if (e.reason === "timeout") {
+          setPersistMessage(
+            "ブラウザ保存領域の応答がタイムアウトしたため、保存をスキップしました。"
+          );
+        } else {
+          setPersistMessage(
+            "ブラウザ保存領域への書き込みに失敗しました（プライベートモード等の可能性）。"
+          );
+        }
+      } else {
+        setPersistMessage(
+          "ブラウザ保存領域への書き込みに失敗しました。"
+        );
+      }
+    });
+  };
+
+  const handleClearFile = async () => {
+    try {
+      await clearPersistedCsv();
+    } catch {
+      // クリアの失敗はユーザー操作の妨げにしない（表示はクリアする）
+    }
+    setPersistMessage(null);
+    applySelectedFile(null);
   };
 
   const { data, loading, error, reload } = useCSVParser(selectedFile);
@@ -183,7 +306,7 @@ export const DataPage = () => {
       ? { name: selectedFile.name, size: selectedFile.size }
       : null,
     onFileSelect: handleFileUpload,
-    onClear: () => setSelectedFile(null),
+    onClear: handleClearFile,
     onOpenFileSelect: openFileSelect,
     filters,
     onFilterChange: updateFilter,
@@ -270,40 +393,93 @@ export const DataPage = () => {
               フィルター・データセット
             </button>
           </div>
-          {!selectedFile && (
+          {persistMessage && selectedFile && (
             <div
-              className="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-xl mx-4 md:mx-6 bg-slate-50/50 hover:border-[var(--primary)] hover:bg-indigo-50/20 transition-colors cursor-pointer group"
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const file = e.dataTransfer.files[0];
-                if (file && file.type === CSV_FILE_CONFIG.mimeType) {
-                  handleFileUpload(file);
-                }
-              }}
-              onClick={openFileSelect}
+              className="mx-4 md:mx-6 mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+              role="alert"
             >
-              <MdTableChart className="text-6xl text-slate-300 group-hover:text-[var(--primary)] mb-4 transition-colors" />
-              <h2 className="text-xl font-bold text-slate-700 mb-2">
-                CSV を読み込んでください
-              </h2>
-              <p className="text-sm text-slate-500 mb-4">
-                ここに CSV をドロップするかクリックしてファイルを選択
-              </p>
-              <p className="text-xs text-slate-400 mb-6">
-                読み込み後はサイドバーから別のファイルに差し替えできます
-              </p>
-              <Link
-                to="/usage"
-                className="text-sm text-[var(--primary)] font-semibold hover:underline"
-                onClick={(e) => e.stopPropagation()}
+              <MdInfoOutline className="text-base flex-shrink-0 mt-[1px]" />
+              <span className="flex-1">{persistMessage}</span>
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-amber-100 text-amber-700"
+                aria-label="メッセージを閉じる"
+                onClick={() => setPersistMessage(null)}
               >
-                使い方 →
-              </Link>
+                <MdClose />
+              </button>
+            </div>
+          )}
+          {!selectedFile && (
+            <div className="flex-1 flex flex-col px-4 md:px-6 py-4 gap-3 min-h-0">
+              {restorePending && (
+                <div
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs text-slate-600"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="loading loading-spinner loading-xs text-[var(--primary)]" />
+                  <span>
+                    端末内に保存された前回の CSV を確認しています… 新しい
+                    CSV をドロップすればそちらを優先します。
+                  </span>
+                </div>
+              )}
+              {persistMessage && (
+                <div
+                  className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+                  role="alert"
+                >
+                  <MdInfoOutline className="text-base flex-shrink-0 mt-[1px]" />
+                  <span className="flex-1">{persistMessage}</span>
+                  <button
+                    type="button"
+                    className="p-0.5 rounded hover:bg-amber-100 text-amber-700"
+                    aria-label="メッセージを閉じる"
+                    onClick={() => setPersistMessage(null)}
+                  >
+                    <MdClose />
+                  </button>
+                </div>
+              )}
+              <div
+                className="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:border-[var(--primary)] hover:bg-indigo-50/20 transition-colors cursor-pointer group"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files[0];
+                  if (file && file.type === CSV_FILE_CONFIG.mimeType) {
+                    handleFileUpload(file);
+                  }
+                }}
+                onClick={openFileSelect}
+              >
+                <MdTableChart className="text-6xl text-slate-300 group-hover:text-[var(--primary)] mb-4 transition-colors" />
+                <h2 className="text-xl font-bold text-slate-700 mb-2">
+                  CSV を読み込んでください
+                </h2>
+                <p className="text-sm text-slate-500 mb-4">
+                  ここに CSV をドロップするかクリックしてファイルを選択
+                </p>
+                <p className="text-xs text-slate-400 mb-2">
+                  読み込み後はサイドバーから別のファイルに差し替えできます
+                </p>
+                <p className="text-[11px] text-slate-400 mb-6 max-w-md">
+                  読み込んだ CSV はお使いのブラウザ内 (IndexedDB)
+                  に保存され、次回起動時に自動復元されます。サイドバーの「すべてクリア」で削除できます。
+                </p>
+                <Link
+                  to="/usage"
+                  className="text-sm text-[var(--primary)] font-semibold hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  使い方 →
+                </Link>
+              </div>
             </div>
           )}
 

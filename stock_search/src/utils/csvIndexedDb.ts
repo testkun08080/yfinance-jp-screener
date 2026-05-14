@@ -11,13 +11,7 @@ export interface PersistedCsvRecord {
   lastModified: number;
 }
 
-export type PersistErrorReason =
-  | "open"
-  | "blocked"
-  | "quota"
-  | "abort"
-  | "timeout"
-  | "unknown";
+export type PersistErrorReason = "open" | "blocked" | "quota" | "abort" | "timeout" | "unknown";
 
 export class PersistError extends Error {
   readonly reason: PersistErrorReason;
@@ -69,29 +63,20 @@ function openDbInternal(): Promise<IDBDatabase> {
       req = indexedDB.open(dbName, dbVersion);
     } catch (e) {
       reject(
-        new PersistError(
-          "open",
-          "IndexedDB の open に失敗しました",
-          { cause: e instanceof Error ? e : undefined }
-        )
+        new PersistError("open", "IndexedDB の open に失敗しました", {
+          cause: e instanceof Error ? e : undefined,
+        })
       );
       return;
     }
     req.onerror = () =>
       reject(
-        new PersistError(
-          "open",
-          req.error?.message ?? "IndexedDB open failed",
-          { cause: req.error ?? undefined }
-        )
+        new PersistError("open", req.error?.message ?? "IndexedDB open failed", {
+          cause: req.error ?? undefined,
+        })
       );
     req.onblocked = () =>
-      reject(
-        new PersistError(
-          "blocked",
-          "IndexedDB が他のタブにブロックされています"
-        )
-      );
+      reject(new PersistError("blocked", "IndexedDB が他のタブにブロックされています"));
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(storeName)) {
@@ -122,11 +107,9 @@ function awaitTx(tx: IDBTransaction): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onabort = () =>
       reject(
-        new PersistError(
-          "abort",
-          tx.error?.message ?? "IndexedDB transaction aborted",
-          { cause: tx.error ?? undefined }
-        )
+        new PersistError("abort", tx.error?.message ?? "IndexedDB transaction aborted", {
+          cause: tx.error ?? undefined,
+        })
       );
     tx.onerror = () =>
       reject(
@@ -162,11 +145,9 @@ export async function savePersistedCsv(
         } catch {
           /* noop */
         }
-        throw new PersistError(
-          "quota",
-          "ブラウザのストレージ容量が不足しています",
-          { cause: e instanceof Error ? e : undefined }
-        );
+        throw new PersistError("quota", "ブラウザのストレージ容量が不足しています", {
+          cause: e instanceof Error ? e : undefined,
+        });
       }
       throw e;
     }
@@ -187,11 +168,9 @@ export async function loadPersistedCsv(): Promise<PersistedCsvRecord | null> {
         r.onsuccess = () => resolve(r.result);
         r.onerror = () =>
           reject(
-            new PersistError(
-              "unknown",
-              r.error?.message ?? "IndexedDB get failed",
-              { cause: r.error ?? undefined }
-            )
+            new PersistError("unknown", r.error?.message ?? "IndexedDB get failed", {
+              cause: r.error ?? undefined,
+            })
           );
       }),
       TX_TIMEOUT_MS,

@@ -68,7 +68,9 @@ def get_us_ticker_list() -> List[str]:
         # SECのAPI使用規約に従い、User-Agentに連絡先を含める
         # 環境変数から連絡先を取得（uvで設定された環境変数またはシステム環境変数）
         # 空文字は未設定扱い（GHA で secret 未設定だと "" が渡る）
-        contact_email = (os.getenv("SEC_USER_AGENT_CONTACT") or "").strip() or "your@email.com"
+        contact_email = (
+            os.getenv("SEC_USER_AGENT_CONTACT") or ""
+        ).strip() or "your@email.com"
         if contact_email == "your@email.com":
             logger.warning(
                 "⚠️  SEC_USER_AGENT_CONTACT が未設定です。SEC が 403 を返す場合があります。"
@@ -198,7 +200,9 @@ def main():
 
     for i, ticker in enumerate(tickers, 1):
         if i % 100 == 0:
-            logger.info(f"[{i}/{len(tickers)}] 進捗: {i}/{len(tickers)} (成功: {success_count}, 失敗: {fail_count})")
+            logger.info(
+                f"[{i}/{len(tickers)}] 進捗: {i}/{len(tickers)} (成功: {success_count}, 失敗: {fail_count})"
+            )
         else:
             logger.debug(f"[{i}/{len(tickers)}] 処理中: {ticker}")
 

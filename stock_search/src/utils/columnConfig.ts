@@ -5,13 +5,8 @@ import type { ColumnConfig } from "../components/ColumnSelector";
  * @param availableColumns 利用可能な列名のリスト
  * @returns ColumnConfig配列
  */
-export const getDefaultColumns = (
-  availableColumns: string[]
-): ColumnConfig[] => {
-  const columnDefinitions: Record<
-    string,
-    Omit<ColumnConfig, "key" | "visible">
-  > = {
+export const getDefaultColumns = (availableColumns: string[]): ColumnConfig[] => {
+  const columnDefinitions: Record<string, Omit<ColumnConfig, "key" | "visible">> = {
     会社名: { label: "会社名", category: "basic", essential: true },
     銘柄コード: { label: "銘柄コード", category: "basic", essential: true },
     コード: { label: "コード", category: "basic" },

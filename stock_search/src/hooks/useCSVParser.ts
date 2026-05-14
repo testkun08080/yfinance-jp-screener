@@ -31,9 +31,7 @@ export const useCSVParser = (file: CSVFile | null) => {
 
       if (signal.aborted) return;
       if (!response.ok) {
-        throw new Error(
-          `CSVファイルの読み込みに失敗しました (${response.status})`
-        );
+        throw new Error(`CSVファイルの読み込みに失敗しました (${response.status})`);
       }
 
       const csvText = await response.text();
@@ -91,9 +89,7 @@ export const useCSVParser = (file: CSVFile | null) => {
         return;
       }
       console.error("CSV loading error:", err);
-      setError(
-        err instanceof Error ? err.message : "データの読み込みに失敗しました"
-      );
+      setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
     } finally {
       if (!signal.aborted) {
         setLoading(false);

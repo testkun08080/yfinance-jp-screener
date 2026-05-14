@@ -64,9 +64,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     if (timeSinceLastDownload < COOLDOWN_DURATION) {
       const remaining = COOLDOWN_DURATION - timeSinceLastDownload;
       setCooldownRemaining(remaining);
-      setDownloadMessage(
-        `⏱️ ${Math.ceil(remaining / 1000)}秒後に再度お試しください`
-      );
+      setDownloadMessage(`⏱️ ${Math.ceil(remaining / 1000)}秒後に再度お試しください`);
       setTimeout(() => setDownloadMessage(null), remaining + 500);
       return;
     }
@@ -96,8 +94,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       setTimeout(() => setDownloadMessage(null), 4000);
 
       // 3回に1回の確率でドネーションモーダルを表示
-      const downloadCount =
-        parseInt(localStorage.getItem("downloadCount") || "0", 10) + 1;
+      const downloadCount = parseInt(localStorage.getItem("downloadCount") || "0", 10) + 1;
       localStorage.setItem("downloadCount", downloadCount.toString());
 
       if (downloadCount % 3 === 0) {
@@ -114,8 +111,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
   const estimatedSize = estimateCSVSize(data, columns);
   const visibleColumnCount = columns.filter((col) => col.visible).length;
-  const isDisabled =
-    isDownloading || data.length === 0 || cooldownRemaining > 0;
+  const isDisabled = isDownloading || data.length === 0 || cooldownRemaining > 0;
 
   return (
     <div className={`relative flex-shrink-0 ${className}`}>
@@ -139,9 +135,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
         ) : cooldownRemaining > 0 ? (
           <>
             ⏱️ CSV
-            <span className="text-xs opacity-70">
-              {Math.ceil(cooldownRemaining / 1000)}秒
-            </span>
+            <span className="text-xs opacity-70">{Math.ceil(cooldownRemaining / 1000)}秒</span>
           </>
         ) : (
           <>
@@ -168,10 +162,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       )}
 
       {/* ドネーションモーダル */}
-      <SponsorshipModal
-        isOpen={showDonationModal}
-        onClose={() => setShowDonationModal(false)}
-      />
+      <SponsorshipModal isOpen={showDonationModal} onClose={() => setShowDonationModal(false)} />
     </div>
   );
 };

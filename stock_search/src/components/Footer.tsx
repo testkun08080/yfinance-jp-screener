@@ -47,16 +47,12 @@ export const Footer: React.FC = () => {
           </div>
         </nav>
         <aside>
-          <p>
-            Copyright © {new Date().getFullYear()} - All right reserved by
-            testkun
-          </p>
+          <p>Copyright © {new Date().getFullYear()} - All right reserved by testkun</p>
 
           {/* データ利用に関する重要な注意 */}
           <div className="text-xs text-base-content/80 text-center space-y-1 mt-2">
             <p className="font-semibold text-base-content">
-              ⚠️ このプロジェクトは Yahoo Finance
-              のデータ取得を補助するツールです
+              ⚠️ このプロジェクトは Yahoo Finance のデータ取得を補助するツールです
             </p>
             <p className="text-base-content/80">
               取得したデータの利用については Yahoo の利用規約に従ってください

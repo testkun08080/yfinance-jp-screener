@@ -13,12 +13,8 @@ export const AboutPage = () => {
         <div className="max-w-4xl mx-auto">
           {/* ヘッダー */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-base-content mb-2">
-              ℹ️ このアプリについて
-            </h1>
-            <p className="text-base-content/70">
-              yf x 日本株スクリーニングサービス
-            </p>
+            <h1 className="text-4xl font-bold text-base-content mb-2">ℹ️ このアプリについて</h1>
+            <p className="text-base-content/70">yf x 日本株スクリーニングサービス</p>
           </div>
 
           {/* なぜ作成したか */}
@@ -63,9 +59,7 @@ export const AboutPage = () => {
           {/* データソース */}
           <div className="card bg-base-100 shadow-sm mb-8">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">
-                📊 データソース / 🙏 お礼
-              </h2>
+              <h2 className="card-title text-2xl mb-4">📊 データソース / 🙏 お礼</h2>
               <p className="text-base-content/80 leading-relaxed mb-4">
                 株式のリストは以下のJPXのエクセルデータを元にしています。
               </p>
@@ -100,9 +94,7 @@ export const AboutPage = () => {
           {/* 法的情報・重要な注意事項 */}
           <div className="card bg-error/5 border border-error/20 shadow-sm mb-8">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4 text-error">
-                ⚖️ 法的情報・重要な注意事項
-              </h2>
+              <h2 className="card-title text-2xl mb-4 text-error">⚖️ 法的情報・重要な注意事項</h2>
 
               <div className="alert alert-warning mb-4">
                 <svg
@@ -133,22 +125,18 @@ export const AboutPage = () => {
                     📌 yfinance ライセンス情報
                   </h3>
                   <p className="mb-2">
-                    このプロジェクトは <strong>yfinance</strong>{" "}
-                    ライブラリを使用してYahoo
+                    このプロジェクトは <strong>yfinance</strong> ライブラリを使用してYahoo
                     Financeの公開APIからデータを取得しています。
                   </p>
                   <div className="bg-base-200 p-4 rounded-lg mb-2">
                     <p className="text-sm italic">
-                      "yfinance is distributed under the Apache Software
-                      License."
+                      "yfinance is distributed under the Apache Software License."
                     </p>
                     <p className="text-sm italic mt-2">
                       "<strong>AGAIN</strong> - yfinance is{" "}
-                      <strong>
-                        not affiliated, endorsed, or vetted by Yahoo, Inc.
-                      </strong>
-                      It's an open-source tool that uses Yahoo's publicly
-                      available APIs, and is intended for
+                      <strong>not affiliated, endorsed, or vetted by Yahoo, Inc.</strong>
+                      It's an open-source tool that uses Yahoo's publicly available APIs, and is
+                      intended for
                       <strong> research and educational purposes</strong>."
                     </p>
                   </div>
@@ -157,9 +145,7 @@ export const AboutPage = () => {
                 <div className="divider"></div>
 
                 <div>
-                  <h3 className="font-semibold text-base-content mb-2">
-                    🚫 データの二次配布禁止
-                  </h3>
+                  <h3 className="font-semibold text-base-content mb-2">🚫 データの二次配布禁止</h3>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>
                       Yahoo Financeから取得したデータの
@@ -170,9 +156,7 @@ export const AboutPage = () => {
                       データは<strong>あなた自身の環境</strong>
                       で取得してください
                     </li>
-                    <li>
-                      本サービスのリポジトリにはデータファイルは含まれていません
-                    </li>
+                    <li>本サービスのリポジトリにはデータファイルは含まれていません</li>
                     <li>ユーザーは個人的な研究・教育目的でのみ使用できます</li>
                   </ul>
                 </div>
@@ -180,9 +164,7 @@ export const AboutPage = () => {
                 <div className="divider"></div>
 
                 <div>
-                  <h3 className="font-semibold text-base-content mb-2">
-                    📚 Yahoo! 利用規約
-                  </h3>
+                  <h3 className="font-semibold text-base-content mb-2">📚 Yahoo! 利用規約</h3>
                   <p className="mb-2">
                     取得したデータの使用権については、以下のYahoo!の利用規約を参照してください：
                   </p>
@@ -223,9 +205,7 @@ export const AboutPage = () => {
                 <div className="divider"></div>
 
                 <div>
-                  <h3 className="font-semibold text-base-content mb-2">
-                    ✅ データ取得方法
-                  </h3>
+                  <h3 className="font-semibold text-base-content mb-2">✅ データ取得方法</h3>
                   <p className="mb-2">
                     データの取得方法や使用方法については、{" "}
                     <a
@@ -248,9 +228,7 @@ export const AboutPage = () => {
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">💰 寄付について</h2>
               <div className="space-y-4 text-base-content/80 leading-relaxed">
-                <p>
-                  このプロジェクトが役に立った場合、任意で寄付を受け付けています。
-                </p>
+                <p>このプロジェクトが役に立った場合、任意で寄付を受け付けています。</p>
 
                 {/* 寄付ボタン */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center my-6">
@@ -303,9 +281,7 @@ export const AboutPage = () => {
                     ></path>
                   </svg>
                   <div>
-                    <p className="text-sm mt-1">
-                      開発の継続やモチベーション維持になります！
-                    </p>
+                    <p className="text-sm mt-1">開発の継続やモチベーション維持になります！</p>
                   </div>
                 </div>
               </div>

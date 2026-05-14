@@ -158,7 +158,9 @@ def combine_csv_files(csv_files, output_file):
 
             # BOM（Byte Order Mark）を除去
             if df.columns[0].startswith("\ufeff"):
-                df.columns = [df.columns[0].replace("\ufeff", "")] + df.columns[1:].tolist()
+                df.columns = [df.columns[0].replace("\ufeff", "")] + df.columns[
+                    1:
+                ].tolist()
 
             # データの基本情報をログ出力
             logger.info(f"  - 行数: {len(df)}, 列数: {len(df.columns)}")
@@ -177,9 +179,13 @@ def combine_csv_files(csv_files, output_file):
         # 重複データの除去（銘柄コードベース）
         if "銘柄コード" in combined_df.columns:
             before_dedup = len(combined_df)
-            combined_df = combined_df.drop_duplicates(subset=["銘柄コード"], keep="last")
+            combined_df = combined_df.drop_duplicates(
+                subset=["銘柄コード"], keep="last"
+            )
             after_dedup = len(combined_df)
-            logger.info(f"重複除去: {before_dedup} → {after_dedup} 行 ({before_dedup - after_dedup}行を除去)")
+            logger.info(
+                f"重複除去: {before_dedup} → {after_dedup} 行 ({before_dedup - after_dedup}行を除去)"
+            )
 
         # 出力ディレクトリを作成
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -190,7 +196,9 @@ def combine_csv_files(csv_files, output_file):
         logger.info(f"✅ 結合完了: {output_file}")
         logger.info(f"   - 総行数: {len(combined_df)}")
         logger.info(f"   - 総列数: {len(combined_df.columns)}")
-        logger.info(f"   - ファイルサイズ: {os.path.getsize(output_file) / (1024 * 1024):.2f} MB")
+        logger.info(
+            f"   - ファイルサイズ: {os.path.getsize(output_file) / (1024 * 1024):.2f} MB"
+        )
 
         return True
 
@@ -225,7 +233,9 @@ def main():
         0: 成功
         1: 失敗
     """
-    parser = argparse.ArgumentParser(description="最新のCSVファイルを結合して日付付きファイルを生成")
+    parser = argparse.ArgumentParser(
+        description="最新のCSVファイルを結合して日付付きファイルを生成"
+    )
     parser.add_argument(
         "--export-dir",
         default="./Export",

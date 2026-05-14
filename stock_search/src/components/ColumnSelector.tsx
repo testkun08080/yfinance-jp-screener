@@ -14,6 +14,8 @@ interface ColumnSelectorProps {
   columns: ColumnConfig[];
   onColumnChange: (key: string, visible: boolean) => void;
   onCategoryToggle: (category: string, visible: boolean) => void;
+  /** アイコンのみ（ツールバー用）。ラベルは title / aria-label に集約 */
+  variant?: "default" | "iconOnly";
 }
 
 const categoryLabels: Record<string, string> = {
@@ -28,14 +30,18 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
   columns,
   onColumnChange,
   onCategoryToggle,
+  variant = "default",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const categorizedColumns = columns.reduce((acc, col) => {
-    if (!acc[col.category]) acc[col.category] = [];
-    acc[col.category].push(col);
-    return acc;
-  }, {} as Record<string, ColumnConfig[]>);
+  const categorizedColumns = columns.reduce(
+    (acc, col) => {
+      if (!acc[col.category]) acc[col.category] = [];
+      acc[col.category].push(col);
+      return acc;
+    },
+    {} as Record<string, ColumnConfig[]>
+  );
 
   const visibleCount = columns.filter((col) => col.visible).length;
   const totalCount = columns.length;
@@ -43,9 +49,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
   const handleCategoryToggle = useCallback(
     (category: string) => {
       const categoryColumns = categorizedColumns[category];
-      const allVisible = categoryColumns.every(
-        (col) => col.visible || col.essential
-      );
+      const allVisible = categoryColumns.every((col) => col.visible || col.essential);
       onCategoryToggle(category, !allVisible);
     },
     [categorizedColumns, onCategoryToggle]
@@ -76,10 +80,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
           const allVisible = cols.every((col) => col.visible || col.essential);
 
           return (
-            <div
-              key={category}
-              className="border border-base-300 rounded-lg p-3"
-            >
+            <div key={category} className="border border-base-300 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <input
@@ -99,30 +100,21 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
 
               <div className="space-y-1 ml-6">
                 {cols.map((col) => (
-                  <label
-                    key={col.key}
-                    className="flex items-center gap-2 cursor-pointer py-0.5"
-                  >
+                  <label key={col.key} className="flex items-center gap-2 cursor-pointer py-0.5">
                     <input
                       type="checkbox"
                       className="checkbox checkbox-sm"
                       checked={col.visible}
                       disabled={col.essential}
-                      onChange={(e) =>
-                        onColumnChange(col.key, e.target.checked)
-                      }
+                      onChange={(e) => onColumnChange(col.key, e.target.checked)}
                     />
                     <span
                       className={`text-sm ${
-                        col.essential
-                          ? "text-base-content/70"
-                          : "text-base-content"
+                        col.essential ? "text-base-content/70" : "text-base-content"
                       }`}
                     >
                       {col.label}
-                      {col.essential && (
-                        <span className="text-warning ml-1">*</span>
-                      )}
+                      {col.essential && <span className="text-warning ml-1">*</span>}
                     </span>
                   </label>
                 ))}
@@ -138,17 +130,23 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
     </>
   );
 
+  const labelText = `表示列 (${visibleCount}/${totalCount})`;
+
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
+        title={labelText}
+        aria-label={labelText}
+        className={
+          variant === "iconOnly"
+            ? "flex items-center justify-center w-9 h-9 shrink-0 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+            : "flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
+        }
       >
-        <MdViewColumn className="text-lg" />
-        <span className="whitespace-nowrap">
-          表示列 ({visibleCount}/{totalCount})
-        </span>
+        <MdViewColumn className={variant === "iconOnly" ? "text-xl" : "text-lg"} />
+        {variant === "default" && <span className="whitespace-nowrap">{labelText}</span>}
       </button>
 
       {isOpen && (

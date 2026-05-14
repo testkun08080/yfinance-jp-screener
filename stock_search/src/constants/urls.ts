@@ -10,8 +10,7 @@ export const EXTERNAL_URLS = {
     twitter: "https://x.com/testkun08080",
     github: "https://github.com/testkun08080",
     githubRepo: "https://github.com/testkun08080/yfinance-jp-screener",
-    githubRepoReadme:
-      "https://github.com/testkun08080/yfinance-jp-screener#readme",
+    githubRepoReadme: "https://github.com/testkun08080/yfinance-jp-screener#readme",
     email: "mailto:testkun.08080@gmail.com",
   },
 
@@ -32,15 +31,13 @@ export const EXTERNAL_URLS = {
   /** 法的情報・利用規約 */
   legal: {
     yahooTerms: "https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html",
-    yahooDevTerms:
-      "https://legal.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.html",
+    yahooDevTerms: "https://legal.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.html",
     yahooFinanceTerms: "https://finance.yahoo.com/about/terms",
   },
 
   /** 使い方・ドキュメント */
   documentation: {
-    zennArticle:
-      "https://zenn.dev/testkun08080/articles/python-yfinance-4c4331412bc50f",
+    zennArticle: "https://zenn.dev/testkun08080/articles/python-yfinance-4c4331412bc50f",
     noteArticle: "https://note.com/testkun08080/n/n0dce5617d24a",
     readme: "https://github.com/testkun08080/yfinance-jp-screener#readme",
   },

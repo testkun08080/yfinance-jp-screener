@@ -11,9 +11,7 @@ function loadFavorites(): FavoriteItem[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (x): x is FavoriteItem =>
-        typeof x === "object" &&
-        x !== null &&
-        typeof (x as FavoriteItem).code === "string"
+        typeof x === "object" && x !== null && typeof (x as FavoriteItem).code === "string"
     );
   } catch {
     return [];
@@ -53,9 +51,7 @@ export function useFavorites() {
 
   const remove = useCallback((code: string) => {
     const normalized = normalizeCode(code);
-    setItems((prev) =>
-      prev.filter((x) => normalizeCode(x.code) !== normalized)
-    );
+    setItems((prev) => prev.filter((x) => normalizeCode(x.code) !== normalized));
   }, []);
 
   const isFavorite = useCallback(
@@ -78,10 +74,7 @@ export function useFavorites() {
     [items, add, remove]
   );
 
-  const favoriteCodesSet = useMemo(
-    () => new Set(items.map((x) => normalizeCode(x.code))),
-    [items]
-  );
+  const favoriteCodesSet = useMemo(() => new Set(items.map((x) => normalizeCode(x.code))), [items]);
 
   return {
     favorites: items,

@@ -1,42 +1,66 @@
 <!doctype html>
 <html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- ============================= -->
+    <!-- 🔹 Favicon / アイコン関連 -->
+    <!-- ============================= -->
 
-<head>
-  <meta charset="UTF-8" />
-  <!-- ============================= -->
-  <!-- 🔹 Favicon / アイコン関連 -->
-  <!-- ============================= -->
+    <!-- faviconの設定 -->
+    <link rel="shortcut icon" href="/favicon.ico" />
 
-  <!-- faviconの設定 -->
-  <link rel="shortcut icon" href="/favicon.ico" />
+    <!-- ============================= -->
+    <!-- 🔹 ビューポート設定 -->
+    <!-- ============================= -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ============================= -->
-  <!-- 🔹 ビューポート設定 -->
-  <!-- ============================= -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ============================= -->
+    <!-- 🔹 SEO 基本設定 -->
+    <!-- ============================= -->
+    <title>日本株スクリーニング｜yfinance×わが投資術 - 小型株割安株探し・CSVで分析</title>
+    <meta
+      name="description"
+      content="日本株3795銘柄以上をyfinanceで取得し、CSVでドラッグ&ドロップ分析。小型株・業種別・高ネットキャッシュ企業のスクリーニングが可能。個人投資家向け無料ツール。「わが投資術」発想の割安株探しに。"
+    />
+    <meta
+      name="keywords"
+      content="日本株,スクリーニング,小型株,個人投資家,CSV分析,yfinance,わが投資術,割安株,業種別,高ネットキャッシュ,JPX,可視化,無料ツール"
+    />
+    <link rel="canonical" href="https://yfinance-jp-screener-search.vercel.app/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
 
-  <!-- ============================= -->
-  <!-- 🔹 SEO 基本設定 -->
-  <!-- ============================= -->
-  <title>日本株スクリーニング｜yfinance×わが投資術 - 小型株割安株探し・CSVで分析</title>
-  <meta name="description"
-    content="日本株3795銘柄以上をyfinanceで取得し、CSVでドラッグ&ドロップ分析。小型株・業種別・高ネットキャッシュ企業のスクリーニングが可能。個人投資家向け無料ツール。「わが投資術」発想の割安株探しに。" />
-  <meta name="keywords" content="日本株,スクリーニング,小型株,個人投資家,CSV分析,yfinance,わが投資術,割安株,業種別,高ネットキャッシュ,JPX,可視化,無料ツール" />
-  <link rel="canonical" href="https://yfinance-jp-screener-search.vercel.app/" />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#0f172a" />
+    <!-- ============================= -->
+    <!-- 🔹 OGP（SNS共有用） -->
+    <!-- ============================= -->
+    <meta
+      property="og:title"
+      content="日本株スクリーニング｜yfinance×わが投資術 - 小型株割安株探し・CSVで分析"
+    />
+    <meta
+      property="og:description"
+      content="日本株3795銘柄以上をyfinanceで取得し、CSVでドラッグ&ドロップ分析。小型株・業種別・高ネットキャッシュ企業のスクリーニングが可能。個人投資家向け無料ツール。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://yfinance-jp-screener-search.vercel.app/" />
+    <meta property="og:image" content="https://yfinance-jp-screener-search.vercel.app/ogp.jpg" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:site_name" content="日本株スクリーニング" />
 
-  <!-- ============================= -->
-  <!-- 🔹 OGP（SNS共有用） -->
-  <!-- ============================= -->
-  <meta property="og:title" content="日本株スクリーニング｜yfinance×わが投資術 - 小型株割安株探し・CSVで分析" />
-  <meta property="og:description"
-    content="日本株3795銘柄以上をyfinanceで取得し、CSVでドラッグ&ドロップ分析。小型株・業種別・高ネットキャッシュ企業のスクリーニングが可能。個人投資家向け無料ツール。" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://yfinance-jp-screener-search.vercel.app/" />
-  <meta property="og:image" content="https://yfinance-jp-screener-search.vercel.app/ogp.jpg" />
-  <meta property="og:locale" content="ja_JP" />
-  <meta property="og:site_name" content="日本株スクリーニング" />
+    <!-- ============================= -->
+    <!-- 🔹 Twitterカード設定 -->
+    <!-- ============================= -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="日本株スクリーニング｜yfinance×わが投資術 - 小型株割安株探し・CSVで分析"
+    />
+    <meta
+      name="twitter:description"
+      content="日本株3795銘柄以上をyfinanceで取得し、CSVでドラッグ&ドロップ分析。小型株・業種別・高ネットキャッシュ企業のスクリーニングが可能。個人投資家向け無料ツール。"
+    />
+    <meta name="twitter:image" content="https://yfinance-jp-screener-search.vercel.app/ogp.jpg" />
+    <meta name="twitter:site" content="@testkun08080" />
 
   <!-- ============================= -->
   <!-- 🔹 Twitterカード設定 -->
@@ -65,8 +89,8 @@
   }
   </script>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LTJYRLKBB6"></script>
+    <!-- Google tag (gtag.js) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-LTJYRLKBB6"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag() {
@@ -75,12 +99,11 @@
     gtag("js", new Date());
 
     gtag("config", "G-LTJYRLKBB6");
-  </script>
-</head>
+  </script> -->
+  </head>
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

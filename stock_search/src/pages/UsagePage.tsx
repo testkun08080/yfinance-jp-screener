@@ -12,20 +12,14 @@ export const UsagePage = () => {
         <div className="max-w-4xl mx-auto">
           {/* ヘッダー */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-base-content mb-2">
-              📚 使い方
-            </h1>
-            <p className="text-base-content/70">
-              このアプリの使い方やセットアップ方法について
-            </p>
+            <h1 className="text-4xl font-bold text-base-content mb-2">📚 使い方</h1>
+            <p className="text-base-content/70">このアプリの使い方やセットアップ方法について</p>
           </div>
 
           {/* 記事リンクセクション */}
           <div className="card bg-base-200 shadow-sm mb-8">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">
-                📖 詳細な使い方ガイド
-              </h2>
+              <h2 className="card-title text-2xl mb-4">📖 詳細な使い方ガイド</h2>
               <p className="text-base-content/80 leading-relaxed mb-6">
                 このアプリの使い方やセットアップ方法については、以下の記事をご覧ください。
                 開発者向けの詳細な情報から、初心者向けの分かりやすい説明まで用意しています。
@@ -38,12 +32,9 @@ export const UsagePage = () => {
                     <div className="flex items-start gap-4">
                       <div className="text-4xl">📘</div>
                       <div className="flex-1">
-                        <h3 className="card-title text-xl mb-2">
-                          開発者向け記事（Zenn）
-                        </h3>
+                        <h3 className="card-title text-xl mb-2">開発者向け記事（Zenn）</h3>
                         <p className="text-base-content/70 mb-4">
-                          技術的な詳細、アーキテクチャ、セットアップ方法、GitHub
-                          Actions
+                          技術的な詳細、アーキテクチャ、セットアップ方法、GitHub Actions
                           の使い方など、開発者向けの詳細な情報を掲載しています。
                         </p>
                         <a
@@ -73,9 +64,7 @@ export const UsagePage = () => {
                     <div className="flex items-start gap-4">
                       <div className="text-4xl">📝</div>
                       <div className="flex-1">
-                        <h3 className="card-title text-xl mb-2">
-                          初心者向け記事（Note）
-                        </h3>
+                        <h3 className="card-title text-xl mb-2">初心者向け記事（Note）</h3>
                         <p className="text-base-content/70 mb-4">
                           プログラミング初心者の方でも理解しやすいように、基本的な使い方から丁寧に説明しています(Github
                           Actionsの使い方はこちらが詳しいです)。
@@ -107,12 +96,10 @@ export const UsagePage = () => {
                     <div className="flex items-start gap-4">
                       <div className="text-4xl">📋</div>
                       <div className="flex-1">
-                        <h3 className="card-title text-xl mb-2">
-                          GitHub README
-                        </h3>
+                        <h3 className="card-title text-xl mb-2">GitHub README</h3>
                         <p className="text-base-content/70 mb-4">
-                          プロジェクトの概要、セットアップ手順、技術スタックなどの詳細情報は
-                          GitHub の README をご覧ください。
+                          プロジェクトの概要、セットアップ手順、技術スタックなどの詳細情報は GitHub
+                          の README をご覧ください。
                         </p>
                         <a
                           href={EXTERNAL_URLS.documentation.readme}
@@ -155,8 +142,7 @@ export const UsagePage = () => {
                   <li>
                     <strong>データの取得</strong>
                     <br />
-                    データは GitHub Actions
-                    を使用して自動取得するか、ローカル環境で取得できます。
+                    データは GitHub Actions を使用して自動取得するか、ローカル環境で取得できます。
                     詳細は上記の記事をご覧ください。
                   </li>
                   <li>
@@ -173,8 +159,7 @@ export const UsagePage = () => {
                   <li>
                     <strong>結果の確認・ダウンロード</strong>
                     <br />
-                    検索結果を確認し、必要に応じて CSV
-                    形式でダウンロードできます。
+                    検索結果を確認し、必要に応じて CSV 形式でダウンロードできます。
                   </li>
                 </ol>
               </div>
@@ -187,8 +172,7 @@ export const UsagePage = () => {
               ⚠️ <strong>データの取り扱いについて</strong>
               <br />
               このプロジェクトは個人利用・研究・教育目的でのみ使用してください。
-              データの取得方法や利用規約については、上記の記事や README
-              を必ずご確認ください。
+              データの取得方法や利用規約については、上記の記事や README を必ずご確認ください。
             </p>
           </div>
         </div>

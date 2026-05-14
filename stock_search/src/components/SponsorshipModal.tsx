@@ -6,10 +6,7 @@ interface SponsorshipModalProps {
   onClose: () => void;
 }
 
-const SponsorshipModal: React.FC<SponsorshipModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+const SponsorshipModal: React.FC<SponsorshipModalProps> = ({ isOpen, onClose }) => {
   const modalCheckboxRef = useRef<HTMLInputElement>(null);
   const modalId = "sponsorship_modal";
 
@@ -30,12 +27,7 @@ const SponsorshipModal: React.FC<SponsorshipModalProps> = ({
   return (
     <>
       {/* DaisyUI Modal Toggle */}
-      <input
-        ref={modalCheckboxRef}
-        type="checkbox"
-        id={modalId}
-        className="modal-toggle"
-      />
+      <input ref={modalCheckboxRef} type="checkbox" id={modalId} className="modal-toggle" />
 
       {/* DaisyUI Modal */}
       <div className="modal" role="dialog">
@@ -94,11 +86,7 @@ const SponsorshipModal: React.FC<SponsorshipModalProps> = ({
         </div>
 
         {/* Modal backdrop */}
-        <label
-          className="modal-backdrop"
-          onClick={handleCloseModal}
-          aria-label="閉じる"
-        ></label>
+        <label className="modal-backdrop" onClick={handleCloseModal} aria-label="閉じる"></label>
       </div>
     </>
   );

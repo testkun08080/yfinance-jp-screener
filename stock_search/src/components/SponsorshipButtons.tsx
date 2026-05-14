@@ -5,9 +5,7 @@ interface SponsorshipButtonsProps {
   className?: string;
 }
 
-const SponsorshipButtons: React.FC<SponsorshipButtonsProps> = ({
-  className = "",
-}) => {
+const SponsorshipButtons: React.FC<SponsorshipButtonsProps> = ({ className = "" }) => {
   const sponsorshipLinks = {
     github: EXTERNAL_URLS.sponsorship.githubSponsors,
     buyMeACoffee: EXTERNAL_URLS.sponsorship.buyMeACoffee,

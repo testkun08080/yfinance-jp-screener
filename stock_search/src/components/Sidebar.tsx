@@ -1,13 +1,17 @@
+import { Link, NavLink } from "react-router-dom";
 import {
   MdClose,
   MdChevronLeft,
   MdFolderOpen,
   MdExpandMore,
   MdFilterList,
+  MdAnalytics,
 } from "react-icons/md";
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
+import { FILTER_PRESETS } from "../constants/presets";
+import { NAVIGATION_ITEMS } from "../constants/ui";
 
 interface FileInfo {
   name: string;
@@ -16,8 +20,7 @@ interface FileInfo {
 
 function formatFileSize(bytes: number): string {
   if (bytes < FILE_SIZE.kilobyte) return `${bytes} B`;
-  if (bytes < FILE_SIZE.megabyte)
-    return `${(bytes / FILE_SIZE.kilobyte).toFixed(2)} KB`;
+  if (bytes < FILE_SIZE.megabyte) return `${(bytes / FILE_SIZE.kilobyte).toFixed(2)} KB`;
   return `${(bytes / FILE_SIZE.megabyte).toFixed(2)} MB`;
 }
 
@@ -29,11 +32,9 @@ interface SidebarProps {
   /** データ読み込み後、別のファイルを選択するためにファイルダイアログを開く */
   onOpenFileSelect?: () => void;
   filters: SearchFiltersType;
-  onFilterChange: (
-    key: keyof SearchFiltersType,
-    value: string | number | string[] | null
-  ) => void;
+  onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
   onClearFilters: () => void;
+  onApplyPreset?: (preset: Partial<SearchFiltersType>) => void;
   availableIndustries: string[];
   availableMarkets: string[];
   availablePrefectures: string[];
@@ -74,10 +75,7 @@ function NumRange({
           placeholder="最小"
           value={minVal ?? ""}
           onChange={(e) =>
-            onFilterChange(
-              minKey,
-              e.target.value ? parseFloat(e.target.value) : null
-            )
+            onFilterChange(minKey, e.target.value ? parseFloat(e.target.value) : null)
           }
         />
         <input
@@ -86,10 +84,7 @@ function NumRange({
           placeholder="最大"
           value={maxVal ?? ""}
           onChange={(e) =>
-            onFilterChange(
-              maxKey,
-              e.target.value ? parseFloat(e.target.value) : null
-            )
+            onFilterChange(maxKey, e.target.value ? parseFloat(e.target.value) : null)
           }
         />
       </div>
@@ -106,6 +101,7 @@ export const Sidebar = ({
   filters,
   onFilterChange,
   onClearFilters,
+  onApplyPreset,
   availableIndustries,
   availableMarkets,
   availablePrefectures,
@@ -160,32 +156,74 @@ export const Sidebar = ({
           : "w-72 h-full border-r border-[var(--border)]"
       }`}
     >
-      {/* ヘッダー: モバイル閉じる / デスクトップ折りたたみ */}
-      {(onClose || onCollapse) && (
-        <div className="flex items-center justify-end gap-1 p-2 border-b border-[var(--border)]">
-          {onClose && (
-            <button
-              type="button"
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onClose}
-              aria-label="閉じる"
-            >
-              <MdClose />
-            </button>
-          )}
-          {onCollapse && (
-            <button
-              type="button"
-              className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onCollapse}
-              aria-label="サイドバーを折りたたむ"
-              title="サイドバーを折りたたむ"
-            >
-              <MdChevronLeft className="text-lg" />
-            </button>
-          )}
+      {/* アプリ chrome（旧トップヘッダー相当）: ブランド・ナビ・閉じる/折りたたみ */}
+      <div className="flex-shrink-0 border-b border-[var(--border)] bg-white">
+        <div className="flex items-center gap-2 px-3 py-2 min-h-[44px]">
+          <Link
+            to="/"
+            className="flex items-center gap-2 min-w-0 flex-1 no-underline text-inherit hover:opacity-90"
+            aria-label="ホーム"
+            onClick={() => {
+              if (isDrawer && onClose) onClose();
+            }}
+          >
+            <div className="w-7 h-7 shrink-0 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white">
+              <MdAnalytics className="text-lg" aria-hidden />
+            </div>
+            <span className="font-bold text-sm tracking-tight text-slate-800 truncate">
+              <span className="text-[var(--primary)]">yfsc</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {onCollapse && (
+              <button
+                type="button"
+                className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+                onClick={onCollapse}
+                aria-label="サイドバーを折りたたむ"
+                title="サイドバーを折りたたむ"
+              >
+                <MdChevronLeft className="text-lg" />
+              </button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 md:hidden"
+                onClick={onClose}
+                aria-label="閉じる"
+              >
+                <MdClose className="text-lg" />
+              </button>
+            )}
+          </div>
         </div>
-      )}
+        <nav
+          className="flex flex-wrap gap-x-1 gap-y-1 px-2 pb-2 border-t border-slate-100/90"
+          aria-label="サイト内"
+        >
+          {NAVIGATION_ITEMS.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/"}
+              onClick={() => {
+                if (isDrawer && onClose) onClose();
+              }}
+              className={({ isActive }) =>
+                `inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold no-underline transition-colors ${
+                  isActive
+                    ? "bg-[var(--primary)]/12 text-[var(--primary)]"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`
+              }
+            >
+              <span aria-hidden>{item.icon}</span>
+              <span className="truncate max-w-[9.5rem]">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
       {/* データセット */}
       <div className="p-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-3">
@@ -223,19 +261,13 @@ export const Sidebar = ({
             >
               {fileInfo.name}
             </p>
-            <p className="text-[10px] text-slate-400">
-              {formatFileSize(fileInfo.size)} • 準備完了
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">
-              ドロップで差し替え
-            </p>
+            <p className="text-[10px] text-slate-400">{formatFileSize(fileInfo.size)} • 準備完了</p>
+            <p className="text-[10px] text-slate-400 mt-1">ドロップで差し替え</p>
           </div>
         ) : (
           <div className="border-2 border-slate-100 rounded-lg p-3 text-center bg-slate-50/50">
             <p className="text-[11px] text-slate-400">未読み込み</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              メインエリアでCSVを読み込み
-            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">メインエリアでCSVを読み込み</p>
           </div>
         )}
       </div>
@@ -264,13 +296,33 @@ export const Sidebar = ({
           </div>
         </div>
 
+        {/* プリセットフィルター */}
+        {onApplyPreset && (
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
+              スクリーニングプリセット
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {FILTER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  title={preset.description}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors leading-tight"
+                  onClick={() => onApplyPreset(preset.filters)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 基本フィルター */}
         <div className="space-y-1">
           <details className="group border-b border-slate-100 pb-2" open>
             <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">
-                📋 基本フィルター
-              </span>
+              <span className="text-xs font-bold text-slate-700">📋 基本フィルター</span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
@@ -296,13 +348,9 @@ export const Sidebar = ({
                         type="checkbox"
                         className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
                         checked={filters.industries.includes(industry)}
-                        onChange={(e) =>
-                          handleIndustryChange(industry, e.target.checked)
-                        }
+                        onChange={(e) => handleIndustryChange(industry, e.target.checked)}
                       />
-                      <span className="text-[11px] text-slate-600 truncate">
-                        {industry}
-                      </span>
+                      <span className="text-[11px] text-slate-600 truncate">{industry}</span>
                     </label>
                   ))}
                 </div>
@@ -321,9 +369,7 @@ export const Sidebar = ({
                         type="checkbox"
                         className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
                         checked={filters.market.includes(market)}
-                        onChange={(e) =>
-                          handleMarketChange(market, e.target.checked)
-                        }
+                        onChange={(e) => handleMarketChange(market, e.target.checked)}
                       />
                       <span className="text-[11px] text-slate-600">
                         {market.replace("（内国株式）", "")}
@@ -347,13 +393,9 @@ export const Sidebar = ({
                           type="checkbox"
                           className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
                           checked={filters.prefecture.includes(prefecture)}
-                          onChange={(e) =>
-                            handlePrefectureChange(prefecture, e.target.checked)
-                          }
+                          onChange={(e) => handlePrefectureChange(prefecture, e.target.checked)}
                         />
-                        <span className="text-[11px] text-slate-600 truncate">
-                          {prefecture}
-                        </span>
+                        <span className="text-[11px] text-slate-600 truncate">{prefecture}</span>
                       </label>
                     ))}
                   </div>
@@ -365,9 +407,7 @@ export const Sidebar = ({
           {/* バリュエーション */}
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">
-                📊 バリュエーション
-              </span>
+              <span className="text-xs font-bold text-slate-700">📊 バリュエーション</span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
@@ -458,9 +498,7 @@ export const Sidebar = ({
           {/* 業績 */}
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">
-                💹 業績・収益性
-              </span>
+              <span className="text-xs font-bold text-slate-700">💹 業績・収益性</span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
@@ -510,9 +548,7 @@ export const Sidebar = ({
           {/* バランスシート */}
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">
-                🏛️ バランスシート
-              </span>
+              <span className="text-xs font-bold text-slate-700">🏛️ バランスシート</span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
@@ -562,9 +598,7 @@ export const Sidebar = ({
           {/* キャッシュ */}
           <details className="group border-b border-slate-100 pb-2">
             <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">
-                💰 キャッシュ
-              </span>
+              <span className="text-xs font-bold text-slate-700">💰 キャッシュ</span>
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">

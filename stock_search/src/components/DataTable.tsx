@@ -1,11 +1,7 @@
 import type { FC } from "react";
 import { MdStar, MdStarBorder } from "react-icons/md";
 import type { StockData, SortConfig } from "../types/stock";
-import {
-  formatNumber,
-  formatCurrency,
-  formatPercentage,
-} from "../utils/csvParser";
+import { formatNumber, formatCurrency, formatPercentage } from "../utils/csvParser";
 import type { ColumnConfig } from "./ColumnSelector";
 
 function getStockCode(stock: StockData): string {
@@ -122,10 +118,7 @@ export const DataTable: FC<DataTableProps> = ({
         )
           format = "percentage";
         else if (isCurrencyField(key)) format = "currency";
-        else if (
-          String(col.key).includes("PBR") ||
-          String(col.key).includes("PER")
-        )
+        else if (String(col.key).includes("PBR") || String(col.key).includes("PER"))
           format = "decimal";
         else if (typeof currentData[0]?.[key] === "number") format = "number";
 
@@ -161,15 +154,15 @@ export const DataTable: FC<DataTableProps> = ({
   const isNumericColumn = (format: string) => format !== "string";
 
   return (
-    <div
-      className="overflow-x-auto custom-scrollbar"
-      style={{ maxWidth: "100%" }}
-    >
+    <div className="overflow-x-auto custom-scrollbar" style={{ maxWidth: "100%" }}>
       <table className="w-full border-separate border-spacing-0 min-w-max">
         <thead className="sticky top-0 z-10 bg-slate-50 border-b border-[var(--border)]">
           <tr>
             {onToggleFavorite && (
-              <th className="w-10 px-2 py-3 border-b border-[var(--border)] text-center text-amber-500" title="お気に入り">
+              <th
+                className="w-10 px-2 py-3 border-b border-[var(--border)] text-center text-amber-500"
+                title="お気に入り"
+              >
                 <MdStar className="text-base inline" />
               </th>
             )}
@@ -190,99 +183,90 @@ export const DataTable: FC<DataTableProps> = ({
             const code = getStockCode(stock);
             const name = stock.会社名 != null ? String(stock.会社名) : undefined;
             return (
-            <tr
-              key={`${stock.銘柄コード ?? stock.コード}-${index}`}
-              className={`transition-colors group ${
-                index % 2 === 1 ? "bg-slate-50/50" : ""
-              } hover:bg-indigo-50/30 ${fav ? "bg-amber-50/50" : ""}`}
-            >
-              {onToggleFavorite && (
-                <td className="px-2 py-3 text-center align-middle">
-                  <button
-                    type="button"
-                    className="p-1 rounded hover:bg-amber-100 text-amber-500 hover:text-amber-600 transition-colors"
-                    onClick={() => onToggleFavorite(code, name)}
-                    aria-label={fav ? "お気に入りから外す" : "お気に入りに追加"}
-                    title={fav ? "お気に入りから外す" : "お気に入りに追加"}
-                  >
-                    {fav ? (
-                      <MdStar className="text-lg" />
-                    ) : (
-                      <MdStarBorder className="text-lg text-slate-300 hover:text-amber-500" />
-                    )}
-                  </button>
-                </td>
-              )}
-              {columns.map((column) => {
-                const value = stock[column.key];
-                const isNetCash =
-                  column.key === "ネットキャッシュ（流動資産-負債）" ||
-                  column.key === "ネットキャッシュ";
-
-                return (
-                  <td
-                    key={column.key}
-                    className={`px-4 py-3 text-sm ${
-                      column.format === "string" ? "text-left" : "text-right"
-                    }`}
-                  >
-                    {column.format === "string" && column.key === "会社名" ? (
-                      <span
-                        className="font-bold text-slate-800 group-hover:text-[var(--primary)] transition-colors truncate block max-w-[12rem]"
-                        title={String(value)}
-                      >
-                        {String(value || "-")}
-                      </span>
-                    ) : column.format === "string" &&
-                      (column.key === "銘柄コード" ||
-                        column.key === "コード") ? (
-                      <span className="font-mono font-medium text-slate-500">
-                        {String(value || "-")}
-                      </span>
-                    ) : column.format === "string" &&
-                      (column.key === "業種" || column.key === "優先市場") ? (
-                      <span
-                        className="font-medium text-slate-600 text-xs truncate block max-w-[8rem]"
-                        title={String(value)}
-                      >
-                        {String(value || "-").replace("（内国株式）", "")}
-                      </span>
-                    ) : isNetCash ? (
-                      <span
-                        className={
-                          value != null &&
-                          typeof value === "number" &&
-                          value > 0
-                            ? "font-bold text-emerald-600"
-                            : "font-bold text-rose-600"
-                        }
-                      >
-                        {formatValue(value, column.format)}
-                      </span>
-                    ) : (
-                      <span
-                        className={
-                          column.key === "時価総額"
-                            ? "font-semibold"
-                            : "text-slate-600"
-                        }
-                      >
-                        {formatValue(value, column.format)}
-                      </span>
-                    )}
+              <tr
+                key={`${stock.銘柄コード ?? stock.コード}-${index}`}
+                className={`transition-colors group ${
+                  index % 2 === 1 ? "bg-slate-50/50" : ""
+                } hover:bg-indigo-50/30 ${fav ? "bg-amber-50/50" : ""}`}
+              >
+                {onToggleFavorite && (
+                  <td className="px-2 py-3 text-center align-middle">
+                    <button
+                      type="button"
+                      className="p-1 rounded hover:bg-amber-100 text-amber-500 hover:text-amber-600 transition-colors"
+                      onClick={() => onToggleFavorite(code, name)}
+                      aria-label={fav ? "お気に入りから外す" : "お気に入りに追加"}
+                      title={fav ? "お気に入りから外す" : "お気に入りに追加"}
+                    >
+                      {fav ? (
+                        <MdStar className="text-lg" />
+                      ) : (
+                        <MdStarBorder className="text-lg text-slate-300 hover:text-amber-500" />
+                      )}
+                    </button>
                   </td>
-                );
-              })}
-            </tr>
+                )}
+                {columns.map((column) => {
+                  const value = stock[column.key];
+                  const isNetCash =
+                    column.key === "ネットキャッシュ（流動資産-負債）" ||
+                    column.key === "ネットキャッシュ";
+
+                  return (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-3 text-sm ${
+                        column.format === "string" ? "text-left" : "text-right"
+                      }`}
+                    >
+                      {column.format === "string" && column.key === "会社名" ? (
+                        <span
+                          className="font-bold text-slate-800 group-hover:text-[var(--primary)] transition-colors truncate block max-w-[12rem]"
+                          title={String(value)}
+                        >
+                          {String(value || "-")}
+                        </span>
+                      ) : column.format === "string" &&
+                        (column.key === "銘柄コード" || column.key === "コード") ? (
+                        <span className="font-mono font-medium text-slate-500">
+                          {String(value || "-")}
+                        </span>
+                      ) : column.format === "string" &&
+                        (column.key === "業種" || column.key === "優先市場") ? (
+                        <span
+                          className="font-medium text-slate-600 text-xs truncate block max-w-[8rem]"
+                          title={String(value)}
+                        >
+                          {String(value || "-").replace("（内国株式）", "")}
+                        </span>
+                      ) : isNetCash ? (
+                        <span
+                          className={
+                            value != null && typeof value === "number" && value > 0
+                              ? "font-bold text-emerald-600"
+                              : "font-bold text-rose-600"
+                          }
+                        >
+                          {formatValue(value, column.format)}
+                        </span>
+                      ) : (
+                        <span
+                          className={column.key === "時価総額" ? "font-semibold" : "text-slate-600"}
+                        >
+                          {formatValue(value, column.format)}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
             );
           })}
         </tbody>
       </table>
 
       {currentData.length === 0 && (
-        <div className="text-center py-12 text-slate-500 text-sm">
-          データがありません
-        </div>
+        <div className="text-center py-12 text-slate-500 text-sm">データがありません</div>
       )}
     </div>
   );

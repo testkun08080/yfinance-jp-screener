@@ -24,9 +24,7 @@ export const Navigation = () => {
                 <Link
                   to={item.path}
                   className={`gap-2 ${
-                    location.pathname === item.path
-                      ? "active bg-primary text-primary-content"
-                      : ""
+                    location.pathname === item.path ? "active bg-primary text-primary-content" : ""
                   }`}
                 >
                   <span>{item.icon}</span>
@@ -40,12 +38,7 @@ export const Navigation = () => {
         {/* モバイルメニュー */}
         <div className="navbar-end">
           <div className="dropdown dropdown-end lg:hidden">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost"
-              aria-label="メニューを開く"
-            >
+            <div tabIndex={0} role="button" className="btn btn-ghost" aria-label="メニューを開く">
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -70,9 +63,7 @@ export const Navigation = () => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`gap-2 ${
-                      location.pathname === item.path ? "active" : ""
-                    }`}
+                    className={`gap-2 ${location.pathname === item.path ? "active" : ""}`}
                   >
                     <span>{item.icon}</span>
                     {item.label}

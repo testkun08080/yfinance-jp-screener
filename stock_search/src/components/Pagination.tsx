@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  MdFirstPage,
-  MdChevronLeft,
-  MdChevronRight,
-  MdLastPage,
-} from "react-icons/md";
+import { MdFirstPage, MdChevronLeft, MdChevronRight, MdLastPage } from "react-icons/md";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
 

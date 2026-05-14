@@ -245,52 +245,6 @@ export const DataPage = () => {
     });
   }, [filteredData, favoriteCodesSet]);
 
-  /** フィルター結果の統計（平均値） */
-  const filteredStats = useMemo(() => {
-    if (filteredData.length === 0) return null;
-    const avg = (vals: number[]) =>
-      vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-    return {
-      pbr: avg(
-        filteredData
-          .map((s) => s.PBR)
-          .filter((v): v is number => Number.isFinite(v))
-      ),
-      roe: avg(
-        filteredData
-          .map((s) => s.ROE)
-          .filter((v): v is number => Number.isFinite(v))
-          .map((v) => v * 100)
-      ),
-      divYield: avg(
-        filteredData
-          .map((s) => s.配当利回り)
-          .filter((v): v is number => Number.isFinite(v))
-          .map((v) => v * 100)
-      ),
-      netCashRatio: avg(
-        filteredData
-          .map((s) => s.ネットキャッシュ比率)
-          .filter((v): v is number => Number.isFinite(v))
-          .map((v) => v * 100)
-      ),
-    };
-  }, [filteredData]);
-
-  /** フィルターが初期値から変更されているか */
-  const hasActiveFilters = useMemo(() => {
-    const { companyName, stockCode, industries, market, prefecture, marketType, ...numericFilters } = filters;
-    return (
-      companyName !== "" ||
-      (stockCode ?? "") !== "" ||
-      industries.length > 0 ||
-      market.length > 0 ||
-      prefecture.length > 0 ||
-      // marketType のデフォルトは ["JP","US"] (長さ2) なので異なる場合のみアクティブ
-      (marketType ?? []).length !== 2 ||
-      Object.values(numericFilters).some((v) => v !== null)
-    );
-  }, [filters]);
 
   /** タブ: すべて / お気に入りのみ */
   const [listTab, setListTab] = useState<"all" | "favorites">("all");
@@ -645,55 +599,6 @@ export const DataPage = () => {
                 </div>
               </div>
 
-              {/* フィルター結果の統計バー（フィルター適用時のみ） */}
-              {listTab === "all" && hasActiveFilters && filteredStats && (
-                <div className="px-3 md:px-6 py-2.5 bg-slate-50/50 border-b border-[var(--border)] flex-shrink-0 flex flex-wrap gap-4 md:gap-8 items-center text-xs">
-                  <div className="flex items-center gap-6">
-                    {filteredStats.pbr !== null && (
-                      <div>
-                        <span className="text-slate-500 font-semibold">
-                          平均PBR:
-                        </span>
-                        <span className="ml-1.5 font-bold text-slate-700">
-                          {filteredStats.pbr.toFixed(2)}倍
-                        </span>
-                      </div>
-                    )}
-                    {filteredStats.roe !== null && (
-                      <div>
-                        <span className="text-slate-500 font-semibold">
-                          平均ROE:
-                        </span>
-                        <span className="ml-1.5 font-bold text-slate-700">
-                          {filteredStats.roe.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-6">
-                    {filteredStats.divYield !== null && (
-                      <div>
-                        <span className="text-slate-500 font-semibold">
-                          平均配当利回り:
-                        </span>
-                        <span className="ml-1.5 font-bold text-slate-700">
-                          {filteredStats.divYield.toFixed(2)}%
-                        </span>
-                      </div>
-                    )}
-                    {filteredStats.netCashRatio !== null && (
-                      <div>
-                        <span className="text-slate-500 font-semibold">
-                          平均NC比率:
-                        </span>
-                        <span className="ml-1.5 font-bold text-slate-700">
-                          {filteredStats.netCashRatio.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Table area */}
               <div className="flex-1 overflow-auto custom-scrollbar min-h-0">

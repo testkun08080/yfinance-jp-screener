@@ -8,8 +8,6 @@ import {
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
-import { Tooltip } from "./Tooltip";
-import { FILTER_TOOLTIPS } from "../constants/tooltips";
 import { FILTER_PRESETS } from "../constants/presets";
 
 interface FileInfo {
@@ -66,12 +64,10 @@ function NumRange({
 }) {
   const minVal = filters[minKey] as number | null | undefined;
   const maxVal = filters[maxKey] as number | null | undefined;
-  const tooltip = FILTER_TOOLTIPS[label];
   return (
     <div>
-      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">
         {label} {unit && `(${unit})`}
-        {tooltip && <Tooltip content={tooltip} position="bottom" />}
       </label>
       <div className="grid grid-cols-2 gap-2">
         <input

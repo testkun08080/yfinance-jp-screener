@@ -8,6 +8,9 @@ import {
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
+import { Tooltip } from "./Tooltip";
+import { FILTER_TOOLTIPS } from "../constants/tooltips";
+import { FILTER_PRESETS } from "../constants/presets";
 
 interface FileInfo {
   name: string;
@@ -34,6 +37,7 @@ interface SidebarProps {
     value: string | number | string[] | null
   ) => void;
   onClearFilters: () => void;
+  onApplyPreset?: (preset: Partial<SearchFiltersType>) => void;
   availableIndustries: string[];
   availableMarkets: string[];
   availablePrefectures: string[];
@@ -62,10 +66,12 @@ function NumRange({
 }) {
   const minVal = filters[minKey] as number | null | undefined;
   const maxVal = filters[maxKey] as number | null | undefined;
+  const tooltip = FILTER_TOOLTIPS[label];
   return (
     <div>
-      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">
+      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
         {label} {unit && `(${unit})`}
+        {tooltip && <Tooltip content={tooltip} position="bottom" />}
       </label>
       <div className="grid grid-cols-2 gap-2">
         <input
@@ -106,6 +112,7 @@ export const Sidebar = ({
   filters,
   onFilterChange,
   onClearFilters,
+  onApplyPreset,
   availableIndustries,
   availableMarkets,
   availablePrefectures,
@@ -263,6 +270,28 @@ export const Sidebar = ({
             />
           </div>
         </div>
+
+        {/* プリセットフィルター */}
+        {onApplyPreset && (
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
+              スクリーニングプリセット
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {FILTER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  title={preset.description}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors leading-tight"
+                  onClick={() => onApplyPreset(preset.filters)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 基本フィルター */}
         <div className="space-y-1">

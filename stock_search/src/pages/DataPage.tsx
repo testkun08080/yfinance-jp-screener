@@ -226,6 +226,7 @@ export const DataPage = () => {
     availablePrefectures,
     updateFilter,
     clearFilters,
+    applyPreset,
     handleSort,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
@@ -243,6 +244,38 @@ export const DataPage = () => {
       return favoriteCodesSet.has(n) || favoriteCodesSet.has(String(code).trim());
     });
   }, [filteredData, favoriteCodesSet]);
+
+  /** フィルター結果の統計（平均値） */
+  const filteredStats = useMemo(() => {
+    if (filteredData.length === 0) return null;
+    const avg = (vals: number[]) =>
+      vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    return {
+      pbr: avg(
+        filteredData
+          .map((s) => s.PBR)
+          .filter((v): v is number => typeof v === "number")
+      ),
+      roe: avg(
+        filteredData
+          .map((s) => s.ROE)
+          .filter((v): v is number => typeof v === "number")
+          .map((v) => v * 100)
+      ),
+      divYield: avg(
+        filteredData
+          .map((s) => s.配当利回り)
+          .filter((v): v is number => typeof v === "number")
+          .map((v) => v * 100)
+      ),
+      netCashRatio: avg(
+        filteredData
+          .map((s) => s.ネットキャッシュ比率)
+          .filter((v): v is number => typeof v === "number")
+          .map((v) => v * 100)
+      ),
+    };
+  }, [filteredData]);
 
   /** タブ: すべて / お気に入りのみ */
   const [listTab, setListTab] = useState<"all" | "favorites">("all");
@@ -311,6 +344,7 @@ export const DataPage = () => {
     filters,
     onFilterChange: updateFilter,
     onClearFilters: clearFilters,
+    onApplyPreset: applyPreset,
     availableIndustries: selectedFile ? availableIndustries : [],
     availableMarkets: selectedFile ? availableMarkets : [],
     availablePrefectures: selectedFile ? availablePrefectures : [],
@@ -595,6 +629,56 @@ export const DataPage = () => {
                   />
                 </div>
               </div>
+
+              {/* フィルター結果の統計バー（オールタブのみ） */}
+              {listTab === "all" && filteredStats && (
+                <div className="px-3 md:px-6 py-2.5 bg-slate-50/50 border-b border-[var(--border)] flex-shrink-0 flex flex-wrap gap-4 md:gap-8 items-center text-xs">
+                  <div className="flex items-center gap-6">
+                    {filteredStats.pbr !== null && (
+                      <div>
+                        <span className="text-slate-500 font-semibold">
+                          平均PBR:
+                        </span>
+                        <span className="ml-1.5 font-bold text-slate-700">
+                          {filteredStats.pbr.toFixed(2)}倍
+                        </span>
+                      </div>
+                    )}
+                    {filteredStats.roe !== null && (
+                      <div>
+                        <span className="text-slate-500 font-semibold">
+                          平均ROE:
+                        </span>
+                        <span className="ml-1.5 font-bold text-slate-700">
+                          {filteredStats.roe.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-6">
+                    {filteredStats.divYield !== null && (
+                      <div>
+                        <span className="text-slate-500 font-semibold">
+                          平均配当利回り:
+                        </span>
+                        <span className="ml-1.5 font-bold text-slate-700">
+                          {filteredStats.divYield.toFixed(2)}%
+                        </span>
+                      </div>
+                    )}
+                    {filteredStats.netCashRatio !== null && (
+                      <div>
+                        <span className="text-slate-500 font-semibold">
+                          平均NC比率:
+                        </span>
+                        <span className="ml-1.5 font-bold text-slate-700">
+                          {filteredStats.netCashRatio.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Table area */}
               <div className="flex-1 overflow-auto custom-scrollbar min-h-0">

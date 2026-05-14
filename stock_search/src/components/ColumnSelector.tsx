@@ -14,6 +14,8 @@ interface ColumnSelectorProps {
   columns: ColumnConfig[];
   onColumnChange: (key: string, visible: boolean) => void;
   onCategoryToggle: (category: string, visible: boolean) => void;
+  /** アイコンのみ（ツールバー用）。ラベルは title / aria-label に集約 */
+  variant?: "default" | "iconOnly";
 }
 
 const categoryLabels: Record<string, string> = {
@@ -28,6 +30,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
   columns,
   onColumnChange,
   onCategoryToggle,
+  variant = "default",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -127,17 +130,23 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
     </>
   );
 
+  const labelText = `表示列 (${visibleCount}/${totalCount})`;
+
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
+        title={labelText}
+        aria-label={labelText}
+        className={
+          variant === "iconOnly"
+            ? "flex items-center justify-center w-9 h-9 shrink-0 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+            : "flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer flex-shrink-0 min-h-10"
+        }
       >
-        <MdViewColumn className="text-lg" />
-        <span className="whitespace-nowrap">
-          表示列 ({visibleCount}/{totalCount})
-        </span>
+        <MdViewColumn className={variant === "iconOnly" ? "text-xl" : "text-lg"} />
+        {variant === "default" && <span className="whitespace-nowrap">{labelText}</span>}
       </button>
 
       {isOpen && (

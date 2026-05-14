@@ -1,8 +1,17 @@
-import { MdClose, MdChevronLeft, MdFolderOpen, MdExpandMore, MdFilterList } from "react-icons/md";
+import { Link, NavLink } from "react-router-dom";
+import {
+  MdClose,
+  MdChevronLeft,
+  MdFolderOpen,
+  MdExpandMore,
+  MdFilterList,
+  MdAnalytics,
+} from "react-icons/md";
 import type { SearchFilters as SearchFiltersType } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
 import { FILTER_PRESETS } from "../constants/presets";
+import { NAVIGATION_ITEMS } from "../constants/ui";
 
 interface FileInfo {
   name: string;
@@ -147,32 +156,74 @@ export const Sidebar = ({
           : "w-72 h-full border-r border-[var(--border)]"
       }`}
     >
-      {/* ヘッダー: モバイル閉じる / デスクトップ折りたたみ */}
-      {(onClose || onCollapse) && (
-        <div className="flex items-center justify-end gap-1 p-2 border-b border-[var(--border)]">
-          {onClose && (
-            <button
-              type="button"
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onClose}
-              aria-label="閉じる"
-            >
-              <MdClose />
-            </button>
-          )}
-          {onCollapse && (
-            <button
-              type="button"
-              className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
-              onClick={onCollapse}
-              aria-label="サイドバーを折りたたむ"
-              title="サイドバーを折りたたむ"
-            >
-              <MdChevronLeft className="text-lg" />
-            </button>
-          )}
+      {/* アプリ chrome（旧トップヘッダー相当）: ブランド・ナビ・閉じる/折りたたみ */}
+      <div className="flex-shrink-0 border-b border-[var(--border)] bg-white">
+        <div className="flex items-center gap-2 px-3 py-2 min-h-[44px]">
+          <Link
+            to="/"
+            className="flex items-center gap-2 min-w-0 flex-1 no-underline text-inherit hover:opacity-90"
+            aria-label="ホーム"
+            onClick={() => {
+              if (isDrawer && onClose) onClose();
+            }}
+          >
+            <div className="w-7 h-7 shrink-0 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white">
+              <MdAnalytics className="text-lg" aria-hidden />
+            </div>
+            <span className="font-bold text-sm tracking-tight text-slate-800 truncate">
+              <span className="text-[var(--primary)]">yfsc</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {onCollapse && (
+              <button
+                type="button"
+                className="hidden md:flex p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+                onClick={onCollapse}
+                aria-label="サイドバーを折りたたむ"
+                title="サイドバーを折りたたむ"
+              >
+                <MdChevronLeft className="text-lg" />
+              </button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 md:hidden"
+                onClick={onClose}
+                aria-label="閉じる"
+              >
+                <MdClose className="text-lg" />
+              </button>
+            )}
+          </div>
         </div>
-      )}
+        <nav
+          className="flex flex-wrap gap-x-1 gap-y-1 px-2 pb-2 border-t border-slate-100/90"
+          aria-label="サイト内"
+        >
+          {NAVIGATION_ITEMS.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/"}
+              onClick={() => {
+                if (isDrawer && onClose) onClose();
+              }}
+              className={({ isActive }) =>
+                `inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold no-underline transition-colors ${
+                  isActive
+                    ? "bg-[var(--primary)]/12 text-[var(--primary)]"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`
+              }
+            >
+              <span aria-hidden>{item.icon}</span>
+              <span className="truncate max-w-[9.5rem]">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
       {/* データセット */}
       <div className="p-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-3">

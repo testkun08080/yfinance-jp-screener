@@ -9,6 +9,8 @@ import {
   MdChevronRight,
   MdInfoOutline,
   MdClose,
+  MdAnalytics,
+  MdNumbers,
 } from "react-icons/md";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { Sidebar } from "../components/Sidebar";
@@ -342,7 +344,15 @@ export const DataPage = () => {
 
         {/* デスクトップ: 折りたたみ時に表示する展開タブ */}
         {sidebarCollapsed && (
-          <div className="hidden md:flex w-12 flex-shrink-0 flex-col items-center border-r border-[var(--border)] bg-slate-50/50 py-4">
+          <div className="hidden md:flex w-12 flex-shrink-0 flex-col items-center border-r border-[var(--border)] bg-slate-50/50 py-3 gap-2">
+            <Link
+              to="/"
+              className="p-1.5 rounded-lg hover:bg-slate-200/80 text-white bg-[var(--primary)] shadow-sm"
+              aria-label="ホーム"
+              title="yfsc ホーム"
+            >
+              <MdAnalytics className="text-lg" aria-hidden />
+            </Link>
             <button
               type="button"
               className="p-2 rounded-lg hover:bg-slate-200/80 text-slate-600 transition-colors"
@@ -352,20 +362,33 @@ export const DataPage = () => {
             >
               <MdChevronRight className="text-xl" />
             </button>
-            <span className="mt-2 text-[10px] text-slate-500">開く</span>
+            <span className="text-[9px] text-slate-500 text-center leading-tight px-0.5">開く</span>
           </div>
         )}
 
         <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
           {/* モバイル: フィルターを開くボタン */}
-          <div className="md:hidden flex-shrink-0 px-3 py-2 border-b border-[var(--border)] bg-white flex items-center gap-2">
+          <div className="md:hidden flex-shrink-0 px-3 py-2 border-b border-[var(--border)] bg-white flex items-center justify-between gap-2 min-h-[52px]">
+            <Link
+              to="/"
+              className="flex items-center gap-2 shrink-0 no-underline text-inherit min-w-0"
+              aria-label="ホーム"
+            >
+              <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white shrink-0">
+                <MdAnalytics className="text-xl" aria-hidden />
+              </div>
+              <span className="font-bold text-sm text-slate-800 truncate">
+                <span className="text-[var(--primary)]">yfsc</span>
+              </span>
+            </Link>
             <button
               type="button"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 shrink-0"
               onClick={() => setSidebarOpen(true)}
             >
               <MdFilterList className="text-lg" />
-              フィルター・データセット
+              <span className="max-[380px]:hidden">フィルター・データセット</span>
+              <span className="hidden max-[380px]:inline">フィルター</span>
             </button>
           </div>
           {persistMessage && selectedFile && (
@@ -486,73 +509,80 @@ export const DataPage = () => {
           {selectedFile && !loading && !error && data.length > 0 && (
             <>
               {/* タブ: すべて / お気に入りのみ ＋ Main toolbar */}
-              <div className="px-3 md:px-6 py-3 md:py-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-                <div className="flex items-center gap-4 md:gap-6">
-                  {/* リスト表示タブ */}
-                  <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+              <div className="px-3 md:px-6 py-2 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2 md:gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                  {/* リスト表示タブ（アイコン＋ title） */}
+                  <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 shrink-0">
                     <button
                       type="button"
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      title="すべての銘柄を表示"
+                      aria-label="すべての銘柄を表示"
+                      className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${
                         listTab === "all"
                           ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-600 hover:text-slate-800"
                       }`}
                       onClick={() => setListTab("all")}
                     >
-                      すべて
+                      <MdTableChart className="text-xl" aria-hidden />
                     </button>
                     <button
                       type="button"
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                      title="お気に入りのみ表示"
+                      aria-label={`お気に入りのみ${favoritesInData.length > 0 ? ` (${favoritesInData.length}件)` : ""}`}
+                      className={`p-1.5 rounded-md transition-colors flex items-center justify-center gap-0.5 min-w-[2.25rem] ${
                         listTab === "favorites"
                           ? "bg-white text-amber-700 shadow-sm"
                           : "text-slate-600 hover:text-slate-800"
                       }`}
                       onClick={() => setListTab("favorites")}
                     >
-                      <MdStar className="text-amber-500 text-base" />
-                      お気に入りのみ
+                      <MdStar className="text-amber-500 text-lg shrink-0" aria-hidden />
                       {favoritesInData.length > 0 && (
-                        <span className="text-xs">({favoritesInData.length})</span>
+                        <span className="text-[10px] font-bold leading-none tabular-nums">
+                          {favoritesInData.length}
+                        </span>
                       )}
                     </button>
                   </div>
-                  <div className="w-[1px] h-10 bg-slate-100 hidden sm:block" />
-                  <div className="flex items-center gap-6 md:gap-10">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
-                        {listTab === "all" ? "総件数" : "お気に入り"}
-                      </p>
-                      <p className="text-2xl md:text-3xl font-bold text-slate-900">
-                        {displayData.length.toLocaleString()}
-                      </p>
-                    </div>
+                  <div className="w-px h-7 bg-slate-100 hidden sm:block shrink-0" />
+                  <div className="flex items-center gap-2 md:gap-4 min-w-0 text-sm md:text-base font-bold tabular-nums">
+                    <span
+                      className="inline-flex items-center gap-1 text-slate-900 truncate"
+                      title={listTab === "all" ? "総件数" : "お気に入り件数"}
+                    >
+                      <MdNumbers className="text-slate-400 shrink-0 text-lg" aria-hidden />
+                      {displayData.length.toLocaleString()}
+                    </span>
                     {listTab === "all" && (
                       <>
-                        <div className="w-[1px] h-10 bg-slate-100" />
-                        <div>
-                          <p className="text-[11px] font-bold text-[var(--primary)] uppercase tracking-tight">
-                            絞り込み結果
-                          </p>
-                          <p className="text-2xl md:text-3xl font-bold text-[var(--primary)]">
-                            {filteredData.length.toLocaleString()}
-                          </p>
-                        </div>
+                        <span className="text-slate-200 shrink-0" aria-hidden>
+                          |
+                        </span>
+                        <span
+                          className="inline-flex items-center gap-1 text-[var(--primary)] truncate"
+                          title="絞り込み結果"
+                        >
+                          <MdFilterList className="shrink-0 text-lg" aria-hidden />
+                          {filteredData.length.toLocaleString()}
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                   <ColumnSelector
                     columns={columns}
                     onColumnChange={handleColumnChange}
                     onCategoryToggle={handleCategoryToggle}
+                    variant="iconOnly"
                   />
                   <DownloadButton
                     data={displayData}
                     columns={columns}
                     fileName={selectedFile.name.replace(/\.[^/.]+$/, "")}
                     totalCount={data.length}
+                    variant="iconOnly"
                   />
                 </div>
               </div>

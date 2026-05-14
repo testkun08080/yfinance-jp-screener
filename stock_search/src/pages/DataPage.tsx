@@ -219,6 +219,10 @@ export const DataPage = () => {
     updateFilter,
     clearFilters,
     applyPreset,
+    customPresets,
+    saveCustomFilterPreset,
+    removeCustomFilterPreset,
+    applyCustomFilterPreset,
     handleSort,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
@@ -295,6 +299,10 @@ export const DataPage = () => {
     onFilterChange: updateFilter,
     onClearFilters: clearFilters,
     onApplyPreset: applyPreset,
+    customPresets,
+    onSaveCustomPreset: saveCustomFilterPreset,
+    onApplyCustomPreset: applyCustomFilterPreset,
+    onDeleteCustomPreset: removeCustomFilterPreset,
     availableIndustries: selectedFile ? availableIndustries : [],
     availableMarkets: selectedFile ? availableMarkets : [],
     availablePrefectures: selectedFile ? availablePrefectures : [],
@@ -549,10 +557,10 @@ export const DataPage = () => {
                   <div className="flex items-center gap-2 md:gap-4 min-w-0 text-sm md:text-base font-bold tabular-nums">
                     <span
                       className="inline-flex items-center gap-1 text-slate-900 truncate"
-                      title={listTab === "all" ? "総件数" : "お気に入り件数"}
+                      title={listTab === "all" ? "総件数（CSV 全行）" : "お気に入り件数"}
                     >
                       <MdNumbers className="text-slate-400 shrink-0 text-lg" aria-hidden />
-                      {displayData.length.toLocaleString()}
+                      {(listTab === "all" ? data.length : displayData.length).toLocaleString()}
                     </span>
                     {listTab === "all" && (
                       <>

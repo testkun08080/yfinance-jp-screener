@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
   MdClose,
@@ -6,11 +7,16 @@ import {
   MdExpandMore,
   MdFilterList,
   MdAnalytics,
+  MdBookmarkAdd,
 } from "react-icons/md";
-import type { SearchFilters as SearchFiltersType } from "../types/stock";
+import type { SearchFilters as SearchFiltersType, SavedFilterPreset } from "../types/stock";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
 import { FILTER_PRESETS } from "../constants/presets";
+import {
+  loadHiddenBuiltinPresetIds,
+  persistHiddenBuiltinPresetIds,
+} from "../utils/builtinPresetHiddenStorage";
 import { NAVIGATION_ITEMS } from "../constants/ui";
 
 interface FileInfo {
@@ -35,6 +41,10 @@ interface SidebarProps {
   onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
   onClearFilters: () => void;
   onApplyPreset?: (preset: Partial<SearchFiltersType>) => void;
+  customPresets?: SavedFilterPreset[];
+  onSaveCustomPreset?: (name: string) => string | null;
+  onApplyCustomPreset?: (preset: SavedFilterPreset) => void;
+  onDeleteCustomPreset?: (id: string) => void;
   availableIndustries: string[];
   availableMarkets: string[];
   availablePrefectures: string[];
@@ -102,6 +112,10 @@ export const Sidebar = ({
   onFilterChange,
   onClearFilters,
   onApplyPreset,
+  customPresets = [],
+  onSaveCustomPreset,
+  onApplyCustomPreset,
+  onDeleteCustomPreset,
   availableIndustries,
   availableMarkets,
   availablePrefectures,
@@ -109,6 +123,17 @@ export const Sidebar = ({
   isDrawer = false,
   onCollapse,
 }: SidebarProps) => {
+  const [savePresetModalOpen, setSavePresetModalOpen] = useState(false);
+  const [modalPresetName, setModalPresetName] = useState("");
+  const [modalPresetErr, setModalPresetErr] = useState<string | null>(null);
+  const [hiddenBuiltinPresetIds, setHiddenBuiltinPresetIds] = useState<string[]>(() =>
+    loadHiddenBuiltinPresetIds()
+  );
+
+  useEffect(() => {
+    persistHiddenBuiltinPresetIds(hiddenBuiltinPresetIds);
+  }, [hiddenBuiltinPresetIds]);
+
   const handleDatasetDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -296,25 +321,80 @@ export const Sidebar = ({
           </div>
         </div>
 
-        {/* プリセットフィルター */}
+        {/* プリセットフィルター（標準＋マイプリセットを同一一覧） */}
         {onApplyPreset && (
           <div>
             <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
               スクリーニングプリセット
             </label>
             <div className="flex flex-wrap gap-1.5">
-              {FILTER_PRESETS.map((preset) => (
-                <button
+              {FILTER_PRESETS.filter((p) => !hiddenBuiltinPresetIds.includes(p.id)).map((preset) => (
+                <span
                   key={preset.id}
-                  type="button"
-                  title={preset.description}
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-colors leading-tight"
-                  onClick={() => onApplyPreset(preset.filters)}
+                  className="inline-flex items-stretch rounded-full border border-[var(--primary)] text-[var(--primary)] overflow-hidden shadow-sm"
                 >
-                  {preset.label}
-                </button>
+                  <button
+                    type="button"
+                    title={preset.description}
+                    className="text-[11px] font-semibold px-2.5 py-1 leading-tight hover:bg-[var(--primary)] hover:text-white transition-colors"
+                    onClick={() => onApplyPreset(preset.filters)}
+                  >
+                    {preset.label}
+                  </button>
+                  <button
+                    type="button"
+                    className="px-1.5 border-l border-[var(--primary)]/25 text-slate-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                    title="一覧から削除（再表示は下部リンク）"
+                    aria-label={`「${preset.label}」を一覧から削除`}
+                    onClick={() =>
+                      setHiddenBuiltinPresetIds((prev) =>
+                        prev.includes(preset.id) ? prev : [...prev, preset.id]
+                      )
+                    }
+                  >
+                    <MdClose className="text-sm" aria-hidden />
+                  </button>
+                </span>
               ))}
+              {onApplyCustomPreset &&
+                onDeleteCustomPreset &&
+                customPresets.map((p) => (
+                  <span
+                    key={p.id}
+                    className="inline-flex items-stretch rounded-full border border-slate-300 text-slate-700 overflow-hidden shadow-sm"
+                  >
+                    <button
+                      type="button"
+                      title="この条件を適用"
+                      className="text-[11px] font-semibold px-2.5 py-1 leading-tight hover:bg-slate-700 hover:text-white transition-colors max-w-[10rem] truncate"
+                      onClick={() => {
+                        onApplyCustomPreset(p);
+                        if (isDrawer && onClose) onClose();
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                    <button
+                      type="button"
+                      className="px-1.5 border-l border-slate-200 text-slate-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                      title="このプリセットを削除"
+                      aria-label={`「${p.label}」を削除`}
+                      onClick={() => onDeleteCustomPreset(p.id)}
+                    >
+                      <MdClose className="text-sm" aria-hidden />
+                    </button>
+                  </span>
+                ))}
             </div>
+            {hiddenBuiltinPresetIds.length > 0 && (
+              <button
+                type="button"
+                className="mt-2 text-[10px] font-semibold text-[var(--primary)] hover:underline"
+                onClick={() => setHiddenBuiltinPresetIds([])}
+              >
+                削除した標準プリセットをすべて再表示
+              </button>
+            )}
           </div>
         )}
 
@@ -631,16 +711,103 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-[var(--border)]">
-        <button
-          type="button"
-          className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold py-2.5 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 text-sm"
-          onClick={onClearFilters}
-        >
-          <MdFilterList className="text-lg" />
-          🗑️ フィルターをクリア
-        </button>
+      <div className="p-4 bg-slate-50 border-t border-[var(--border)] shrink-0">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="flex-1 min-w-0 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 text-[11px] sm:text-xs"
+            onClick={onClearFilters}
+          >
+            <MdFilterList className="text-base shrink-0" aria-hidden />
+            <span className="truncate">フィルターをクリア</span>
+          </button>
+          {onSaveCustomPreset && onApplyCustomPreset && onDeleteCustomPreset && (
+            <button
+              type="button"
+              className="flex-1 min-w-0 bg-white border-2 border-slate-200 hover:border-[var(--primary)] text-slate-700 hover:text-[var(--primary)] font-bold py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 text-[11px] sm:text-xs"
+              title="現在の条件を名前を付けて保存"
+              onClick={() => {
+                setModalPresetName("");
+                setModalPresetErr(null);
+                setSavePresetModalOpen(true);
+              }}
+            >
+              <MdBookmarkAdd className="text-base shrink-0" aria-hidden />
+              <span className="truncate">条件を保存</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {savePresetModalOpen && onSaveCustomPreset && (
+        <div className="modal modal-open z-[200]" role="dialog" aria-modal="true" aria-labelledby="save-preset-title">
+          <div className="modal-box max-w-sm p-5 shadow-xl">
+            <h3 id="save-preset-title" className="font-bold text-base text-slate-800 mb-1">
+              マイプリセットに保存
+            </h3>
+            <p className="text-xs text-slate-500 mb-3">
+              表示中のフィルター条件を保存します。名前を入力して保存してください。
+            </p>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1" htmlFor="save-preset-name">
+              プリセット名
+            </label>
+            <input
+              id="save-preset-name"
+              type="text"
+              className="input input-bordered input-sm w-full text-sm mb-2"
+              placeholder="例: 小型グロース"
+              maxLength={40}
+              autoFocus
+              value={modalPresetName}
+              onChange={(e) => {
+                setModalPresetName(e.target.value);
+                if (modalPresetErr) setModalPresetErr(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const err = onSaveCustomPreset(modalPresetName);
+                  if (err) {
+                    setModalPresetErr(err);
+                    return;
+                  }
+                  setSavePresetModalOpen(false);
+                }
+              }}
+            />
+            {modalPresetErr && <p className="text-xs text-red-600 mb-2">{modalPresetErr}</p>}
+            <div className="modal-action mt-2 gap-2 flex-wrap sm:flex-nowrap">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm flex-1"
+                onClick={() => setSavePresetModalOpen(false)}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm flex-1"
+                onClick={() => {
+                  const err = onSaveCustomPreset(modalPresetName);
+                  if (err) {
+                    setModalPresetErr(err);
+                    return;
+                  }
+                  setSavePresetModalOpen(false);
+                }}
+              >
+                保存する
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop bg-black/50"
+            aria-label="閉じる"
+            onClick={() => setSavePresetModalOpen(false)}
+          />
+        </div>
+      )}
     </aside>
   );
 };

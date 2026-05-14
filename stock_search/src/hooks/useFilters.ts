@@ -740,6 +740,7 @@ export const useFilters = (data: StockData[]) => {
       companyName: filters.companyName,
       stockCode: filters.stockCode,
       industries: filters.industries,
+      marketType: filters.marketType,
       market: filters.market,
       prefecture: filters.prefecture,
     };

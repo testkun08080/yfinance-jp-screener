@@ -254,28 +254,43 @@ export const DataPage = () => {
       pbr: avg(
         filteredData
           .map((s) => s.PBR)
-          .filter((v): v is number => typeof v === "number")
+          .filter((v): v is number => Number.isFinite(v))
       ),
       roe: avg(
         filteredData
           .map((s) => s.ROE)
-          .filter((v): v is number => typeof v === "number")
+          .filter((v): v is number => Number.isFinite(v))
           .map((v) => v * 100)
       ),
       divYield: avg(
         filteredData
           .map((s) => s.配当利回り)
-          .filter((v): v is number => typeof v === "number")
+          .filter((v): v is number => Number.isFinite(v))
           .map((v) => v * 100)
       ),
       netCashRatio: avg(
         filteredData
           .map((s) => s.ネットキャッシュ比率)
-          .filter((v): v is number => typeof v === "number")
+          .filter((v): v is number => Number.isFinite(v))
           .map((v) => v * 100)
       ),
     };
   }, [filteredData]);
+
+  /** フィルターが初期値から変更されているか */
+  const hasActiveFilters = useMemo(() => {
+    const { companyName, stockCode, industries, market, prefecture, marketType, ...numericFilters } = filters;
+    return (
+      companyName !== "" ||
+      (stockCode ?? "") !== "" ||
+      industries.length > 0 ||
+      market.length > 0 ||
+      prefecture.length > 0 ||
+      // marketType のデフォルトは ["JP","US"] (長さ2) なので異なる場合のみアクティブ
+      (marketType ?? []).length !== 2 ||
+      Object.values(numericFilters).some((v) => v !== null)
+    );
+  }, [filters]);
 
   /** タブ: すべて / お気に入りのみ */
   const [listTab, setListTab] = useState<"all" | "favorites">("all");
@@ -630,8 +645,8 @@ export const DataPage = () => {
                 </div>
               </div>
 
-              {/* フィルター結果の統計バー（オールタブのみ） */}
-              {listTab === "all" && filteredStats && (
+              {/* フィルター結果の統計バー（フィルター適用時のみ） */}
+              {listTab === "all" && hasActiveFilters && filteredStats && (
                 <div className="px-3 md:px-6 py-2.5 bg-slate-50/50 border-b border-[var(--border)] flex-shrink-0 flex flex-wrap gap-4 md:gap-8 items-center text-xs">
                   <div className="flex items-center gap-6">
                     {filteredStats.pbr !== null && (

@@ -102,6 +102,13 @@ export interface SearchFilters {
   netCashRatioMax: number | null;
 }
 
+/** ユーザーが保存したスクリーニング条件（localStorage に永続化） */
+export interface SavedFilterPreset {
+  id: string;
+  label: string;
+  filters: SearchFilters;
+}
+
 export interface SortConfig {
   key: keyof StockData;
   direction: "asc" | "desc";

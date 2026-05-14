@@ -729,8 +729,23 @@ export const useFilters = (data: StockData[]) => {
 
   const clearFilters = () => {
     setFilters(initialFilters);
-    // URLパラメータもクリア
     navigate(location.pathname, { replace: true });
+  };
+
+  const applyPreset = (preset: Partial<SearchFilters>) => {
+    const newFilters: SearchFilters = {
+      ...initialFilters,
+      ...preset,
+      // テキスト検索・業種・市場選択は引き継ぐ
+      companyName: filters.companyName,
+      stockCode: filters.stockCode,
+      industries: filters.industries,
+      marketType: filters.marketType,
+      market: filters.market,
+      prefecture: filters.prefecture,
+    };
+    setFilters(newFilters);
+    updateUrlWithFilters(newFilters);
   };
 
   const shareFilters = () => {
@@ -829,6 +844,7 @@ export const useFilters = (data: StockData[]) => {
     availablePrefectures,
     updateFilter,
     clearFilters,
+    applyPreset,
     handleSort,
     shareFilters,
     copyShareUrl,

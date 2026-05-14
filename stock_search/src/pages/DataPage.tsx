@@ -226,6 +226,7 @@ export const DataPage = () => {
     availablePrefectures,
     updateFilter,
     clearFilters,
+    applyPreset,
     handleSort,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
@@ -243,6 +244,7 @@ export const DataPage = () => {
       return favoriteCodesSet.has(n) || favoriteCodesSet.has(String(code).trim());
     });
   }, [filteredData, favoriteCodesSet]);
+
 
   /** タブ: すべて / お気に入りのみ */
   const [listTab, setListTab] = useState<"all" | "favorites">("all");
@@ -311,6 +313,7 @@ export const DataPage = () => {
     filters,
     onFilterChange: updateFilter,
     onClearFilters: clearFilters,
+    onApplyPreset: applyPreset,
     availableIndustries: selectedFile ? availableIndustries : [],
     availableMarkets: selectedFile ? availableMarkets : [],
     availablePrefectures: selectedFile ? availablePrefectures : [],
@@ -595,6 +598,7 @@ export const DataPage = () => {
                   />
                 </div>
               </div>
+
 
               {/* Table area */}
               <div className="flex-1 overflow-auto custom-scrollbar min-h-0">

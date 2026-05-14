@@ -7,11 +7,7 @@ interface FileUploadProps {
   error: string | null;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({
-  onFileSelect,
-  loading,
-  error,
-}) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, loading, error }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,9 +35,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <h3 className="text-lg font-semibold text-base-content mb-4">
-        CSVファイル読み込み
-      </h3>
+      <h3 className="text-lg font-semibold text-base-content mb-4">CSVファイル読み込み</h3>
 
       <div
         className={`
@@ -71,14 +65,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <div className="flex flex-col items-center gap-3">
             <div className="text-4xl text-primary">📁</div>
             <div>
-              <p className="text-base-content font-medium mb-1">
-                CSVファイルをドラッグ&ドロップ
-              </p>
+              <p className="text-base-content font-medium mb-1">CSVファイルをドラッグ&ドロップ</p>
               <p className="text-base-content/70 text-sm">
                 または
-                <span className="text-primary font-medium">
-                  クリックして選択
-                </span>
+                <span className="text-primary font-medium">クリックして選択</span>
               </p>
             </div>
             <div className="text-xs text-base-content/70">

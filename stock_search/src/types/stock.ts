@@ -125,11 +125,7 @@ export const MARKET_OPTIONS = [
   "グロース（内国株式）",
 ] as const;
 
-export const US_MARKET_OPTIONS = [
-  "NYSE",
-  "NASDAQ",
-  "AMEX",
-] as const;
+export const US_MARKET_OPTIONS = ["NYSE", "NASDAQ", "AMEX"] as const;
 
 export const MARKET_TYPE_OPTIONS = ["JP", "US"] as const;
 

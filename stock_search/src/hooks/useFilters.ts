@@ -1,11 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { StockData, SearchFilters, SortConfig } from "../types/stock";
-import {
-  urlParamsToFilters,
-  updateUrlWithFilters,
-  generateShareUrl,
-} from "../utils/urlParams";
+import { urlParamsToFilters, updateUrlWithFilters, generateShareUrl } from "../utils/urlParams";
 
 /**
  * ティッカーシンボルから市場タイプを判定
@@ -125,41 +121,30 @@ export const useFilters = (data: StockData[]) => {
       }
 
       // 業種フィルター（複数選択）
-      if (
-        filters.industries.length > 0 &&
-        !filters.industries.includes(stock.業種 || "")
-      ) {
+      if (filters.industries.length > 0 && !filters.industries.includes(stock.業種 || "")) {
         return false;
       }
 
       // 市場タイプフィルター（複数選択）
       if (filters.marketType && filters.marketType.length > 0) {
         const stockMarketType =
-          stock.市場タイプ ||
-          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+          stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         if (!filters.marketType.includes(stockMarketType as "JP" | "US")) {
           return false;
         }
       }
 
       // 市場フィルター（複数選択）
-      if (
-        filters.market.length > 0 &&
-        !filters.market.includes(stock.優先市場 || "")
-      ) {
+      if (filters.market.length > 0 && !filters.market.includes(stock.優先市場 || "")) {
         return false;
       }
 
       // 都道府県フィルター（複数選択、日本株のみ）
       if (filters.prefecture.length > 0) {
         const stockMarketType =
-          stock.市場タイプ ||
-          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+          stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         // 日本株の場合のみ都道府県フィルターを適用
-        if (
-          stockMarketType === "JP" &&
-          !filters.prefecture.includes(stock.都道府県 || "")
-        ) {
+        if (stockMarketType === "JP" && !filters.prefecture.includes(stock.都道府県 || "")) {
           return false;
         }
       }
@@ -646,8 +631,7 @@ export const useFilters = (data: StockData[]) => {
       }
 
       // ネットキャッシュフィルター（キーは ネットキャッシュ または ネットキャッシュ（流動資産-負債））
-      const netCashValue =
-        stock.ネットキャッシュ ?? stock["ネットキャッシュ（流動資産-負債）"];
+      const netCashValue = stock.ネットキャッシュ ?? stock["ネットキャッシュ（流動資産-負債）"];
       if (
         filters.netCashMin !== null &&
         netCashValue !== null &&
@@ -715,10 +699,7 @@ export const useFilters = (data: StockData[]) => {
     return filtered;
   }, [data, filters, sortConfig]);
 
-  const updateFilter = (
-    key: keyof SearchFilters,
-    value: string | number | string[] | null
-  ) => {
+  const updateFilter = (key: keyof SearchFilters, value: string | number | string[] | null) => {
     const newFilters = {
       ...filters,
       [key]: value,
@@ -797,8 +778,7 @@ export const useFilters = (data: StockData[]) => {
     if (filters.marketType && filters.marketType.length > 0) {
       filteredData = data.filter((stock) => {
         const stockMarketType =
-          stock.市場タイプ ||
-          detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+          stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
         return filters.marketType!.includes(stockMarketType as "JP" | "US");
       });
     }
@@ -806,8 +786,7 @@ export const useFilters = (data: StockData[]) => {
     const markets = filteredData
       .map((stock) => stock.優先市場)
       .filter(
-        (market): market is string =>
-          market !== undefined && market !== null && market !== ""
+        (market): market is string => market !== undefined && market !== null && market !== ""
       )
       .filter((market, index, arr) => arr.indexOf(market) === index)
       .sort();
@@ -819,8 +798,7 @@ export const useFilters = (data: StockData[]) => {
     // 日本株のみを対象にする
     const jpStocks = data.filter((stock) => {
       const stockMarketType =
-        stock.市場タイプ ||
-        detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+        stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
       return stockMarketType === "JP";
     });
 

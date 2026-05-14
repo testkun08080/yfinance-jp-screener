@@ -14,7 +14,8 @@
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  font-family:
+    ui-sans-serif, system-ui, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   @apply text-slate-900 bg-white antialiased;
 }
 
@@ -47,11 +48,11 @@ body {
 }
 
 /* details/summary for sidebar filters */
-details>summary {
+details > summary {
   list-style: none;
 }
 
-details>summary::-webkit-details-marker {
+details > summary::-webkit-details-marker {
   display: none;
 }
 

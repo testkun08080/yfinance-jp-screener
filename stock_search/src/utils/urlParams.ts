@@ -86,9 +86,7 @@ export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
 };
 
 // URLパラメータをフィルターに変換
-export const urlParamsToFilters = (
-  searchParams: URLSearchParams
-): Partial<SearchFilters> => {
+export const urlParamsToFilters = (searchParams: URLSearchParams): Partial<SearchFilters> => {
   const filters: Partial<SearchFilters> = {};
 
   // 文字列フィルター
@@ -196,7 +194,5 @@ export const updateUrlWithFilters = (filters: SearchFilters) => {
 // 共有用URLを生成
 export const generateShareUrl = (filters: SearchFilters): string => {
   const params = filtersToUrlParams(filters);
-  return `${window.location.origin}${
-    window.location.pathname
-  }?${params.toString()}`;
+  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 };

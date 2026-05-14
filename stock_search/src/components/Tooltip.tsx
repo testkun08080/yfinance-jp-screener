@@ -31,9 +31,7 @@ export const Tooltip = ({ content, children, position = "top" }: TooltipProps) =
         {content}
         <span
           className={`absolute ${
-            position === "top"
-              ? "top-full border-t-slate-800"
-              : "bottom-full border-b-slate-800"
+            position === "top" ? "top-full border-t-slate-800" : "bottom-full border-b-slate-800"
           } left-1/2 -translate-x-1/2 border-4 border-transparent`}
         />
       </span>

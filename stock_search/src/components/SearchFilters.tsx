@@ -11,23 +11,11 @@ interface NumberRangeInputProps {
   step?: number;
   isInteger?: boolean;
   filters: SearchFiltersType;
-  onFilterChange: (
-    key: keyof SearchFiltersType,
-    value: string | number | string[] | null
-  ) => void;
+  onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
 }
 
 const NumberRangeInput: React.FC<NumberRangeInputProps> = React.memo(
-  ({
-    label,
-    unit = "",
-    minKey,
-    maxKey,
-    step = 1,
-    isInteger = false,
-    filters,
-    onFilterChange,
-  }) => {
+  ({ label, unit = "", minKey, maxKey, step = 1, isInteger = false, filters, onFilterChange }) => {
     const handleMinChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         onFilterChange(
@@ -94,10 +82,7 @@ interface SearchFiltersProps {
   availableIndustries: string[];
   availableMarkets: string[];
   availablePrefectures: string[];
-  onFilterChange: (
-    key: keyof SearchFiltersType,
-    value: string | number | string[] | null
-  ) => void;
+  onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
   onClearFilters: () => void;
 }
 
@@ -203,9 +188,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
   return (
     <div className="bg-base-100 rounded-lg shadow-sm p-4 sm:p-6 mb-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg sm:text-xl font-semibold text-base-content">
-          🔍 検索フィルター
-        </h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-base-content">🔍 検索フィルター</h3>
         <button onClick={onClearFilters} className="btn btn-outline btn-sm">
           🗑️ すべてクリア
         </button>
@@ -218,9 +201,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           checked={expandedSections.basic}
           onChange={() => toggleSection("basic")}
         />
-        <div className="collapse-title text-lg font-medium">
-          📋 基本フィルター
-        </div>
+        <div className="collapse-title text-lg font-medium">📋 基本フィルター</div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 市場タイプ選択 - コメントアウト */}
@@ -291,9 +272,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               <div className="flex items-center gap-2">
                 <span className="label-text">業種選択（複数選択可）</span>
                 <span className="label-text-alt">
-                  {filters.industries.length > 0
-                    ? `${filters.industries.length}件選択中`
-                    : ""}
+                  {filters.industries.length > 0 ? `${filters.industries.length}件選択中` : ""}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -301,9 +280,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   type="button"
                   className="btn btn-xs btn-outline"
                   onClick={handleSelectAllIndustries}
-                  disabled={
-                    filters.industries.length === availableIndustries.length
-                  }
+                  disabled={filters.industries.length === availableIndustries.length}
                 >
                   ✅ 全選択
                 </button>
@@ -320,17 +297,12 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
             <div className="bg-base-100 border border-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {availableIndustries.map((industry) => (
-                  <label
-                    key={industry}
-                    className="label cursor-pointer justify-start"
-                  >
+                  <label key={industry} className="label cursor-pointer justify-start">
                     <input
                       type="checkbox"
                       className="checkbox checkbox-sm mr-2"
                       checked={filters.industries.includes(industry)}
-                      onChange={(e) =>
-                        handleIndustryChange(industry, e.target.checked)
-                      }
+                      onChange={(e) => handleIndustryChange(industry, e.target.checked)}
                     />
                     <span className="label-text text-sm">{industry}</span>
                   </label>
@@ -345,9 +317,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
               <div className="flex items-center gap-2">
                 <span className="label-text">優先市場選択（複数選択可）</span>
                 <span className="label-text-alt">
-                  {filters.market.length > 0
-                    ? `${filters.market.length}件選択中`
-                    : ""}
+                  {filters.market.length > 0 ? `${filters.market.length}件選択中` : ""}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -372,21 +342,14 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
             <div className="bg-base-100 border border-base-300 rounded-lg p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {availableMarkets.map((market) => (
-                  <label
-                    key={market}
-                    className="label cursor-pointer justify-start"
-                  >
+                  <label key={market} className="label cursor-pointer justify-start">
                     <input
                       type="checkbox"
                       className="checkbox checkbox-sm mr-2"
                       checked={filters.market.includes(market)}
-                      onChange={(e) =>
-                        handleMarketChange(market, e.target.checked)
-                      }
+                      onChange={(e) => handleMarketChange(market, e.target.checked)}
                     />
-                    <span className="label-text text-sm">
-                      {market.replace("（内国株式）", "")}
-                    </span>
+                    <span className="label-text text-sm">{market.replace("（内国株式）", "")}</span>
                   </label>
                 ))}
               </div>
@@ -401,53 +364,44 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="label-text">都道府県選択（複数選択可、日本株のみ）</span>
                     <span className="label-text-alt">
-                      {filters.prefecture.length > 0
-                        ? `${filters.prefecture.length}件選択中`
-                        : ""}
+                      {filters.prefecture.length > 0 ? `${filters.prefecture.length}件選択中` : ""}
                     </span>
                   </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-xs btn-outline"
-                    onClick={handleSelectAllPrefectures}
-                    disabled={
-                      filters.prefecture.length === availablePrefectures.length
-                    }
-                  >
-                    ✅ 全選択
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-xs btn-outline"
-                    onClick={handleClearAllPrefectures}
-                    disabled={filters.prefecture.length === 0}
-                  >
-                    ❌ 全クリア
-                  </button>
-                </div>
-              </div>
-              <div className="bg-base-100 border border-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {availablePrefectures.map((prefecture) => (
-                    <label
-                      key={prefecture}
-                      className="label cursor-pointer justify-start"
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-outline"
+                      onClick={handleSelectAllPrefectures}
+                      disabled={filters.prefecture.length === availablePrefectures.length}
                     >
-                      <input
-                        type="checkbox"
-                        className="checkbox checkbox-sm mr-2"
-                        checked={filters.prefecture.includes(prefecture)}
-                        onChange={(e) =>
-                          handlePrefectureChange(prefecture, e.target.checked)
-                        }
-                      />
-                      <span className="label-text text-sm">{prefecture}</span>
-                    </label>
-                  ))}
+                      ✅ 全選択
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-outline"
+                      onClick={handleClearAllPrefectures}
+                      disabled={filters.prefecture.length === 0}
+                    >
+                      ❌ 全クリア
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-base-100 border border-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {availablePrefectures.map((prefecture) => (
+                      <label key={prefecture} className="label cursor-pointer justify-start">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm mr-2"
+                          checked={filters.prefecture.includes(prefecture)}
+                          onChange={(e) => handlePrefectureChange(prefecture, e.target.checked)}
+                        />
+                        <span className="label-text text-sm">{prefecture}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
             </React.Fragment>
           )}
         </div>
@@ -460,9 +414,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           checked={expandedSections.valuation}
           onChange={() => toggleSection("valuation")}
         />
-        <div className="collapse-title text-lg font-medium">
-          📊 バリュエーション指標
-        </div>
+        <div className="collapse-title text-lg font-medium">📊 バリュエーション指標</div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <NumberRangeInput
@@ -577,9 +529,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           checked={expandedSections.performance}
           onChange={() => toggleSection("performance")}
         />
-        <div className="collapse-title text-lg font-medium">
-          💹 業績・収益性指標
-        </div>
+        <div className="collapse-title text-lg font-medium">💹 業績・収益性指標</div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <NumberRangeInput
@@ -638,9 +588,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           checked={expandedSections.balance}
           onChange={() => toggleSection("balance")}
         />
-        <div className="collapse-title text-lg font-medium">
-          🏛️ バランスシート指標
-        </div>
+        <div className="collapse-title text-lg font-medium">🏛️ バランスシート指標</div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <NumberRangeInput
@@ -699,9 +647,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           checked={expandedSections.cash}
           onChange={() => toggleSection("cash")}
         />
-        <div className="collapse-title text-lg font-medium">
-          💰 キャッシュ関連指標
-        </div>
+        <div className="collapse-title text-lg font-medium">💰 キャッシュ関連指標</div>
         <div className="collapse-content">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <NumberRangeInput

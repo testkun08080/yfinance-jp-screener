@@ -40,11 +40,7 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
       },
       transform: (value: string, header: string) => {
         // 数値フィールドの処理
-        if (
-          CSV_NUMERIC_FIELDS.includes(
-            header as (typeof CSV_NUMERIC_FIELDS)[number],
-          )
-        ) {
+        if (CSV_NUMERIC_FIELDS.includes(header as (typeof CSV_NUMERIC_FIELDS)[number])) {
           // 単位表記を除去（倍、%、円など）
           const cleanValue = value
             .replace(/,/g, "")
@@ -68,7 +64,7 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
 
         try {
           const stockData = results.data as StockData[];
-          
+
           // 市場タイプが未指定の場合、ティッカー形式から自動判定
           const processedData = stockData.map((row) => {
             if (!row.市場タイプ) {
@@ -76,16 +72,14 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
             }
             return row;
           });
-          
+
           resolve(processedData.filter((row) => row.会社名 && (row.銘柄コード || row.コード)));
         } catch (error) {
           reject(new Error("データの変換中にエラーが発生しました"));
         }
       },
       error: (error: Error) => {
-        reject(
-          new Error(`CSVファイルの読み込みに失敗しました: ${error.message}`),
-        );
+        reject(new Error(`CSVファイルの読み込みに失敗しました: ${error.message}`));
       },
     });
   });
@@ -103,16 +97,10 @@ export const formatCurrency = (value: number | null): string => {
   if (value === null || value === undefined) return "-";
 
   // 全て百万円単位で表示（単位サフィックスなし）
-  return formatNumber(
-    value / CURRENCY_FORMAT.millionDivisor,
-    CURRENCY_FORMAT.decimals,
-  );
+  return formatNumber(value / CURRENCY_FORMAT.millionDivisor, CURRENCY_FORMAT.decimals);
 };
 
 export const formatPercentage = (value: number | null): string => {
   if (value === null || value === undefined) return "-";
-  return `${formatNumber(
-    value * PERCENTAGE_FORMAT.multiplier,
-    PERCENTAGE_FORMAT.decimals,
-  )}%`;
+  return `${formatNumber(value * PERCENTAGE_FORMAT.multiplier, PERCENTAGE_FORMAT.decimals)}%`;
 };

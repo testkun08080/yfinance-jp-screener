@@ -36,10 +36,7 @@ export const NotFound: React.FC = () => {
                 🏠 ホームに戻る
               </Link>
 
-              <button
-                onClick={() => window.history.back()}
-                className="btn btn-outline"
-              >
+              <button onClick={() => window.history.back()} className="btn btn-outline">
                 ⬅️ 前のページに戻る
               </button>
             </div>

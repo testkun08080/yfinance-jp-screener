@@ -1,7 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { StockData, SearchFilters, SortConfig } from "../types/stock";
+import type { StockData, SearchFilters, SortConfig, SavedFilterPreset } from "../types/stock";
 import { urlParamsToFilters, updateUrlWithFilters, generateShareUrl } from "../utils/urlParams";
+import {
+  loadCustomFilterPresets,
+  persistCustomFilterPresets,
+} from "../utils/customFilterPresetsStorage";
 
 /**
  * ティッカーシンボルから市場タイプを判定
@@ -92,6 +96,13 @@ export const useFilters = (data: StockData[]) => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [customPresets, setCustomPresets] = useState<SavedFilterPreset[]>(() =>
+    loadCustomFilterPresets()
+  );
+
+  useEffect(() => {
+    persistCustomFilterPresets(customPresets);
+  }, [customPresets]);
 
   // 初回ロード時にURLパラメータからフィルターを復元
   useEffect(() => {
@@ -729,6 +740,37 @@ export const useFilters = (data: StockData[]) => {
     updateUrlWithFilters(newFilters);
   };
 
+  const MAX_CUSTOM_PRESETS = 30;
+  const MAX_CUSTOM_PRESET_LABEL = 40;
+
+  const applyCustomFilterPreset = (preset: SavedFilterPreset) => {
+    const merged: SearchFilters = {
+      ...initialFilters,
+      ...structuredClone(preset.filters),
+    };
+    setFilters(merged);
+    updateUrlWithFilters(merged);
+  };
+
+  const saveCustomFilterPreset = (label: string): string | null => {
+    const trimmed = label.trim();
+    if (!trimmed) return "名前を入力してください";
+    if (trimmed.length > MAX_CUSTOM_PRESET_LABEL) {
+      return `名前は${MAX_CUSTOM_PRESET_LABEL}文字以内にしてください`;
+    }
+    if (customPresets.length >= MAX_CUSTOM_PRESETS) {
+      return `マイプリセットは最大${MAX_CUSTOM_PRESETS}件までです`;
+    }
+    const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const snapshot = structuredClone(filters) as SearchFilters;
+    setCustomPresets((prev) => [...prev, { id, label: trimmed, filters: snapshot }]);
+    return null;
+  };
+
+  const removeCustomFilterPreset = (id: string) => {
+    setCustomPresets((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const shareFilters = () => {
     const shareUrl = generateShareUrl(filters);
     return shareUrl;
@@ -823,6 +865,10 @@ export const useFilters = (data: StockData[]) => {
     updateFilter,
     clearFilters,
     applyPreset,
+    customPresets,
+    saveCustomFilterPreset,
+    removeCustomFilterPreset,
+    applyCustomFilterPreset,
     handleSort,
     shareFilters,
     copyShareUrl,

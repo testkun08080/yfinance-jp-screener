@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MdDownload } from "react-icons/md";
 import type { StockData } from "../types/stock";
 import type { ColumnConfig } from "./ColumnSelector";
 import {
@@ -15,6 +16,8 @@ interface DownloadButtonProps {
   fileName?: string;
   totalCount?: number;
   className?: string;
+  /** アイコンのみ（ツールバー用）。件数・説明は title に集約 */
+  variant?: "default" | "iconOnly";
 }
 
 export const DownloadButton: React.FC<DownloadButtonProps> = ({
@@ -23,6 +26,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   fileName = "stock_data",
   totalCount,
   className = "",
+  variant = "default",
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
@@ -113,30 +117,58 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   const visibleColumnCount = columns.filter((col) => col.visible).length;
   const isDisabled = isDownloading || data.length === 0 || cooldownRemaining > 0;
 
+  const downloadTitle =
+    cooldownRemaining > 0
+      ? `クールダウン中: あと${Math.ceil(cooldownRemaining / 1000)}秒`
+      : `CSVファイルをダウンロード (${data.length}件, ${visibleColumnCount}列, 約${estimatedSize})`;
+
+  const ariaLabel =
+    variant === "iconOnly"
+      ? cooldownRemaining > 0
+        ? `CSVダウンロード: クールダウン あと${Math.ceil(cooldownRemaining / 1000)}秒`
+        : isDownloading
+          ? "CSVを生成中"
+          : `CSVダウンロード (${data.length}件)`
+      : undefined;
+
   return (
     <div className={`relative flex-shrink-0 ${className}`}>
       <button
         onClick={handleDownload}
         disabled={isDisabled}
-        className={`btn btn-outline btn-sm gap-1.5 md:gap-2 min-h-10 px-3 md:px-4 whitespace-nowrap inline-flex items-center ${
-          data.length === 0 ? "btn-disabled" : ""
-        } ${cooldownRemaining > 0 ? "btn-disabled opacity-60" : ""}`}
-        title={
-          cooldownRemaining > 0
-            ? `クールダウン中: あと${Math.ceil(cooldownRemaining / 1000)}秒`
-            : `CSVファイルをダウンロード (${data.length}件, ${visibleColumnCount}列, 約${estimatedSize})`
-        }
+        type="button"
+        aria-label={ariaLabel}
+        className={`btn btn-outline btn-sm inline-flex items-center justify-center ${
+          variant === "iconOnly"
+            ? "min-h-9 h-9 w-9 px-0 gap-0"
+            : "gap-1.5 md:gap-2 min-h-10 px-3 md:px-4 whitespace-nowrap"
+        } ${data.length === 0 ? "btn-disabled" : ""} ${
+          cooldownRemaining > 0 ? "btn-disabled opacity-60" : ""
+        }`}
+        title={downloadTitle}
       >
         {isDownloading ? (
-          <>
-            <span className="loading loading-spinner loading-xs"></span>
-            生成中...
-          </>
+          variant === "iconOnly" ? (
+            <span className="loading loading-spinner loading-xs" aria-hidden />
+          ) : (
+            <>
+              <span className="loading loading-spinner loading-xs"></span>
+              生成中...
+            </>
+          )
         ) : cooldownRemaining > 0 ? (
-          <>
-            ⏱️ CSV
-            <span className="text-xs opacity-70">{Math.ceil(cooldownRemaining / 1000)}秒</span>
-          </>
+          variant === "iconOnly" ? (
+            <span className="text-xs font-semibold tabular-nums" aria-hidden>
+              {Math.ceil(cooldownRemaining / 1000)}
+            </span>
+          ) : (
+            <>
+              ⏱️ CSV
+              <span className="text-xs opacity-70">{Math.ceil(cooldownRemaining / 1000)}秒</span>
+            </>
+          )
+        ) : variant === "iconOnly" ? (
+          <MdDownload className="text-xl shrink-0" aria-hidden />
         ) : (
           <>
             📥 CSVダウンロード

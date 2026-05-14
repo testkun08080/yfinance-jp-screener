@@ -44,8 +44,6 @@ warnings.filterwarnings("ignore")
 
 # ログ設定
 # Exportフォルダが存在しない場合は作成
-import os
-
 os.makedirs("Export", exist_ok=True)
 
 logging.basicConfig(
@@ -203,7 +201,7 @@ def safe_get_value(data, key, default=None):
             return data.get(key, default)
         else:
             return default
-    except:
+    except Exception:
         return default
 
 
@@ -296,7 +294,7 @@ def calculate_net_cash(current_assets, investments, total_liabilities):
             inv_value = (investments * 0.7) if investments is not None else 0
             return current_assets + inv_value - total_liabilities
         return None
-    except:
+    except Exception:
         return None
 
 
@@ -369,7 +367,7 @@ def calculate_previous_year_per(ticker, financials):
                 previous_year_date = pd.to_datetime(
                     previous_year_period
                 ).to_pydatetime()
-            except:
+            except Exception:
                 return None
 
         # 前年度末の株価を取得（決算期の前後数日で取得）

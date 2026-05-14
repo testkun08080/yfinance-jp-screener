@@ -551,10 +551,7 @@ export const DataPage = () => {
                       className="inline-flex items-center gap-1 text-slate-900 truncate"
                       title={listTab === "all" ? "総件数" : "お気に入り件数"}
                     >
-                      <MdNumbers
-                        className="text-slate-400 shrink-0 text-lg"
-                        aria-hidden
-                      />
+                      <MdNumbers className="text-slate-400 shrink-0 text-lg" aria-hidden />
                       {displayData.length.toLocaleString()}
                     </span>
                     {listTab === "all" && (

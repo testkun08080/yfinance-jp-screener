@@ -146,9 +146,7 @@ export const ColumnSelector: FC<ColumnSelectorProps> = ({
         }
       >
         <MdViewColumn className={variant === "iconOnly" ? "text-xl" : "text-lg"} />
-        {variant === "default" && (
-          <span className="whitespace-nowrap">{labelText}</span>
-        )}
+        {variant === "default" && <span className="whitespace-nowrap">{labelText}</span>}
       </button>
 
       {isOpen && (

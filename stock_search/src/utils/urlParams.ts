@@ -1,198 +1,146 @@
-import type { SearchFilters } from "../types/stock";
+import type { ScreenerCondition, ScreenerState, SortConfig } from "../types/stock";
+import { urlParamsToFilters } from "./urlParamsLegacy";
+import { searchFiltersToScreenerState } from "./searchFiltersMigration";
 
-// フィルターをURLパラメータに変換
-export const filtersToUrlParams = (filters: SearchFilters): URLSearchParams => {
+function encodeCondition(c: ScreenerCondition): string {
+  if (c.operator === "between" && Array.isArray(c.value)) {
+    return `${encodeURIComponent(c.field)}:between:${c.value[0]}~${c.value[1]}`;
+  }
+  return `${encodeURIComponent(c.field)}:${c.operator}:${c.value}`;
+}
+
+function decodeCondition(token: string): ScreenerCondition | null {
+  const parts = token.split(":");
+  if (parts.length < 3) return null;
+  const field = decodeURIComponent(parts[0]);
+  const operator = parts[1] as ScreenerCondition["operator"];
+  const raw = parts.slice(2).join(":");
+  if (!["gte", "lte", "between", "eq"].includes(operator)) return null;
+
+  if (operator === "between") {
+    const [a, b] = raw.split("~");
+    const min = parseFloat(a);
+    const max = parseFloat(b);
+    if (Number.isNaN(min) || Number.isNaN(max)) return null;
+    return { id: crypto.randomUUID(), field, operator, value: [min, max] };
+  }
+  const num = parseFloat(raw);
+  if (Number.isNaN(num)) return null;
+  return { id: crypto.randomUUID(), field, operator, value: num };
+}
+
+export const screenerToUrlParams = (screener: ScreenerState): URLSearchParams => {
   const params = new URLSearchParams();
 
-  // 文字列フィルター
-  if (filters.companyName) params.set("company", filters.companyName);
+  if (screener.companyName) params.set("company", screener.companyName);
+  if (screener.stockCode) params.set("code", screener.stockCode);
+  if (screener.market.length > 0) params.set("market", screener.market.join(","));
+  if (screener.prefecture.length > 0) params.set("prefecture", screener.prefecture.join(","));
+  if (screener.industries.length > 0) params.set("industries", screener.industries.join(","));
+  if (screener.marketType.length > 0) params.set("marketType", screener.marketType.join(","));
+  if (screener.excludeMissing) params.set("excludeMissing", "1");
 
-  // 複数選択フィルター
-  if (filters.market.length > 0) {
-    params.set("market", filters.market.join(","));
-  }
-  if (filters.prefecture.length > 0) {
-    params.set("prefecture", filters.prefecture.join(","));
-  }
-  if (filters.industries.length > 0) {
-    params.set("industries", filters.industries.join(","));
-  }
-  if (filters.marketType && filters.marketType.length > 0) {
-    params.set("marketType", filters.marketType.join(","));
+  if (screener.conditions.length > 0) {
+    params.set("sc", screener.conditions.map(encodeCondition).join(","));
   }
 
-  // 数値フィルター
-  const numericFilters: Array<{ key: keyof SearchFilters; param: string }> = [
-    { key: "marketCapMin", param: "mcMin" },
-    { key: "marketCapMax", param: "mcMax" },
-    { key: "pbrMin", param: "pbrMin" },
-    { key: "pbrMax", param: "pbrMax" },
-    { key: "roeMin", param: "roeMin" },
-    { key: "roeMax", param: "roeMax" },
-    { key: "revenueMin", param: "revMin" },
-    { key: "revenueMax", param: "revMax" },
-    { key: "operatingProfitMin", param: "opMin" },
-    { key: "operatingProfitMax", param: "opMax" },
-    { key: "operatingMarginMin", param: "omMin" },
-    { key: "operatingMarginMax", param: "omMax" },
-    { key: "netProfitMin", param: "npMin" },
-    { key: "netProfitMax", param: "npMax" },
-    { key: "netMarginMin", param: "nmMin" },
-    { key: "netMarginMax", param: "nmMax" },
-    { key: "equityRatioMin", param: "eqMin" },
-    { key: "equityRatioMax", param: "eqMax" },
-    { key: "forwardPEMin", param: "peMin" },
-    { key: "forwardPEMax", param: "peMax" },
-    { key: "trailingPEMin", param: "tpeMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
-    { key: "trailingPEMax", param: "tpeMax" },
-    { key: "previousYearPEMin", param: "pypeMin" }, // PER(前年度)
-    { key: "previousYearPEMax", param: "pypeMax" },
-    { key: "dividendDirectionMin", param: "ddMin" },
-    { key: "dividendDirectionMax", param: "ddMax" },
-    { key: "dividendYieldMin", param: "dyMin" },
-    { key: "dividendYieldMax", param: "dyMax" },
-    { key: "trailingEpsMin", param: "tepsMin" },
-    { key: "trailingEpsMax", param: "tepsMax" },
-    { key: "forwardEpsMin", param: "fepsMin" },
-    { key: "forwardEpsMax", param: "fepsMax" },
-    { key: "previousYearEpsMin", param: "pyepsMin" }, // EPS(前年度)
-    { key: "previousYearEpsMax", param: "pyepsMax" },
-    { key: "totalLiabilitiesMin", param: "tlMin" },
-    { key: "totalLiabilitiesMax", param: "tlMax" },
-    { key: "currentLiabilitiesMin", param: "clMin" },
-    { key: "currentLiabilitiesMax", param: "clMax" },
-    { key: "currentAssetsMin", param: "caMin" },
-    { key: "currentAssetsMax", param: "caMax" },
-    { key: "totalDebtMin", param: "tdMin" },
-    { key: "totalDebtMax", param: "tdMax" },
-    { key: "cashMin", param: "cashMin" },
-    { key: "cashMax", param: "cashMax" },
-    { key: "investmentsMin", param: "invMin" },
-    { key: "investmentsMax", param: "invMax" },
-    { key: "netCashMin", param: "ncMin" },
-    { key: "netCashMax", param: "ncMax" },
-    { key: "netCashRatioMin", param: "ncrMin" },
-    { key: "netCashRatioMax", param: "ncrMax" },
-  ];
-
-  numericFilters.forEach(({ key, param }) => {
-    const value = filters[key];
-    if (value !== null && value !== undefined) {
-      params.set(param, value.toString());
-    }
-  });
+  if (screener.sort) {
+    params.set("sort", String(screener.sort.key));
+    params.set("sortDir", screener.sort.direction);
+  }
 
   return params;
 };
 
-// URLパラメータをフィルターに変換
-export const urlParamsToFilters = (searchParams: URLSearchParams): Partial<SearchFilters> => {
-  const filters: Partial<SearchFilters> = {};
+export const urlParamsToScreener = (searchParams: URLSearchParams): Partial<ScreenerState> => {
+  const partial: Partial<ScreenerState> = {};
 
-  // 文字列フィルター
   const company = searchParams.get("company");
-  if (company) filters.companyName = company;
+  if (company) partial.companyName = company;
 
-  // 複数選択フィルター
+  const code = searchParams.get("code");
+  if (code) partial.stockCode = code;
+
   const market = searchParams.get("market");
-  if (market) {
-    filters.market = market.split(",").filter(Boolean);
-  }
+  if (market) partial.market = market.split(",").filter(Boolean);
 
   const prefecture = searchParams.get("prefecture");
-  if (prefecture) {
-    filters.prefecture = prefecture.split(",").filter(Boolean);
-  }
+  if (prefecture) partial.prefecture = prefecture.split(",").filter(Boolean);
 
   const industries = searchParams.get("industries");
-  if (industries) {
-    filters.industries = industries.split(",").filter(Boolean);
-  }
+  if (industries) partial.industries = industries.split(",").filter(Boolean);
 
   const marketType = searchParams.get("marketType");
   if (marketType) {
-    const marketTypes = marketType.split(",").filter(Boolean) as ("JP" | "US")[];
-    if (marketTypes.length > 0) {
-      filters.marketType = marketTypes;
-    }
+    partial.marketType = marketType.split(",").filter(Boolean) as ("JP" | "US")[];
   }
 
-  // 数値フィルター
-  const numericMappings: Array<{ param: string; key: keyof SearchFilters }> = [
-    { param: "mcMin", key: "marketCapMin" },
-    { param: "mcMax", key: "marketCapMax" },
-    { param: "pbrMin", key: "pbrMin" },
-    { param: "pbrMax", key: "pbrMax" },
-    { param: "roeMin", key: "roeMin" },
-    { param: "roeMax", key: "roeMax" },
-    { param: "revMin", key: "revenueMin" },
-    { param: "revMax", key: "revenueMax" },
-    { param: "opMin", key: "operatingProfitMin" },
-    { param: "opMax", key: "operatingProfitMax" },
-    { param: "omMin", key: "operatingMarginMin" },
-    { param: "omMax", key: "operatingMarginMax" },
-    { param: "npMin", key: "netProfitMin" },
-    { param: "npMax", key: "netProfitMax" },
-    { param: "nmMin", key: "netMarginMin" },
-    { param: "nmMax", key: "netMarginMax" },
-    { param: "eqMin", key: "equityRatioMin" },
-    { param: "eqMax", key: "equityRatioMax" },
-    { param: "peMin", key: "forwardPEMin" },
-    { param: "peMax", key: "forwardPEMax" },
-    { param: "tpeMin", key: "trailingPEMin" }, // PER(過去12ヶ月)(過去12ヶ月分)
-    { param: "tpeMax", key: "trailingPEMax" },
-    { param: "pypeMin", key: "previousYearPEMin" }, // PER(前年度)
-    { param: "pypeMax", key: "previousYearPEMax" },
-    { param: "ddMin", key: "dividendDirectionMin" },
-    { param: "ddMax", key: "dividendDirectionMax" },
-    { param: "dyMin", key: "dividendYieldMin" },
-    { param: "dyMax", key: "dividendYieldMax" },
-    { param: "tepsMin", key: "trailingEpsMin" },
-    { param: "tepsMax", key: "trailingEpsMax" },
-    { param: "fepsMin", key: "forwardEpsMin" },
-    { param: "fepsMax", key: "forwardEpsMax" },
-    { param: "pyepsMin", key: "previousYearEpsMin" }, // EPS(前年度)
-    { param: "pyepsMax", key: "previousYearEpsMax" },
-    { param: "tlMin", key: "totalLiabilitiesMin" },
-    { param: "tlMax", key: "totalLiabilitiesMax" },
-    { param: "clMin", key: "currentLiabilitiesMin" },
-    { param: "clMax", key: "currentLiabilitiesMax" },
-    { param: "caMin", key: "currentAssetsMin" },
-    { param: "caMax", key: "currentAssetsMax" },
-    { param: "tdMin", key: "totalDebtMin" },
-    { param: "tdMax", key: "totalDebtMax" },
-    { param: "cashMin", key: "cashMin" },
-    { param: "cashMax", key: "cashMax" },
-    { param: "invMin", key: "investmentsMin" },
-    { param: "invMax", key: "investmentsMax" },
-    { param: "ncMin", key: "netCashMin" },
-    { param: "ncMax", key: "netCashMax" },
-    { param: "ncrMin", key: "netCashRatioMin" },
-    { param: "ncrMax", key: "netCashRatioMax" },
-  ];
+  if (searchParams.get("excludeMissing") === "1") {
+    partial.excludeMissing = true;
+  }
 
-  numericMappings.forEach(({ param, key }) => {
-    const value = searchParams.get(param);
-    if (value) {
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
-        (filters as Record<string, string | number>)[key] = numValue;
-      }
+  const sc = searchParams.get("sc");
+  if (sc) {
+    const conditions: ScreenerCondition[] = [];
+    for (const token of sc.split(",")) {
+      const decoded = decodeCondition(token.trim());
+      if (decoded) conditions.push(decoded);
     }
-  });
+    if (conditions.length > 0) partial.conditions = conditions;
+  }
 
-  return filters;
+  const sortKey = searchParams.get("sort");
+  const sortDir = searchParams.get("sortDir");
+  if (sortKey && (sortDir === "asc" || sortDir === "desc")) {
+    partial.sort = { key: sortKey, direction: sortDir } as SortConfig;
+  }
+
+  return partial;
 };
 
-// 現在のフィルターでURLを更新
-export const updateUrlWithFilters = (filters: SearchFilters) => {
-  const params = filtersToUrlParams(filters);
-  const newUrl = `${window.location.pathname}?${params.toString()}`;
+/** 新形式 + 旧 SearchFilters 形式の読み取り互換 */
+export function mergeUrlIntoScreener(
+  current: ScreenerState,
+  searchParams: URLSearchParams
+): ScreenerState {
+  const fromNew = urlParamsToScreener(searchParams);
+  const hasNew =
+    searchParams.has("sc") ||
+    searchParams.has("code") ||
+    searchParams.has("excludeMissing") ||
+    searchParams.has("sort");
+
+  if (hasNew || Object.keys(fromNew).length > 0) {
+    return {
+      ...current,
+      ...fromNew,
+      conditions: fromNew.conditions ?? current.conditions,
+      sort: fromNew.sort !== undefined ? fromNew.sort : current.sort,
+    };
+  }
+
+  const legacy = urlParamsToFilters(searchParams);
+  if (Object.keys(legacy).length === 0) return current;
+
+  const migrated = searchFiltersToScreenerState(legacy);
+  return {
+    ...current,
+    ...migrated,
+    conditions: migrated.conditions.length > 0 ? migrated.conditions : current.conditions,
+  };
+}
+
+export const updateUrlWithScreener = (screener: ScreenerState) => {
+  const params = screenerToUrlParams(screener);
+  const qs = params.toString();
+  const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
   window.history.replaceState({}, "", newUrl);
 };
 
-// 共有用URLを生成
-export const generateShareUrl = (filters: SearchFilters): string => {
-  const params = filtersToUrlParams(filters);
-  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+export const generateShareUrl = (screener: ScreenerState): string => {
+  const params = screenerToUrlParams(screener);
+  const qs = params.toString();
+  return qs
+    ? `${window.location.origin}${window.location.pathname}?${qs}`
+    : `${window.location.origin}${window.location.pathname}`;
 };

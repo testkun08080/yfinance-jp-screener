@@ -102,11 +102,46 @@ export interface SearchFilters {
   netCashRatioMax: number | null;
 }
 
+export type ScreenerOperator = "gte" | "lte" | "between" | "eq";
+
+export interface ScreenerCondition {
+  id: string;
+  field: string;
+  operator: ScreenerOperator;
+  value: number | [number, number];
+}
+
+export interface ScreenerState {
+  conditions: ScreenerCondition[];
+  companyName: string;
+  stockCode: string;
+  industries: string[];
+  market: string[];
+  prefecture: string[];
+  marketType: ("JP" | "US")[];
+  excludeMissing: boolean;
+  sort: SortConfig | null;
+}
+
+export type ScreenerCategoricalKey =
+  | "companyName"
+  | "stockCode"
+  | "industries"
+  | "market"
+  | "prefecture"
+  | "marketType"
+  | "excludeMissing";
+
 /** ユーザーが保存したスクリーニング条件（localStorage に永続化） */
 export interface SavedFilterPreset {
   id: string;
   label: string;
-  filters: SearchFilters;
+  /** v2: 動的条件 */
+  conditions?: ScreenerCondition[];
+  /** v1 互換（読み込み時に conditions へ変換） */
+  filters?: SearchFilters;
+  /** v2 カテゴリ・検索（filters 非使用時） */
+  screener?: Omit<ScreenerState, "conditions" | "sort">;
 }
 
 export interface SortConfig {

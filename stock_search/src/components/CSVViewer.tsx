@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCSVParser } from "../hooks/useCSVParser";
 import { useFilters } from "../hooks/useFilters";
-import { SearchFilters } from "./SearchFilters";
 import { DataTable } from "./DataTable";
 import { Pagination } from "./Pagination";
 import { ColumnSelector, type ColumnConfig } from "./ColumnSelector";
@@ -24,18 +23,7 @@ interface CSVViewerProps {
 
 export const CSVViewer = ({ file }: CSVViewerProps) => {
   const { data, loading, error, reload } = useCSVParser(file);
-  const {
-    filters,
-    filteredData,
-    sortConfig,
-    availableIndustries,
-    availableMarkets,
-    availablePrefectures,
-    updateFilter,
-    clearFilters,
-    handleSort,
-    // shareFilters, // コメントアウト: 共有機能は不要
-  } = useFilters(data);
+  const { filteredData, sortConfig, handleSort } = useFilters(data);
   const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
     currentPage: 1,
     itemsPerPage: PAGINATION.defaultItemsPerPage,
@@ -171,16 +159,6 @@ export const CSVViewer = ({ file }: CSVViewerProps) => {
 
   return (
     <div className="space-y-6">
-      {/* 検索フィルター */}
-      <SearchFilters
-        filters={filters}
-        availableIndustries={availableIndustries}
-        availableMarkets={availableMarkets}
-        availablePrefectures={availablePrefectures}
-        onFilterChange={updateFilter}
-        onClearFilters={clearFilters}
-      />
-
       {/* ヘッダー情報とサマリー */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">

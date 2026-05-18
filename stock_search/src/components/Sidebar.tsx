@@ -9,7 +9,8 @@ import {
   MdAnalytics,
   MdBookmarkAdd,
 } from "react-icons/md";
-import type { SearchFilters as SearchFiltersType, SavedFilterPreset } from "../types/stock";
+import type { ScreenerState, SavedFilterPreset, ScreenerCategoricalKey } from "../types/stock";
+import type { FilterPreset } from "../constants/presets";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
 import { FILTER_PRESETS } from "../constants/presets";
@@ -37,10 +38,13 @@ interface SidebarProps {
   onClear: () => void;
   /** データ読み込み後、別のファイルを選択するためにファイルダイアログを開く */
   onOpenFileSelect?: () => void;
-  filters: SearchFiltersType;
-  onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
+  filters: ScreenerState;
+  onFilterChange: (
+    key: ScreenerCategoricalKey | "companyName" | "stockCode",
+    value: string | number | string[] | boolean | null
+  ) => void;
   onClearFilters: () => void;
-  onApplyPreset?: (preset: Partial<SearchFiltersType>) => void;
+  onApplyPreset?: (preset: FilterPreset) => void;
   customPresets?: SavedFilterPreset[];
   onSaveCustomPreset?: (name: string) => string | null;
   onApplyCustomPreset?: (preset: SavedFilterPreset) => void;
@@ -54,52 +58,6 @@ interface SidebarProps {
   isDrawer?: boolean;
   /** デスクトップでサイドバーを折りたたむコールバック（指定時は折りたたみボタンを表示） */
   onCollapse?: () => void;
-}
-
-function NumRange({
-  label,
-  minKey,
-  maxKey,
-  unit = "",
-  filters,
-  onFilterChange,
-}: {
-  label: string;
-  minKey: keyof SearchFiltersType;
-  maxKey: keyof SearchFiltersType;
-  unit?: string;
-  filters: SearchFiltersType;
-  onFilterChange: SidebarProps["onFilterChange"];
-}) {
-  const minVal = filters[minKey] as number | null | undefined;
-  const maxVal = filters[maxKey] as number | null | undefined;
-  return (
-    <div>
-      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">
-        {label} {unit && `(${unit})`}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          className="text-[11px] p-1.5 border border-slate-200 rounded w-full focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-          placeholder="最小"
-          value={minVal ?? ""}
-          onChange={(e) =>
-            onFilterChange(minKey, e.target.value ? parseFloat(e.target.value) : null)
-          }
-        />
-        <input
-          type="number"
-          className="text-[11px] p-1.5 border border-slate-200 rounded w-full focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-          placeholder="最大"
-          value={maxVal ?? ""}
-          onChange={(e) =>
-            onFilterChange(maxKey, e.target.value ? parseFloat(e.target.value) : null)
-          }
-        />
-      </div>
-    </div>
-  );
 }
 
 export const Sidebar = ({
@@ -337,7 +295,7 @@ export const Sidebar = ({
                     type="button"
                     title={preset.description}
                     className="text-[11px] font-semibold px-2.5 py-1 leading-tight hover:bg-[var(--primary)] hover:text-white transition-colors"
-                    onClick={() => onApplyPreset(preset.filters)}
+                    onClick={() => onApplyPreset(preset)}
                   >
                     {preset.label}
                   </button>
@@ -406,14 +364,6 @@ export const Sidebar = ({
               <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pt-2 space-y-4">
-              <NumRange
-                label="時価総額"
-                unit="百万円"
-                minKey="marketCapMin"
-                maxKey="marketCapMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
                   業種
@@ -484,230 +434,9 @@ export const Sidebar = ({
             </div>
           </details>
 
-          {/* バリュエーション */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">📊 バリュエーション</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="PBR"
-                minKey="pbrMin"
-                maxKey="pbrMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ROE"
-                unit="%"
-                minKey="roeMin"
-                maxKey="roeMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="自己資本比率"
-                unit="%"
-                minKey="equityRatioMin"
-                maxKey="equityRatioMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(会予)"
-                minKey="forwardPEMin"
-                maxKey="forwardPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(過去12ヶ月)"
-                minKey="trailingPEMin"
-                maxKey="trailingPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(前年度)"
-                minKey="previousYearPEMin"
-                maxKey="previousYearPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="配当性向"
-                unit="%"
-                minKey="dividendDirectionMin"
-                maxKey="dividendDirectionMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="配当利回り"
-                unit="%"
-                minKey="dividendYieldMin"
-                maxKey="dividendYieldMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(過去12ヶ月)"
-                minKey="trailingEpsMin"
-                maxKey="trailingEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(予想)"
-                minKey="forwardEpsMin"
-                maxKey="forwardEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(前年度)"
-                minKey="previousYearEpsMin"
-                maxKey="previousYearEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* 業績 */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">💹 業績・収益性</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="売上高"
-                unit="百万円"
-                minKey="revenueMin"
-                maxKey="revenueMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="営業利益"
-                unit="百万円"
-                minKey="operatingProfitMin"
-                maxKey="operatingProfitMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="営業利益率"
-                unit="%"
-                minKey="operatingMarginMin"
-                maxKey="operatingMarginMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="当期純利益"
-                unit="百万円"
-                minKey="netProfitMin"
-                maxKey="netProfitMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="純利益率"
-                unit="%"
-                minKey="netMarginMin"
-                maxKey="netMarginMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* バランスシート */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">🏛️ バランスシート</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="負債"
-                unit="百万円"
-                minKey="totalLiabilitiesMin"
-                maxKey="totalLiabilitiesMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="流動負債"
-                unit="百万円"
-                minKey="currentLiabilitiesMin"
-                maxKey="currentLiabilitiesMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="流動資産"
-                unit="百万円"
-                minKey="currentAssetsMin"
-                maxKey="currentAssetsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="総負債"
-                unit="百万円"
-                minKey="totalDebtMin"
-                maxKey="totalDebtMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="投資有価証券"
-                unit="百万円"
-                minKey="investmentsMin"
-                maxKey="investmentsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* キャッシュ */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">💰 キャッシュ</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="現金及び現金同等物"
-                unit="百万円"
-                minKey="cashMin"
-                maxKey="cashMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ネットキャッシュ"
-                unit="百万円"
-                minKey="netCashMin"
-                maxKey="netCashMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ネットキャッシュ比率"
-                unit="%"
-                minKey="netCashRatioMin"
-                maxKey="netCashRatioMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
+        <p className="text-[10px] text-slate-500 px-0.5 pb-2">
+          数値条件はメイン画面の「＋ 条件を追加」から設定できます。
+        </p>
         </div>
       </div>
 

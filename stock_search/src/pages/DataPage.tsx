@@ -22,6 +22,8 @@ import { Pagination } from "../components/Pagination";
 import { ColumnSelector, type ColumnConfig } from "../components/ColumnSelector";
 import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "../components/DownloadButton";
+import { ScreenerBar } from "../components/ScreenerBar";
+import type { FilterPreset } from "../constants/presets";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
 import {
@@ -210,20 +212,29 @@ export const DataPage = () => {
 
   const { data, loading, error, reload } = useCSVParser(selectedFile);
   const {
+    screener,
     filters,
     filteredData,
     sortConfig,
+    screenableFields,
     availableIndustries,
     availableMarkets,
     availablePrefectures,
     updateFilter,
     clearFilters,
-    applyPreset,
+    applyPresetConditions,
     customPresets,
     saveCustomFilterPreset,
     removeCustomFilterPreset,
     applyCustomFilterPreset,
+    addCondition,
+    updateCondition,
+    removeCondition,
+    clearConditions,
     handleSort,
+    setSortFromDropdown,
+    copyShareUrl,
+    updateScreenerField,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
 
@@ -298,7 +309,7 @@ export const DataPage = () => {
     filters,
     onFilterChange: updateFilter,
     onClearFilters: clearFilters,
-    onApplyPreset: applyPreset,
+    onApplyPreset: (preset: FilterPreset) => applyPresetConditions(preset.conditions),
     customPresets,
     onSaveCustomPreset: saveCustomFilterPreset,
     onApplyCustomPreset: applyCustomFilterPreset,
@@ -516,6 +527,22 @@ export const DataPage = () => {
 
           {selectedFile && !loading && !error && data.length > 0 && (
             <>
+              <ScreenerBar
+                totalCount={data.length}
+                filteredCount={filteredData.length}
+                screener={screener}
+                screenableFields={screenableFields}
+                sortableKeys={screenableFields.map((f) => f.field)}
+                onAddCondition={() => addCondition()}
+                onUpdateCondition={updateCondition}
+                onRemoveCondition={removeCondition}
+                onClearConditions={clearConditions}
+                onClearAll={clearFilters}
+                onExcludeMissingChange={(v) => updateScreenerField("excludeMissing", v)}
+                onSetSort={setSortFromDropdown}
+                onCopyShareUrl={copyShareUrl}
+              />
+
               {/* タブ: すべて / お気に入りのみ ＋ Main toolbar */}
               <div className="px-3 md:px-6 py-2 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2 md:gap-3 flex-shrink-0">
                 <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">

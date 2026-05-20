@@ -23,7 +23,7 @@ function stateWith(overrides: Partial<ScreenerState>): ScreenerState {
 describe("screenerEngine", () => {
   it("converts percent UI values for ROE", () => {
     const state = stateWith({
-      conditions: [{ id: "1", field: "ROE", operator: "gte", value: 10 }],
+      conditions: [{ id: "1", kind: "numeric", field: "ROE", operator: "gte", value: 10 }],
     });
     expect(evaluateRow({ ...baseStock, ROE: 0.08 }, state)).toBe(false);
     expect(evaluateRow({ ...baseStock, ROE: 0.12 }, state)).toBe(true);
@@ -31,7 +31,7 @@ describe("screenerEngine", () => {
 
   it("converts market cap from million yen UI", () => {
     const state = stateWith({
-      conditions: [{ id: "1", field: "時価総額", operator: "gte", value: 100 }],
+      conditions: [{ id: "1", kind: "numeric", field: "時価総額", operator: "gte", value: 100 }],
     });
     expect(evaluateRow(baseStock, state)).toBe(true);
     expect(evaluateRow({ ...baseStock, 時価総額: 50_000_000 }, state)).toBe(false);
@@ -57,8 +57,8 @@ describe("screenerEngine", () => {
   it("AND-combines multiple conditions", () => {
     const state = stateWith({
       conditions: [
-        { id: "1", field: "PBR", operator: "lte", value: 1 },
-        { id: "2", field: "ROE", operator: "gte", value: 15 },
+        { id: "1", kind: "numeric", field: "PBR", operator: "lte", value: 1 },
+        { id: "2", kind: "numeric", field: "ROE", operator: "gte", value: 15 },
       ],
     });
     expect(evaluateRow(baseStock, state)).toBe(true);
@@ -67,7 +67,7 @@ describe("screenerEngine", () => {
 
   it("resolves net cash field aliases", () => {
     const state = stateWith({
-      conditions: [{ id: "1", field: "ネットキャッシュ", operator: "gte", value: 500 }],
+      conditions: [{ id: "1", kind: "numeric", field: "ネットキャッシュ", operator: "gte", value: 500 }],
     });
     const stock = {
       ...baseStock,
@@ -77,13 +77,46 @@ describe("screenerEngine", () => {
     expect(evaluateRow(stock, state)).toBe(true);
   });
 
+  it("filters by categorical industry condition", () => {
+    const state = stateWith({
+      conditions: [
+        {
+          id: "1",
+          kind: "categorical",
+          field: "industries",
+          operator: "in",
+          values: ["輸送用機器"],
+        },
+      ],
+    });
+    expect(evaluateRow(baseStock, state)).toBe(true);
+    expect(evaluateRow({ ...baseStock, 業種: "銀行業" }, state)).toBe(false);
+  });
+
+  it("AND-combines numeric and categorical conditions", () => {
+    const state = stateWith({
+      conditions: [
+        {
+          id: "1",
+          kind: "categorical",
+          field: "market",
+          operator: "in",
+          values: ["プライム（内国株式）"],
+        },
+        { id: "2", kind: "numeric", field: "PBR", operator: "lte", value: 1 },
+      ],
+    });
+    expect(evaluateRow(baseStock, state)).toBe(true);
+    expect(evaluateRow({ ...baseStock, 優先市場: "グロース（内国株式）" }, state)).toBe(false);
+  });
+
   it("filters and sorts dataset", () => {
     const rows: StockData[] = [
       { ...baseStock, 銘柄コード: "1", ROE: 0.2 },
       { ...baseStock, 銘柄コード: "2", ROE: 0.05 },
     ];
     const state = stateWith({
-      conditions: [{ id: "1", field: "ROE", operator: "gte", value: 10 }],
+      conditions: [{ id: "1", kind: "numeric", field: "ROE", operator: "gte", value: 10 }],
       sort: { key: "ROE", direction: "desc" },
     });
     const result = filterStocks(rows, state);

@@ -16,6 +16,14 @@ import {
 import { filterStocks, detectMarketTypeFromTicker } from "../utils/screenerEngine";
 import { initialScreenerState, searchFiltersToScreenerState } from "../utils/searchFiltersMigration";
 import { buildScreenableFields } from "../utils/screenerFieldRegistry";
+import {
+  createCategoricalCondition,
+  createNumericCondition,
+  isCategoricalField,
+  isCategoricalCondition,
+  isNumericCondition,
+  normalizeScreener,
+} from "../utils/screenerConditions";
 
 export const useFilters = (data: StockData[]) => {
   const location = useLocation();
@@ -56,7 +64,8 @@ export const useFilters = (data: StockData[]) => {
   const setScreenerAndSync = useCallback(
     (updater: ScreenerState | ((prev: ScreenerState) => ScreenerState)) => {
       setScreener((prev) => {
-        const next = typeof updater === "function" ? updater(prev) : updater;
+        const raw = typeof updater === "function" ? updater(prev) : updater;
+        const next = normalizeScreener(raw);
         syncUrl(next);
         return next;
       });
@@ -102,13 +111,25 @@ export const useFilters = (data: StockData[]) => {
   };
 
   const addCondition = (partial?: Partial<Omit<ScreenerCondition, "id">>) => {
-    const firstField = screenableFields[0]?.field ?? "ROE";
-    const condition: ScreenerCondition = {
-      id: crypto.randomUUID(),
-      field: partial?.field ?? firstField,
-      operator: partial?.operator ?? "gte",
-      value: partial?.value ?? 0,
-    };
+    const field = partial?.field;
+    let condition: ScreenerCondition;
+    if (field && isCategoricalField(field)) {
+      const values =
+        partial && "values" in partial && Array.isArray(partial.values) ? partial.values : [];
+      condition = createCategoricalCondition(field, values);
+    } else {
+      const firstField = screenableFields[0]?.field ?? "ROE";
+      condition = createNumericCondition(field ?? firstField, {
+        operator:
+          partial && "operator" in partial && partial.operator !== "in"
+            ? partial.operator
+            : "gte",
+        value:
+          partial && "value" in partial
+            ? (partial.value as number | [number, number])
+            : 0,
+      });
+    }
     setScreenerAndSync((prev) => ({
       ...prev,
       conditions: [...prev.conditions, condition],
@@ -119,7 +140,36 @@ export const useFilters = (data: StockData[]) => {
   const updateCondition = (id: string, patch: Partial<Omit<ScreenerCondition, "id">>) => {
     setScreenerAndSync((prev) => ({
       ...prev,
-      conditions: prev.conditions.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      conditions: prev.conditions.map((c) => {
+        if (c.id !== id) return c;
+        if (patch.field !== undefined) {
+          if (isCategoricalField(patch.field)) {
+            const values =
+              isCategoricalCondition(c) && c.field === patch.field ? c.values : [];
+            return {
+              id: c.id,
+              kind: "categorical" as const,
+              field: patch.field,
+              operator: "in" as const,
+              values,
+            };
+          }
+          return {
+            id: c.id,
+            kind: "numeric" as const,
+            field: patch.field,
+            operator: "gte" as const,
+            value: 0,
+          };
+        }
+        if (isCategoricalCondition(c)) {
+          if ("values" in patch && Array.isArray(patch.values)) {
+            return { ...c, values: patch.values };
+          }
+          return c;
+        }
+        return { ...c, ...patch } as ScreenerCondition;
+      }),
     }));
   };
 
@@ -135,16 +185,15 @@ export const useFilters = (data: StockData[]) => {
   };
 
   const applyPresetConditions = (conditions: ScreenerCondition[]) => {
-    setScreenerAndSync((prev) => ({
-      ...initialScreenerState(),
-      companyName: prev.companyName,
-      stockCode: prev.stockCode,
-      industries: prev.industries,
-      marketType: prev.marketType,
-      market: prev.market,
-      prefecture: prev.prefecture,
-      conditions: conditions.map((c) => ({ ...c, id: crypto.randomUUID() })),
-    }));
+    setScreenerAndSync((prev) =>
+      normalizeScreener({
+        ...initialScreenerState(),
+        companyName: prev.companyName,
+        stockCode: prev.stockCode,
+        marketType: prev.marketType,
+        conditions: conditions.map((c) => ({ ...c, id: crypto.randomUUID() })),
+      })
+    );
   };
 
   /** @deprecated use applyPresetConditions */
@@ -161,12 +210,14 @@ export const useFilters = (data: StockData[]) => {
       preset.conditions ??
       (preset.filters ? searchFiltersToScreenerState(preset.filters).conditions : []);
     const base = preset.screener ?? {};
-    setScreenerAndSync({
-      ...initialScreenerState(),
-      ...base,
-      conditions: conditions.map((c) => ({ ...c, id: crypto.randomUUID() })),
-      sort: null,
-    });
+    setScreenerAndSync(
+      normalizeScreener({
+        ...initialScreenerState(),
+        ...base,
+        conditions: conditions.map((c) => ({ ...c, id: crypto.randomUUID() })),
+        sort: null,
+      })
+    );
   };
 
   const saveCustomFilterPreset = (label: string): string | null => {
@@ -179,7 +230,13 @@ export const useFilters = (data: StockData[]) => {
       return `マイプリセットは最大${MAX_CUSTOM_PRESETS}件までです`;
     }
     const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const { conditions, sort, ...screenerMeta } = screener;
+    const { conditions } = screener;
+    const screenerMeta = {
+      companyName: screener.companyName,
+      stockCode: screener.stockCode,
+      marketType: screener.marketType,
+      excludeMissing: screener.excludeMissing,
+    };
     setCustomPresets((prev) => [
       ...prev,
       {
@@ -221,13 +278,6 @@ export const useFilters = (data: StockData[]) => {
       }
       return { ...prev, sort: nextSort };
     });
-  };
-
-  const setSortFromDropdown = (key: string | "", direction: "asc" | "desc") => {
-    setScreenerAndSync((prev) => ({
-      ...prev,
-      sort: key ? ({ key, direction } as SortConfig) : null,
-    }));
   };
 
   const availableIndustries = useMemo(() => {
@@ -296,7 +346,6 @@ export const useFilters = (data: StockData[]) => {
     removeCondition,
     clearConditions,
     handleSort,
-    setSortFromDropdown,
     shareFilters,
     copyShareUrl,
   };

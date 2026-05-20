@@ -5,6 +5,7 @@ import {
   uiValueToStored,
   type ScreenerFieldKind,
 } from "./screenerFieldRegistry";
+import { isCategoricalCondition, isNumericCondition } from "./screenerConditions";
 
 export function detectMarketTypeFromTicker(ticker: string): "JP" | "US" {
   if (!ticker) return "JP";
@@ -26,11 +27,32 @@ function getNumericValue(
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function compareCondition(
+function compareCategoricalCondition(stock: StockData, condition: ScreenerCondition): boolean {
+  if (!isCategoricalCondition(condition) || condition.values.length === 0) {
+    return true;
+  }
+  switch (condition.field) {
+    case "industries":
+      return condition.values.includes(stock.業種 || "");
+    case "market":
+      return condition.values.includes(stock.優先市場 || "");
+    case "prefecture": {
+      const stockMarketType =
+        stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
+      if (stockMarketType !== "JP") return true;
+      return condition.values.includes(stock.都道府県 || "");
+    }
+    default:
+      return true;
+  }
+}
+
+function compareNumericCondition(
   stock: StockData,
   condition: ScreenerCondition,
   excludeMissing: boolean
 ): boolean {
+  if (!isNumericCondition(condition)) return true;
   const meta = getFieldMeta(condition.field);
   const kind: ScreenerFieldKind = meta?.kind ?? "number";
   const value = getNumericValue(stock, condition.field);
@@ -73,32 +95,17 @@ export function evaluateRow(stock: StockData, state: ScreenerState): boolean {
     if (!stockCode.toString().includes(state.stockCode)) return false;
   }
 
-  if (state.industries.length > 0 && !state.industries.includes(stock.業種 || "")) {
-    return false;
-  }
-
   if (state.marketType && state.marketType.length > 0) {
     const stockMarketType =
       stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
     if (!state.marketType.includes(stockMarketType as "JP" | "US")) return false;
   }
 
-  if (state.market.length > 0 && !state.market.includes(stock.優先市場 || "")) {
-    return false;
-  }
-
-  if (state.prefecture.length > 0) {
-    const stockMarketType =
-      stock.市場タイプ || detectMarketTypeFromTicker(stock.銘柄コード || stock.コード || "");
-    if (stockMarketType === "JP" && !state.prefecture.includes(stock.都道府県 || "")) {
-      return false;
-    }
-  }
-
   for (const condition of state.conditions) {
-    if (!compareCondition(stock, condition, state.excludeMissing)) {
-      return false;
-    }
+    const ok = isCategoricalCondition(condition)
+      ? compareCategoricalCondition(stock, condition)
+      : compareNumericCondition(stock, condition, state.excludeMissing);
+    if (!ok) return false;
   }
 
   return true;

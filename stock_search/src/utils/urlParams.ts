@@ -1,8 +1,13 @@
 import type { ScreenerCondition, ScreenerState, SortConfig } from "../types/stock";
 import { urlParamsToFilters } from "./urlParamsLegacy";
 import { searchFiltersToScreenerState } from "./searchFiltersMigration";
+import { isCategoricalCondition, isCategoricalField, normalizeScreener } from "./screenerConditions";
 
 function encodeCondition(c: ScreenerCondition): string {
+  if (isCategoricalCondition(c)) {
+    const encoded = c.values.map((v) => encodeURIComponent(v)).join("|");
+    return `${c.field}:in:${encoded}`;
+  }
   if (c.operator === "between" && Array.isArray(c.value)) {
     return `${encodeURIComponent(c.field)}:between:${c.value[0]}~${c.value[1]}`;
   }
@@ -13,8 +18,22 @@ function decodeCondition(token: string): ScreenerCondition | null {
   const parts = token.split(":");
   if (parts.length < 3) return null;
   const field = decodeURIComponent(parts[0]);
-  const operator = parts[1] as ScreenerCondition["operator"];
+  const operator = parts[1];
   const raw = parts.slice(2).join(":");
+
+  if (operator === "in" && isCategoricalField(field)) {
+    const values = raw
+      ? raw.split("|").map((v) => decodeURIComponent(v)).filter(Boolean)
+      : [];
+    return {
+      id: crypto.randomUUID(),
+      kind: "categorical",
+      field,
+      operator: "in",
+      values,
+    };
+  }
+
   if (!["gte", "lte", "between", "eq"].includes(operator)) return null;
 
   if (operator === "between") {
@@ -22,31 +41,35 @@ function decodeCondition(token: string): ScreenerCondition | null {
     const min = parseFloat(a);
     const max = parseFloat(b);
     if (Number.isNaN(min) || Number.isNaN(max)) return null;
-    return { id: crypto.randomUUID(), field, operator, value: [min, max] };
+    return { id: crypto.randomUUID(), kind: "numeric", field, operator, value: [min, max] };
   }
   const num = parseFloat(raw);
   if (Number.isNaN(num)) return null;
-  return { id: crypto.randomUUID(), field, operator, value: num };
+  return {
+    id: crypto.randomUUID(),
+    kind: "numeric",
+    field,
+    operator: operator as "gte" | "lte" | "eq",
+    value: num,
+  };
 }
 
 export const screenerToUrlParams = (screener: ScreenerState): URLSearchParams => {
+  const normalized = normalizeScreener(screener);
   const params = new URLSearchParams();
 
-  if (screener.companyName) params.set("company", screener.companyName);
-  if (screener.stockCode) params.set("code", screener.stockCode);
-  if (screener.market.length > 0) params.set("market", screener.market.join(","));
-  if (screener.prefecture.length > 0) params.set("prefecture", screener.prefecture.join(","));
-  if (screener.industries.length > 0) params.set("industries", screener.industries.join(","));
-  if (screener.marketType.length > 0) params.set("marketType", screener.marketType.join(","));
-  if (screener.excludeMissing) params.set("excludeMissing", "1");
+  if (normalized.companyName) params.set("company", normalized.companyName);
+  if (normalized.stockCode) params.set("code", normalized.stockCode);
+  if (normalized.marketType.length > 0) params.set("marketType", normalized.marketType.join(","));
+  if (normalized.excludeMissing) params.set("excludeMissing", "1");
 
-  if (screener.conditions.length > 0) {
-    params.set("sc", screener.conditions.map(encodeCondition).join(","));
+  if (normalized.conditions.length > 0) {
+    params.set("sc", normalized.conditions.map(encodeCondition).join(","));
   }
 
-  if (screener.sort) {
-    params.set("sort", String(screener.sort.key));
-    params.set("sortDir", screener.sort.direction);
+  if (normalized.sort) {
+    params.set("sort", String(normalized.sort.key));
+    params.set("sortDir", normalized.sort.direction);
   }
 
   return params;
@@ -111,23 +134,23 @@ export function mergeUrlIntoScreener(
     searchParams.has("sort");
 
   if (hasNew || Object.keys(fromNew).length > 0) {
-    return {
+    return normalizeScreener({
       ...current,
       ...fromNew,
       conditions: fromNew.conditions ?? current.conditions,
       sort: fromNew.sort !== undefined ? fromNew.sort : current.sort,
-    };
+    });
   }
 
   const legacy = urlParamsToFilters(searchParams);
   if (Object.keys(legacy).length === 0) return current;
 
   const migrated = searchFiltersToScreenerState(legacy);
-  return {
+  return normalizeScreener({
     ...current,
     ...migrated,
     conditions: migrated.conditions.length > 0 ? migrated.conditions : current.conditions,
-  };
+  });
 }
 
 export const updateUrlWithScreener = (screener: ScreenerState) => {

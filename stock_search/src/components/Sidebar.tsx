@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
+  MdAdd,
   MdClose,
   MdChevronLeft,
   MdFolderOpen,
@@ -9,8 +10,15 @@ import {
   MdAnalytics,
   MdBookmarkAdd,
 } from "react-icons/md";
-import type { ScreenerState, SavedFilterPreset, ScreenerCategoricalKey } from "../types/stock";
+import type {
+  ScreenerState,
+  SavedFilterPreset,
+  ScreenerCategoricalKey,
+  ScreenerCondition,
+} from "../types/stock";
 import type { FilterPreset } from "../constants/presets";
+import type { ScreenerFieldMeta } from "../utils/screenerFieldRegistry";
+import { ScreenerConditionsPanel } from "./ScreenerConditionsPanel";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
 import { FILTER_PRESETS } from "../constants/presets";
@@ -58,6 +66,13 @@ interface SidebarProps {
   isDrawer?: boolean;
   /** デスクトップでサイドバーを折りたたむコールバック（指定時は折りたたみボタンを表示） */
   onCollapse?: () => void;
+  /** 数値スクリーニング（データ読み込み後） */
+  screener?: ScreenerState;
+  screenableFields?: ScreenerFieldMeta[];
+  onAddCondition?: (partial?: Partial<Omit<ScreenerCondition, "id">>) => void;
+  onUpdateCondition?: (id: string, patch: Partial<Omit<ScreenerCondition, "id">>) => void;
+  onRemoveCondition?: (id: string) => void;
+  onExcludeMissingChange?: (value: boolean) => void;
 }
 
 export const Sidebar = ({
@@ -80,7 +95,20 @@ export const Sidebar = ({
   onClose,
   isDrawer = false,
   onCollapse,
+  screener,
+  screenableFields = [],
+  onAddCondition,
+  onUpdateCondition,
+  onRemoveCondition,
+  onExcludeMissingChange,
 }: SidebarProps) => {
+  const showScreenerPanel =
+    hasFile &&
+    screener &&
+    onAddCondition &&
+    onUpdateCondition &&
+    onRemoveCondition &&
+    onExcludeMissingChange;
   const [savePresetModalOpen, setSavePresetModalOpen] = useState(false);
   const [modalPresetName, setModalPresetName] = useState("");
   const [modalPresetErr, setModalPresetErr] = useState<string | null>(null);
@@ -101,34 +129,6 @@ export const Sidebar = ({
   const handleDatasetDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
-
-  const handleIndustryChange = (industry: string, checked: boolean) => {
-    const current = filters.industries || [];
-    if (checked) onFilterChange("industries", [...current, industry]);
-    else
-      onFilterChange(
-        "industries",
-        current.filter((i) => i !== industry)
-      );
-  };
-  const handleMarketChange = (market: string, checked: boolean) => {
-    const current = filters.market || [];
-    if (checked) onFilterChange("market", [...current, market]);
-    else
-      onFilterChange(
-        "market",
-        current.filter((m) => m !== market)
-      );
-  };
-  const handlePrefectureChange = (prefecture: string, checked: boolean) => {
-    const current = filters.prefecture || [];
-    if (checked) onFilterChange("prefecture", [...current, prefecture]);
-    else
-      onFilterChange(
-        "prefecture",
-        current.filter((p) => p !== prefecture)
-      );
   };
 
   return (
@@ -279,6 +279,32 @@ export const Sidebar = ({
           </div>
         </div>
 
+        {showScreenerPanel && (
+          <details className="group border-b border-slate-100 pb-2" open>
+            <summary className="flex items-center justify-between py-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <MdFilterList className="text-[var(--primary)] text-sm" aria-hidden />
+                スクリーニング条件
+              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform shrink-0" />
+            </summary>
+            <div className="pt-2">
+              <ScreenerConditionsPanel
+                screener={screener}
+                screenableFields={screenableFields}
+                onUpdateCondition={onUpdateCondition}
+                onRemoveCondition={onRemoveCondition}
+                onExcludeMissingChange={onExcludeMissingChange}
+                categoricalOptions={{
+                  industries: availableIndustries,
+                  market: availableMarkets,
+                  prefecture: availablePrefectures,
+                }}
+              />
+            </div>
+          </details>
+        )}
+
         {/* プリセットフィルター（標準＋マイプリセットを同一一覧） */}
         {onApplyPreset && (
           <div>
@@ -356,91 +382,20 @@ export const Sidebar = ({
           </div>
         )}
 
-        {/* 基本フィルター */}
-        <div className="space-y-1">
-          <details className="group border-b border-slate-100 pb-2" open>
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">📋 基本フィルター</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                  業種
-                </label>
-                <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
-                  {availableIndustries.map((industry) => (
-                    <label
-                      key={industry}
-                      className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                        checked={filters.industries.includes(industry)}
-                        onChange={(e) => handleIndustryChange(industry, e.target.checked)}
-                      />
-                      <span className="text-[11px] text-slate-600 truncate">{industry}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                  市場
-                </label>
-                <div className="grid grid-cols-1 gap-1">
-                  {availableMarkets.map((market) => (
-                    <label
-                      key={market}
-                      className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                        checked={filters.market.includes(market)}
-                        onChange={(e) => handleMarketChange(market, e.target.checked)}
-                      />
-                      <span className="text-[11px] text-slate-600">
-                        {market.replace("（内国株式）", "")}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {availablePrefectures.length > 0 && (
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                    都道府県
-                  </label>
-                  <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto">
-                    {availablePrefectures.map((prefecture) => (
-                      <label
-                        key={prefecture}
-                        className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                          checked={filters.prefecture.includes(prefecture)}
-                          onChange={(e) => handlePrefectureChange(prefecture, e.target.checked)}
-                        />
-                        <span className="text-[11px] text-slate-600 truncate">{prefecture}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </details>
-
-        <p className="text-[10px] text-slate-500 px-0.5 pb-2">
-          数値条件はメイン画面の「＋ 条件を追加」から設定できます。
-        </p>
-        </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-[var(--border)] shrink-0">
+      <div className="p-4 bg-slate-50 border-t border-[var(--border)] shrink-0 space-y-2">
+        {showScreenerPanel && onAddCondition && (
+          <button
+            type="button"
+            className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 text-[11px] sm:text-xs"
+            onClick={() => onAddCondition()}
+            disabled={screenableFields.length === 0}
+          >
+            <MdAdd className="text-base shrink-0" aria-hidden />
+            条件を追加
+          </button>
+        )}
         <div className="flex gap-2">
           <button
             type="button"

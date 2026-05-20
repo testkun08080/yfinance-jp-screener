@@ -1,4 +1,5 @@
-import type { SearchFilters, ScreenerCondition, ScreenerState } from "../types/stock";
+import type { CategoricalConditionField, SearchFilters, ScreenerCondition, ScreenerState } from "../types/stock";
+import { createCategoricalCondition, normalizeScreener } from "./screenerConditions";
 
 function newId(): string {
   return crypto.randomUUID();
@@ -47,6 +48,7 @@ export function searchFiltersToConditions(filters: Partial<SearchFilters>): Scre
     if (minVal !== null && minVal !== undefined && maxVal !== null && maxVal !== undefined) {
       conditions.push({
         id: newId(),
+        kind: "numeric",
         field,
         operator: "between",
         value: [minVal as number, maxVal as number],
@@ -56,6 +58,7 @@ export function searchFiltersToConditions(filters: Partial<SearchFilters>): Scre
     if (minVal !== null && minVal !== undefined) {
       conditions.push({
         id: newId(),
+        kind: "numeric",
         field,
         operator: "gte",
         value: minVal as number,
@@ -64,10 +67,23 @@ export function searchFiltersToConditions(filters: Partial<SearchFilters>): Scre
     if (maxVal !== null && maxVal !== undefined) {
       conditions.push({
         id: newId(),
+        kind: "numeric",
         field,
         operator: "lte",
         value: maxVal as number,
       });
+    }
+  }
+
+  const categorical: { field: CategoricalConditionField; key: keyof SearchFilters }[] = [
+    { field: "industries", key: "industries" },
+    { field: "market", key: "market" },
+    { field: "prefecture", key: "prefecture" },
+  ];
+  for (const { field, key } of categorical) {
+    const values = filters[key];
+    if (Array.isArray(values) && values.length > 0) {
+      conditions.push(createCategoricalCondition(field, [...values]));
     }
   }
 
@@ -87,7 +103,7 @@ export const initialScreenerState = (): ScreenerState => ({
 });
 
 export function searchFiltersToScreenerState(filters: Partial<SearchFilters>): ScreenerState {
-  return {
+  return normalizeScreener({
     ...initialScreenerState(),
     companyName: filters.companyName ?? "",
     stockCode: filters.stockCode ?? "",
@@ -96,5 +112,5 @@ export function searchFiltersToScreenerState(filters: Partial<SearchFilters>): S
     prefecture: filters.prefecture ?? [],
     marketType: filters.marketType ?? ["JP", "US"],
     conditions: searchFiltersToConditions(filters),
-  };
+  });
 }

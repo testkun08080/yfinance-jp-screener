@@ -104,12 +104,23 @@ export interface SearchFilters {
 
 export type ScreenerOperator = "gte" | "lte" | "between" | "eq";
 
-export interface ScreenerCondition {
-  id: string;
-  field: string;
-  operator: ScreenerOperator;
-  value: number | [number, number];
-}
+export type CategoricalConditionField = "industries" | "market" | "prefecture";
+
+export type ScreenerCondition =
+  | {
+      id: string;
+      kind?: "numeric";
+      field: string;
+      operator: ScreenerOperator;
+      value: number | [number, number];
+    }
+  | {
+      id: string;
+      kind: "categorical";
+      field: CategoricalConditionField;
+      operator: "in";
+      values: string[];
+    };
 
 export interface ScreenerState {
   conditions: ScreenerCondition[];

@@ -1,5 +1,6 @@
 import { FILTER_TOOLTIPS } from "../constants/tooltips";
-import type { ScreenerOperator } from "../types/stock";
+import type { ScreenerCondition, ScreenerOperator } from "../types/stock";
+import { CATEGORICAL_FIELD_LABELS, isCategoricalCondition } from "./screenerConditions";
 
 export type ScreenerFieldKind =
   | "percent"
@@ -202,9 +203,16 @@ export const OPERATOR_LABELS: Record<ScreenerOperator, string> = {
 };
 
 export function formatConditionSummary(
-  condition: import("../types/stock").ScreenerCondition,
+  condition: ScreenerCondition,
   meta?: ScreenerFieldMeta
 ): string {
+  if (isCategoricalCondition(condition)) {
+    const label = CATEGORICAL_FIELD_LABELS[condition.field];
+    const n = condition.values.length;
+    if (n === 0) return `${label}: 未選択`;
+    if (n <= 2) return `${label}: ${condition.values.join("・")}`;
+    return `${label}: ${condition.values[0]} 他${n - 1}件`;
+  }
   const label = meta?.label ?? condition.field;
   const unit = meta?.unit ?? "";
   const op = OPERATOR_LABELS[condition.operator];

@@ -21,8 +21,8 @@ import {
   createNumericCondition,
   isCategoricalField,
   isCategoricalCondition,
-  isNumericCondition,
   normalizeScreener,
+  type ScreenerConditionPatch,
 } from "../utils/screenerConditions";
 
 export const useFilters = (data: StockData[]) => {
@@ -110,7 +110,7 @@ export const useFilters = (data: StockData[]) => {
     navigate(location.pathname, { replace: true });
   };
 
-  const addCondition = (partial?: Partial<Omit<ScreenerCondition, "id">>) => {
+  const addCondition = (partial?: ScreenerConditionPatch) => {
     const field = partial?.field;
     let condition: ScreenerCondition;
     if (field && isCategoricalField(field)) {
@@ -137,7 +137,7 @@ export const useFilters = (data: StockData[]) => {
     return condition.id;
   };
 
-  const updateCondition = (id: string, patch: Partial<Omit<ScreenerCondition, "id">>) => {
+  const updateCondition = (id: string, patch: ScreenerConditionPatch) => {
     setScreenerAndSync((prev) => ({
       ...prev,
       conditions: prev.conditions.map((c) => {
@@ -231,9 +231,12 @@ export const useFilters = (data: StockData[]) => {
     }
     const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const { conditions } = screener;
-    const screenerMeta = {
+    const screenerMeta: SavedFilterPreset["screener"] = {
       companyName: screener.companyName,
       stockCode: screener.stockCode,
+      industries: [],
+      market: [],
+      prefecture: [],
       marketType: screener.marketType,
       excludeMissing: screener.excludeMissing,
     };

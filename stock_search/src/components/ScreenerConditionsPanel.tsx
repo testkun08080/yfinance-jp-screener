@@ -1,13 +1,13 @@
-import type { ScreenerCondition, ScreenerState } from "../types/stock";
+import type { ScreenerState } from "../types/stock";
 import type { ScreenerFieldMeta } from "../utils/screenerFieldRegistry";
 import { formatConditionSummary } from "../utils/screenerFieldRegistry";
-import { isCategoricalCondition } from "../utils/screenerConditions";
+import { isCategoricalCondition, type ScreenerConditionPatch } from "../utils/screenerConditions";
 import { ScreenerConditionRow, type CategoricalOptions } from "./ScreenerConditionRow";
 
 export interface ScreenerConditionsPanelProps {
   screener: ScreenerState;
   screenableFields: ScreenerFieldMeta[];
-  onUpdateCondition: (id: string, patch: Partial<Omit<ScreenerCondition, "id">>) => void;
+  onUpdateCondition: (id: string, patch: ScreenerConditionPatch) => void;
   onRemoveCondition: (id: string) => void;
   onExcludeMissingChange: (value: boolean) => void;
   categoricalOptions: CategoricalOptions;

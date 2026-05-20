@@ -1,8 +1,24 @@
 import type {
   CategoricalConditionField,
   ScreenerCondition,
+  ScreenerOperator,
   ScreenerState,
 } from "../types/stock";
+
+export type NumericScreenerCondition = Extract<
+  ScreenerCondition,
+  { operator: ScreenerOperator }
+>;
+
+export type CategoricalScreenerCondition = Extract<
+  ScreenerCondition,
+  { kind: "categorical" }
+>;
+
+/** 条件行の部分更新（数値 / カテゴリで許可プロパティが異なる） */
+export type ScreenerConditionPatch =
+  | Partial<Omit<NumericScreenerCondition, "id">>
+  | Partial<Omit<CategoricalScreenerCondition, "id">>;
 
 export const CATEGORICAL_CONDITION_FIELDS: readonly CategoricalConditionField[] = [
   "industries",
@@ -47,7 +63,7 @@ export function createCategoricalCondition(
 
 export function createNumericCondition(
   field: string,
-  partial?: Partial<Omit<Extract<ScreenerCondition, { kind?: "numeric" }>, "id" | "kind">>
+  partial?: Partial<Omit<NumericScreenerCondition, "id" | "kind">>
 ): ScreenerCondition {
   return {
     id: crypto.randomUUID(),

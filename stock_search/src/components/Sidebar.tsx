@@ -10,12 +10,8 @@ import {
   MdAnalytics,
   MdBookmarkAdd,
 } from "react-icons/md";
-import type {
-  ScreenerState,
-  SavedFilterPreset,
-  ScreenerCategoricalKey,
-  ScreenerCondition,
-} from "../types/stock";
+import type { ScreenerState, SavedFilterPreset, ScreenerCategoricalKey } from "../types/stock";
+import type { ScreenerConditionPatch } from "../utils/screenerConditions";
 import type { FilterPreset } from "../constants/presets";
 import type { ScreenerFieldMeta } from "../utils/screenerFieldRegistry";
 import { ScreenerConditionsPanel } from "./ScreenerConditionsPanel";
@@ -69,8 +65,8 @@ interface SidebarProps {
   /** 数値スクリーニング（データ読み込み後） */
   screener?: ScreenerState;
   screenableFields?: ScreenerFieldMeta[];
-  onAddCondition?: (partial?: Partial<Omit<ScreenerCondition, "id">>) => void;
-  onUpdateCondition?: (id: string, patch: Partial<Omit<ScreenerCondition, "id">>) => void;
+  onAddCondition?: (partial?: ScreenerConditionPatch) => void;
+  onUpdateCondition?: (id: string, patch: ScreenerConditionPatch) => void;
   onRemoveCondition?: (id: string) => void;
   onExcludeMissingChange?: (value: boolean) => void;
 }

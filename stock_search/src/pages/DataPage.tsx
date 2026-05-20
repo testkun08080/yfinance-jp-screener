@@ -230,7 +230,6 @@ export const DataPage = () => {
     addCondition,
     updateCondition,
     removeCondition,
-    clearConditions,
     handleSort,
     copyShareUrl,
     updateScreenerField,

@@ -6,6 +6,7 @@ import {
   CATEGORICAL_FIELD_LABELS,
   isCategoricalCondition,
   isCategoricalField,
+  type ScreenerConditionPatch,
 } from "../utils/screenerConditions";
 import { MdClose } from "react-icons/md";
 
@@ -19,7 +20,7 @@ interface ScreenerConditionRowProps {
   condition: ScreenerCondition;
   fields: ScreenerFieldMeta[];
   categoricalOptions: CategoricalOptions;
-  onChange: (patch: Partial<Omit<ScreenerCondition, "id">>) => void;
+  onChange: (patch: ScreenerConditionPatch) => void;
   onRemove: () => void;
 }
 

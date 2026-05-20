@@ -1,4 +1,4 @@
-import type { ScreenerCondition } from "../types/stock";
+import type { ScreenerCondition, ScreenerOperator } from "../types/stock";
 
 export interface FilterPreset {
   id: string;
@@ -7,13 +7,10 @@ export interface FilterPreset {
   conditions: ScreenerCondition[];
 }
 
-function cond(
-  field: string,
-  operator: ScreenerCondition["operator"],
-  value: ScreenerCondition["value"]
-): ScreenerCondition {
+function cond(field: string, operator: ScreenerOperator, value: number): ScreenerCondition {
   return {
     id: `preset-${field}-${operator}`,
+    kind: "numeric",
     field,
     operator,
     value,

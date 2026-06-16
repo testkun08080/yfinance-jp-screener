@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
+  MdAdd,
   MdClose,
   MdChevronLeft,
   MdFolderOpen,
@@ -9,7 +10,11 @@ import {
   MdAnalytics,
   MdBookmarkAdd,
 } from "react-icons/md";
-import type { SearchFilters as SearchFiltersType, SavedFilterPreset } from "../types/stock";
+import type { ScreenerState, SavedFilterPreset, ScreenerCategoricalKey } from "../types/stock";
+import type { ScreenerConditionPatch } from "../utils/screenerConditions";
+import type { FilterPreset } from "../constants/presets";
+import type { ScreenerFieldMeta } from "../utils/screenerFieldRegistry";
+import { ScreenerConditionsPanel } from "./ScreenerConditionsPanel";
 import { CSV_FILE_CONFIG } from "../constants/csv";
 import { FILE_SIZE } from "../constants/formatting";
 import { FILTER_PRESETS } from "../constants/presets";
@@ -37,10 +42,13 @@ interface SidebarProps {
   onClear: () => void;
   /** データ読み込み後、別のファイルを選択するためにファイルダイアログを開く */
   onOpenFileSelect?: () => void;
-  filters: SearchFiltersType;
-  onFilterChange: (key: keyof SearchFiltersType, value: string | number | string[] | null) => void;
+  filters: ScreenerState;
+  onFilterChange: (
+    key: ScreenerCategoricalKey | "companyName" | "stockCode",
+    value: string | number | string[] | boolean | null
+  ) => void;
   onClearFilters: () => void;
-  onApplyPreset?: (preset: Partial<SearchFiltersType>) => void;
+  onApplyPreset?: (preset: FilterPreset) => void;
   customPresets?: SavedFilterPreset[];
   onSaveCustomPreset?: (name: string) => string | null;
   onApplyCustomPreset?: (preset: SavedFilterPreset) => void;
@@ -54,52 +62,13 @@ interface SidebarProps {
   isDrawer?: boolean;
   /** デスクトップでサイドバーを折りたたむコールバック（指定時は折りたたみボタンを表示） */
   onCollapse?: () => void;
-}
-
-function NumRange({
-  label,
-  minKey,
-  maxKey,
-  unit = "",
-  filters,
-  onFilterChange,
-}: {
-  label: string;
-  minKey: keyof SearchFiltersType;
-  maxKey: keyof SearchFiltersType;
-  unit?: string;
-  filters: SearchFiltersType;
-  onFilterChange: SidebarProps["onFilterChange"];
-}) {
-  const minVal = filters[minKey] as number | null | undefined;
-  const maxVal = filters[maxKey] as number | null | undefined;
-  return (
-    <div>
-      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">
-        {label} {unit && `(${unit})`}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          className="text-[11px] p-1.5 border border-slate-200 rounded w-full focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-          placeholder="最小"
-          value={minVal ?? ""}
-          onChange={(e) =>
-            onFilterChange(minKey, e.target.value ? parseFloat(e.target.value) : null)
-          }
-        />
-        <input
-          type="number"
-          className="text-[11px] p-1.5 border border-slate-200 rounded w-full focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-          placeholder="最大"
-          value={maxVal ?? ""}
-          onChange={(e) =>
-            onFilterChange(maxKey, e.target.value ? parseFloat(e.target.value) : null)
-          }
-        />
-      </div>
-    </div>
-  );
+  /** 数値スクリーニング（データ読み込み後） */
+  screener?: ScreenerState;
+  screenableFields?: ScreenerFieldMeta[];
+  onAddCondition?: (partial?: ScreenerConditionPatch) => void;
+  onUpdateCondition?: (id: string, patch: ScreenerConditionPatch) => void;
+  onRemoveCondition?: (id: string) => void;
+  onExcludeMissingChange?: (value: boolean) => void;
 }
 
 export const Sidebar = ({
@@ -122,7 +91,20 @@ export const Sidebar = ({
   onClose,
   isDrawer = false,
   onCollapse,
+  screener,
+  screenableFields = [],
+  onAddCondition,
+  onUpdateCondition,
+  onRemoveCondition,
+  onExcludeMissingChange,
 }: SidebarProps) => {
+  const showScreenerPanel =
+    hasFile &&
+    screener &&
+    onAddCondition &&
+    onUpdateCondition &&
+    onRemoveCondition &&
+    onExcludeMissingChange;
   const [savePresetModalOpen, setSavePresetModalOpen] = useState(false);
   const [modalPresetName, setModalPresetName] = useState("");
   const [modalPresetErr, setModalPresetErr] = useState<string | null>(null);
@@ -143,34 +125,6 @@ export const Sidebar = ({
   const handleDatasetDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
-
-  const handleIndustryChange = (industry: string, checked: boolean) => {
-    const current = filters.industries || [];
-    if (checked) onFilterChange("industries", [...current, industry]);
-    else
-      onFilterChange(
-        "industries",
-        current.filter((i) => i !== industry)
-      );
-  };
-  const handleMarketChange = (market: string, checked: boolean) => {
-    const current = filters.market || [];
-    if (checked) onFilterChange("market", [...current, market]);
-    else
-      onFilterChange(
-        "market",
-        current.filter((m) => m !== market)
-      );
-  };
-  const handlePrefectureChange = (prefecture: string, checked: boolean) => {
-    const current = filters.prefecture || [];
-    if (checked) onFilterChange("prefecture", [...current, prefecture]);
-    else
-      onFilterChange(
-        "prefecture",
-        current.filter((p) => p !== prefecture)
-      );
   };
 
   return (
@@ -321,6 +275,32 @@ export const Sidebar = ({
           </div>
         </div>
 
+        {showScreenerPanel && (
+          <details className="group border-b border-slate-100 pb-2" open>
+            <summary className="flex items-center justify-between py-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <MdFilterList className="text-[var(--primary)] text-sm" aria-hidden />
+                スクリーニング条件
+              </span>
+              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform shrink-0" />
+            </summary>
+            <div className="pt-2">
+              <ScreenerConditionsPanel
+                screener={screener}
+                screenableFields={screenableFields}
+                onUpdateCondition={onUpdateCondition}
+                onRemoveCondition={onRemoveCondition}
+                onExcludeMissingChange={onExcludeMissingChange}
+                categoricalOptions={{
+                  industries: availableIndustries,
+                  market: availableMarkets,
+                  prefecture: availablePrefectures,
+                }}
+              />
+            </div>
+          </details>
+        )}
+
         {/* プリセットフィルター（標準＋マイプリセットを同一一覧） */}
         {onApplyPreset && (
           <div>
@@ -337,7 +317,7 @@ export const Sidebar = ({
                     type="button"
                     title={preset.description}
                     className="text-[11px] font-semibold px-2.5 py-1 leading-tight hover:bg-[var(--primary)] hover:text-white transition-colors"
-                    onClick={() => onApplyPreset(preset.filters)}
+                    onClick={() => onApplyPreset(preset)}
                   >
                     {preset.label}
                   </button>
@@ -398,320 +378,20 @@ export const Sidebar = ({
           </div>
         )}
 
-        {/* 基本フィルター */}
-        <div className="space-y-1">
-          <details className="group border-b border-slate-100 pb-2" open>
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">📋 基本フィルター</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="時価総額"
-                unit="百万円"
-                minKey="marketCapMin"
-                maxKey="marketCapMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                  業種
-                </label>
-                <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
-                  {availableIndustries.map((industry) => (
-                    <label
-                      key={industry}
-                      className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                        checked={filters.industries.includes(industry)}
-                        onChange={(e) => handleIndustryChange(industry, e.target.checked)}
-                      />
-                      <span className="text-[11px] text-slate-600 truncate">{industry}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                  市場
-                </label>
-                <div className="grid grid-cols-1 gap-1">
-                  {availableMarkets.map((market) => (
-                    <label
-                      key={market}
-                      className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                        checked={filters.market.includes(market)}
-                        onChange={(e) => handleMarketChange(market, e.target.checked)}
-                      />
-                      <span className="text-[11px] text-slate-600">
-                        {market.replace("（内国株式）", "")}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {availablePrefectures.length > 0 && (
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">
-                    都道府県
-                  </label>
-                  <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto">
-                    {availablePrefectures.map((prefecture) => (
-                      <label
-                        key={prefecture}
-                        className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          className="w-3.5 h-3.5 rounded border-slate-300 text-[var(--primary)] focus:ring-0"
-                          checked={filters.prefecture.includes(prefecture)}
-                          onChange={(e) => handlePrefectureChange(prefecture, e.target.checked)}
-                        />
-                        <span className="text-[11px] text-slate-600 truncate">{prefecture}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </details>
-
-          {/* バリュエーション */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">📊 バリュエーション</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="PBR"
-                minKey="pbrMin"
-                maxKey="pbrMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ROE"
-                unit="%"
-                minKey="roeMin"
-                maxKey="roeMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="自己資本比率"
-                unit="%"
-                minKey="equityRatioMin"
-                maxKey="equityRatioMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(会予)"
-                minKey="forwardPEMin"
-                maxKey="forwardPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(過去12ヶ月)"
-                minKey="trailingPEMin"
-                maxKey="trailingPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="PER(前年度)"
-                minKey="previousYearPEMin"
-                maxKey="previousYearPEMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="配当性向"
-                unit="%"
-                minKey="dividendDirectionMin"
-                maxKey="dividendDirectionMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="配当利回り"
-                unit="%"
-                minKey="dividendYieldMin"
-                maxKey="dividendYieldMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(過去12ヶ月)"
-                minKey="trailingEpsMin"
-                maxKey="trailingEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(予想)"
-                minKey="forwardEpsMin"
-                maxKey="forwardEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="EPS(前年度)"
-                minKey="previousYearEpsMin"
-                maxKey="previousYearEpsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* 業績 */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">💹 業績・収益性</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="売上高"
-                unit="百万円"
-                minKey="revenueMin"
-                maxKey="revenueMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="営業利益"
-                unit="百万円"
-                minKey="operatingProfitMin"
-                maxKey="operatingProfitMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="営業利益率"
-                unit="%"
-                minKey="operatingMarginMin"
-                maxKey="operatingMarginMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="当期純利益"
-                unit="百万円"
-                minKey="netProfitMin"
-                maxKey="netProfitMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="純利益率"
-                unit="%"
-                minKey="netMarginMin"
-                maxKey="netMarginMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* バランスシート */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">🏛️ バランスシート</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="負債"
-                unit="百万円"
-                minKey="totalLiabilitiesMin"
-                maxKey="totalLiabilitiesMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="流動負債"
-                unit="百万円"
-                minKey="currentLiabilitiesMin"
-                maxKey="currentLiabilitiesMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="流動資産"
-                unit="百万円"
-                minKey="currentAssetsMin"
-                maxKey="currentAssetsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="総負債"
-                unit="百万円"
-                minKey="totalDebtMin"
-                maxKey="totalDebtMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="投資有価証券"
-                unit="百万円"
-                minKey="investmentsMin"
-                maxKey="investmentsMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-
-          {/* キャッシュ */}
-          <details className="group border-b border-slate-100 pb-2">
-            <summary className="flex items-center justify-between py-2 cursor-pointer">
-              <span className="text-xs font-bold text-slate-700">💰 キャッシュ</span>
-              <MdExpandMore className="text-sm text-slate-400 group-open:rotate-180 transition-transform" />
-            </summary>
-            <div className="pt-2 space-y-4">
-              <NumRange
-                label="現金及び現金同等物"
-                unit="百万円"
-                minKey="cashMin"
-                maxKey="cashMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ネットキャッシュ"
-                unit="百万円"
-                minKey="netCashMin"
-                maxKey="netCashMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-              <NumRange
-                label="ネットキャッシュ比率"
-                unit="%"
-                minKey="netCashRatioMin"
-                maxKey="netCashRatioMax"
-                filters={filters}
-                onFilterChange={onFilterChange}
-              />
-            </div>
-          </details>
-        </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-[var(--border)] shrink-0">
+      <div className="p-4 bg-slate-50 border-t border-[var(--border)] shrink-0 space-y-2">
+        {showScreenerPanel && onAddCondition && (
+          <button
+            type="button"
+            className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 text-[11px] sm:text-xs"
+            onClick={() => onAddCondition()}
+            disabled={screenableFields.length === 0}
+          >
+            <MdAdd className="text-base shrink-0" aria-hidden />
+            条件を追加
+          </button>
+        )}
         <div className="flex gap-2">
           <button
             type="button"

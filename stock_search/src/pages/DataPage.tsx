@@ -22,6 +22,8 @@ import { Pagination } from "../components/Pagination";
 import { ColumnSelector, type ColumnConfig } from "../components/ColumnSelector";
 import { getDefaultColumns } from "../utils/columnConfig";
 import { DownloadButton } from "../components/DownloadButton";
+import { ShareUrlButton } from "../components/ShareUrlButton";
+import type { FilterPreset } from "../constants/presets";
 import type { PaginationConfig } from "../types/stock";
 import { PAGINATION } from "../constants/ui";
 import {
@@ -210,20 +212,27 @@ export const DataPage = () => {
 
   const { data, loading, error, reload } = useCSVParser(selectedFile);
   const {
+    screener,
     filters,
     filteredData,
     sortConfig,
+    screenableFields,
     availableIndustries,
     availableMarkets,
     availablePrefectures,
     updateFilter,
     clearFilters,
-    applyPreset,
+    applyPresetConditions,
     customPresets,
     saveCustomFilterPreset,
     removeCustomFilterPreset,
     applyCustomFilterPreset,
+    addCondition,
+    updateCondition,
+    removeCondition,
     handleSort,
+    copyShareUrl,
+    updateScreenerField,
   } = useFilters(data);
   const { favoriteCodesSet, toggle: onToggleFavorite } = useFavorites();
 
@@ -298,7 +307,7 @@ export const DataPage = () => {
     filters,
     onFilterChange: updateFilter,
     onClearFilters: clearFilters,
-    onApplyPreset: applyPreset,
+    onApplyPreset: (preset: FilterPreset) => applyPresetConditions(preset.conditions),
     customPresets,
     onSaveCustomPreset: saveCustomFilterPreset,
     onApplyCustomPreset: applyCustomFilterPreset,
@@ -306,6 +315,16 @@ export const DataPage = () => {
     availableIndustries: selectedFile ? availableIndustries : [],
     availableMarkets: selectedFile ? availableMarkets : [],
     availablePrefectures: selectedFile ? availablePrefectures : [],
+    ...(selectedFile && !loading && !error && data.length > 0
+      ? {
+          screener,
+          screenableFields,
+          onAddCondition: () => addCondition(),
+          onUpdateCondition: updateCondition,
+          onRemoveCondition: removeCondition,
+          onExcludeMissingChange: (v: boolean) => updateScreenerField("excludeMissing", v),
+        }
+      : {}),
   };
 
   return (
@@ -585,6 +604,7 @@ export const DataPage = () => {
                     onCategoryToggle={handleCategoryToggle}
                     variant="iconOnly"
                   />
+                  <ShareUrlButton onCopyShareUrl={copyShareUrl} />
                   <DownloadButton
                     data={displayData}
                     columns={columns}

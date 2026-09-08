@@ -1,10 +1,13 @@
-
-/.qodo
 claudecodes
-.vscode
 node_modules
 .claudecodes
 .serena
 __pycache__
 .env
-.DS_Store
+*.key
+**/.omc/
+*.bak
+*.bak_*
+.tmp_*/
+.pytest_tmp_*/
+HANDOFF.md

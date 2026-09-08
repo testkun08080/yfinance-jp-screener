@@ -1,0 +1,52 @@
+presets:
+  morning-value:
+    description: "朝スクリーニング: バリュー+クオリティ重視"
+    value_weight: 0.5
+    quality_weight: 0.5
+    market: Prime
+    filters:
+      per_max: 20
+      pbr_max: 2.0
+
+  pullback-jp:
+    description: "押し目買い: テクニカル+クオリティ重視"
+    value_weight: 0.3
+    quality_weight: 0.7
+    market: Prime
+    filters:
+      roe_min: 0.08
+
+  high-netcash-jp:
+    description: "高ネットキャッシュ: 財務安全性重視"
+    value_weight: 0.4
+    quality_weight: 0.6
+    market: Prime
+    filters:
+      net_cash_ratio_min: 0.2
+
+  daytrade-liquid:
+    description: "デイトレ向け: 流動性・モメンタム重視"
+    value_weight: 0.2
+    quality_weight: 0.8
+    market: Prime
+    filters:
+      min_market_cap: 100000000000
+
+  testa-value:
+    description: "テスタ式: PBR割れ×高ネットキャッシュ×小型株"
+    value_weight: 0.7
+    quality_weight: 0.3
+    market: All
+    filters:
+      pbr_max: 1.0
+      net_cash_ratio_min: 0.1
+
+  # NOTE: 2026-07-11以降 bridge morning_job は --use-presets で適用。
+  # per_max/pbr_max/roe_min/net_cash_ratio_min も filters.py 実装済み。
+  momentum:
+    description: "デイトレ向け: 流動性・クオリティ重視"
+    value_weight: 0.2
+    quality_weight: 0.8
+    market: Prime
+    filters:
+      min_market_cap: 100000000000

@@ -37,7 +37,8 @@ def score_technical(ticker: str) -> dict:
         ma60 = float(ma60_series.iloc[-1]) if not ma60_series.dropna().empty else ma15
         price = float(closes.iloc[-1])
 
-        vol_avg = float(volumes.rolling(20).mean().iloc[-1]) if len(volumes) >= 20 else 1
+        # len(hist) >= 20 is guaranteed by the early return above.
+        vol_avg = float(volumes.rolling(20).mean().iloc[-1])
         vol_ratio = float(volumes.iloc[-1]) / vol_avg if vol_avg > 0 else 1.0
 
         # MA trend

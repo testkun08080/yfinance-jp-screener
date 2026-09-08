@@ -45,11 +45,20 @@ def parse_data_asof(value: object, *, assume_legacy_jst: bool = True):
 
 
 def combined_market_date(path: str | Path) -> date | None:
-    token = Path(path).stem.split("_")[0]
-    try:
-        return datetime.strptime(token, "%Y%m%d").date()
-    except ValueError:
-        return None
+    """Market date from a combined/raw CSV filename.
+
+    Handles the JP combined form ("20260418_jp_combined.csv", leading token) and
+    filenames that embed the date as a YYYYMMDD token elsewhere in the stem
+    (before a HHMMSS run stamp). Returns the first underscore-separated token
+    that parses as a real date, else None.
+    """
+    for token in Path(path).stem.split("_"):
+        if len(token) == 8 and token.isdigit():
+            try:
+                return datetime.strptime(token, "%Y%m%d").date()
+            except ValueError:
+                continue
+    return None
 
 
 def market_date_status(value: date | None, source: str, now: datetime | None = None) -> str:

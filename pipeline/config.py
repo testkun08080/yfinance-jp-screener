@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 
 @dataclass
 class CandidateConfig:
@@ -30,6 +28,12 @@ def load_preset(name: str) -> dict:
     PRESET_DEFAULTS(CandidateConfigの既定値と同値・filtersなし)を返す。
     呼び出し側でCandidateConfigへ適用するかどうかは呼び出し側の責務(本関数は読込のみ)。
     """
+    try:
+        import yaml  # lazy: only the opt-in preset path needs PyYAML
+    except ModuleNotFoundError:
+        print(f"[config] PyYAML not installed, using defaults for preset='{name}'")
+        return dict(PRESET_DEFAULTS)
+
     try:
         with open(_PRESETS_PATH, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}

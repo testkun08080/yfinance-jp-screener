@@ -4,7 +4,7 @@ Daily screening pipeline entry point.
 Usage:
   python -m pipeline.run_daily
   python -m pipeline.run_daily --top 20 --market Prime --preset morning-value
-  python -m pipeline.run_daily --csv-dir stock_list/Export --intelligence-json ../investment_screening_package/data/intelligence_latest.json
+  python -m pipeline.run_daily --csv-dir stock_list/Export --intelligence-json path/to/intelligence_latest.json
 """
 import argparse
 import json
@@ -46,15 +46,11 @@ from pipeline.reference_freshness import candidate_freshness_fields, combined_ma
 
 DEFAULT_CSV_DIR = str(Path(__file__).parent.parent / "stock_list" / "Export")
 DEFAULT_OUTPUT_DIR = str(Path(__file__).parent.parent / "data" / "candidates")
-DEFAULT_SHARED = str(
-    Path(__file__).parent.parent.parent / "investment_bridge" / "data" / "candidates_latest.json"
-)
-DEFAULT_INTELLIGENCE = str(
-    Path(__file__).parent.parent.parent
-    / "investment_screening_package"
-    / "data"
-    / "intelligence_latest.json"
-)
+# Writing outside the clone is opt-in: pass --shared-output / --intelligence-json
+# or set the env vars. Defaults are None so `python -m pipeline.run_daily` never
+# reaches into sibling directories.
+DEFAULT_SHARED = os.environ.get("PIPELINE_SHARED_OUTPUT") or None
+DEFAULT_INTELLIGENCE = os.environ.get("PIPELINE_INTELLIGENCE_JSON") or None
 
 
 _SMALL_CAP_MIN = 2_000_000_000   # 20億円
@@ -247,7 +243,7 @@ def run(
     path = write_candidates_json(ranked, output, cfg_info, intelligence)
     print(f"[pipeline] 保存: {path}")
 
-    # Copy to shared path for investment_bridge
+    # Optional copy to an external shared path (opt-in via --shared-output)
     if shared_output and shared_output != output:
         Path(shared_output).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(output, shared_output)

@@ -177,9 +177,10 @@ def _quality_score(roe) -> float:
         return 0.5
     if np.isnan(v):
         return 0.5
-    if v >= 15:
+    # CSV ROE is a fraction (yfinance returnOnEquity), e.g. 0.15 == 15%.
+    if v >= 0.15:
         return 0.8
-    if v >= 8:
+    if v >= 0.08:
         return 0.65
     if v >= 0:
         return 0.5
@@ -221,6 +222,16 @@ def attach_fundamentals(rows: list[dict], csv_dir: str) -> str | None:
     return None
 
 
+def _price_row_fresh(bar_date) -> bool:
+    """Per-stock price freshness. A name whose last bar is stale must not be
+    selected even when the rest of the universe is fresh."""
+    try:
+        d = datetime.strptime(bar_date, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return False
+    return market_date_status(d, "price") == "fresh"
+
+
 def score_rows(rows: list[dict], fundamentals_status: str = "fresh") -> None:
     for r in rows:
         r["score_momentum"] = _mom_score(r["mom20"])
@@ -259,6 +270,14 @@ def run(csv_dir: str, shared_output: str, grounding_output: str | None,
         print(f"[scan] ABORT: fetch success {ratio:.0%} < {_MIN_FETCH_SUCCESS_RATIO:.0%} — 出力を書かず終了")
         return 1
 
+    # Drop names with stale price history *before* selection so a suspended
+    # ticker can't ride the universe-wide freshness of everyone else.
+    fresh_rows = [r for r in rows if _price_row_fresh(r.get("last_bar_date"))]
+    stale_n = len(rows) - len(fresh_rows)
+    if stale_n:
+        print(f"[scan] 価格データが古い{stale_n}銘柄を選定対象から除外")
+    rows = fresh_rows
+
     liquid = [r for r in rows if r["turnover_jpy"] >= _MIN_TURNOVER_JPY]
     pool = [r for r in liquid if r["adx"] >= _POOL_MIN_ADX and r["atr_pct"] >= _POOL_MIN_ATR_PCT]
     cands = [r for r in liquid if r["adx"] >= _CAND_MIN_ADX and r["atr_pct"] >= _CAND_MIN_ATR_PCT]
@@ -281,8 +300,10 @@ def run(csv_dir: str, shared_output: str, grounding_output: str | None,
     pool = pool[:pool_n]
     cands = cands[:top_n]
 
-    # data_asof = freshness of the *price* data driving selection
-    price_asof = max(r["last_bar_date"] for r in rows)
+    # data_asof = freshness of the price data actually emitted (pool + candidates);
+    # selection already dropped stale names, so this is not the universe max.
+    emitted = pool + cands
+    price_asof = max(r["last_bar_date"] for r in emitted)
     try:
         price_date = datetime.strptime(price_asof, "%Y-%m-%d").date()
     except ValueError:

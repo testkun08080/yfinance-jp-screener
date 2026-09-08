@@ -1,5 +1,4 @@
 import json
-import json
 import pandas as pd
 from pipeline.config import CandidateConfig
 from pipeline.scorers.fundamentals import score_row
@@ -44,14 +43,16 @@ def apply_lesson_penalties(df: pd.DataFrame, lessons_dir: str | None = None) -> 
     Read stock_skills lesson notes from last 7 days and penalise tickers/sectors
     that match recent failure patterns. Returns updated DataFrame.
     """
-    import glob
+    import os
     from pathlib import Path
     from datetime import date, timedelta
 
     if lessons_dir is None:
-        base = Path(__file__).parent.parent.parent / "stock_skills" / "data" / "notes"
-    else:
-        base = Path(lessons_dir)
+        lessons_dir = os.environ.get("PIPELINE_LESSONS_DIR")
+    if not lessons_dir:
+        # Opt-in only: never reach implicitly into a sibling repo.
+        return df
+    base = Path(lessons_dir)
 
     if not base.exists():
         return df

@@ -13,6 +13,11 @@ def load_latest_combined_csv(csv_dir: str) -> tuple[pd.DataFrame, str]:
     for p in patterns:
         files.extend(glob.glob(p))
 
+    # '*_combined.csv' also matches US exports ('*_us_combined.csv') and a newer
+    # US export can win on mtime, so drop anything US-flavoured here.
+    _US_MARKERS = ("_us_combined", "us_stocks_data_")
+    files = [f for f in files if not any(m in os.path.basename(f) for m in _US_MARKERS)]
+
     if not files:
         raise FileNotFoundError(f"No combined CSV found in: {csv_dir}")
 

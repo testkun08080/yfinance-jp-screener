@@ -122,6 +122,11 @@ jobs:
     needs: [discover, fetch]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # 両ワークフローが同じ Export/<date>_<market>_combined.csv をコミットし得るため、
+    # 結合〜コミットのジョブだけ共通グループで直列化する（fetch の長時間ジョブはロックしない）
+    concurrency:
+      group: combined-csv-commit-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
     env:

@@ -78,7 +78,10 @@ def find_excel_url() -> str:
     try:
         response = requests.get(JPX_LIST_PAGE_URL, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
-        match = re.search(r'href="([^"]*data_j\.xlsx?)"', response.text)
+        # シングル/ダブルクォート・クエリ文字列付きのリンクにも対応
+        match = re.search(
+            r"""href=["']([^"']*data_j\.xlsx?(?:\?[^"']*)?)["']""", response.text
+        )
         if match:
             return urljoin(JPX_LIST_PAGE_URL, match.group(1))
         logger.warning("一覧ページにExcelリンクが見つかりません。フォールバックURLを使用します")

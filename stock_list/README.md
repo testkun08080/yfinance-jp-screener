@@ -12,7 +12,7 @@ yfinance API を使用して、JPX（日本取引所グループ）公式デー�
 
 JPX 公式エクセルデータから最新の株式リストを取得して JSON 形式で保存します。
 
-**データソース**: https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls
+**データソース**: https://www.jpx.co.jp/markets/statistics-equities/misc/01.html の「東証上場銘柄一覧」Excel（`data_j.xlsx`。2026年に `.xls` から移行したため、リンクはページから自動検出）
 
 **出力ファイル**: `stocks_all.json` (約 3795 社)
 

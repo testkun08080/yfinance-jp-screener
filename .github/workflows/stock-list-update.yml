@@ -1,8 +1,7 @@
 name: 📋 Stock List Update
 
 permissions:
-  contents: write
-  actions: read
+  contents: read
 
 on:
   workflow_dispatch:
@@ -21,18 +20,29 @@ on:
         default: "Manual stock list update"
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   update-stock-list:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # US は SEC の全ティッカーを yfinance で照会するため長め
+    timeout-minutes: 300
+    permissions:
+      contents: write
+    # 入力値は run: に直接展開せず環境変数経由で参照する（スクリプトインジェクション対策）
     env:
-      SEC_USER_AGENT_CONTACT: ${{ secrets.SEC_USER_AGENT_CONTACT }}
+      MARKET: ${{ inputs.market }}
+      REASON: ${{ inputs.reason }}
 
     steps:
-      - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+      # 後続ステップで push するため認証情報を保持（.git は artifact に含めない）
+      - name: 🔄 Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -44,16 +54,18 @@ jobs:
 
       - name: 📋 Show input parameters
         run: |
-          echo "Market: ${{ github.event.inputs.market }}"
-          echo "Update reason: ${{ github.event.inputs.reason }}"
+          echo "Market: $MARKET"
+          echo "Update reason: $REASON"
           echo "Timestamp: $(date)"
           echo "Working directory: $(pwd)"
           ls -la stock_list/
 
       - name: 🔐 Check SEC_USER_AGENT_CONTACT (required for US)
-        if: github.event.inputs.market == 'US'
+        if: inputs.market == 'US'
+        env:
+          SEC_USER_AGENT_CONTACT: ${{ secrets.SEC_USER_AGENT_CONTACT }}
         run: |
-          if [ -z "${{ secrets.SEC_USER_AGENT_CONTACT }}" ]; then
+          if [ -z "$SEC_USER_AGENT_CONTACT" ]; then
             echo "::error::米国株リスト取得には SEC_USER_AGENT_CONTACT が必要です。"
             echo "リポジトリの Settings → Secrets and variables → Actions で SEC_USER_AGENT_CONTACT を追加し、あなたのメールアドレスを設定してください。"
             echo "参考: https://www.sec.gov/os/accessing-edgar-data"
@@ -63,8 +75,9 @@ jobs:
 
       - name: 🌐 Fetch latest stock list
         working-directory: ./stock_list
+        env:
+          SEC_USER_AGENT_CONTACT: ${{ secrets.SEC_USER_AGENT_CONTACT }}
         run: |
-          MARKET="${{ github.event.inputs.market }}"
           echo "🚀 Starting stock list download (market=$MARKET)..."
           echo "Timestamp: $(date)"
 
@@ -80,7 +93,7 @@ jobs:
           if [ -f "$MASTER" ]; then
             echo "📊 $MASTER created successfully"
             echo "File size: $(ls -lh "$MASTER" | awk '{print $5}')"
-            echo "Total companies: $(cat "$MASTER" | jq length)"
+            echo "Total companies: $(jq length "$MASTER")"
           else
             echo "❌ Error: $MASTER not found"
             exit 1
@@ -89,7 +102,6 @@ jobs:
       - name: ✂️ Split into chunks
         working-directory: ./stock_list
         run: |
-          MARKET="${{ github.event.inputs.market }}"
           echo "🔀 Starting stock list splitting (market=$MARKET)..."
           echo "Timestamp: $(date)"
 
@@ -108,8 +120,7 @@ jobs:
           echo "🔍 Verifying split files..."
           for file in ${PREFIX}[0-9]*.json; do
             if [ -f "$file" ]; then
-              companies=$(cat "$file" | jq length 2>/dev/null)
-              if [ $? -eq 0 ]; then
+              if companies=$(jq length "$file" 2>/dev/null); then
                 echo "✅ $file: $companies companies (Valid JSON)"
               else
                 echo "❌ $file: Invalid JSON format"
@@ -120,8 +131,9 @@ jobs:
 
       - name: 📊 Generate update summary
         working-directory: ./stock_list
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          MARKET="${{ github.event.inputs.market }}"
           if [ "$MARKET" = "US" ]; then
             MASTER=us_stocks_all.json
             PREFIX=us_stocks_
@@ -134,83 +146,84 @@ jobs:
             TITLE="Stock List Update Report"
           fi
 
-          echo "# 📋 $TITLE" > "$REPORT"
-          echo "" >> "$REPORT"
-          echo "**Market:** $MARKET" >> "$REPORT"
-          echo "**Generated:** $(date)" >> "$REPORT"
-          echo "**Reason:** ${{ github.event.inputs.reason }}" >> "$REPORT"
-          echo "**Workflow:** ${{ github.workflow }}" >> "$REPORT"
-          echo "" >> "$REPORT"
+          {
+            echo "# 📋 $TITLE"
+            echo ""
+            echo "**Market:** $MARKET"
+            echo "**Generated:** $(date)"
+            echo "**Reason:** $REASON"
+            echo "**Workflow:** $GITHUB_WORKFLOW"
+            echo ""
 
-          if [ -f "$MASTER" ]; then
-            total_companies=$(cat "$MASTER" | jq length)
-            size=$(ls -lh "$MASTER" | awk '{print $5}')
-            echo "## 📊 Master List" >> "$REPORT"
-            echo "- **File:** $MASTER" >> "$REPORT"
-            echo "- **Size:** $size" >> "$REPORT"
-            echo "- **Total Companies:** $total_companies" >> "$REPORT"
-            echo "" >> "$REPORT"
-          fi
-
-          echo "## 📂 Split Files" >> "$REPORT"
-          echo "" >> "$REPORT"
-          for file in ${PREFIX}[0-9]*.json; do
-            if [ -f "$file" ]; then
-              size=$(ls -lh "$file" | awk '{print $5}')
-              count=$(cat "$file" | jq length)
-              echo "- **$file** - Size: $size, Companies: $count" >> "$REPORT"
+            if [ -f "$MASTER" ]; then
+              echo "## 📊 Master List"
+              echo "- **File:** $MASTER"
+              echo "- **Size:** $(ls -lh "$MASTER" | awk '{print $5}')"
+              echo "- **Total Companies:** $(jq length "$MASTER")"
+              echo ""
             fi
-          done
 
-          echo "" >> "$REPORT"
-          echo "## 🤖 Automation Info" >> "$REPORT"
-          echo "- **GitHub Action:** [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> "$REPORT"
-          echo "- **Commit SHA:** ${{ github.sha }}" >> "$REPORT"
-          echo "- **Repository:** ${{ github.repository }}" >> "$REPORT"
+            echo "## 📂 Split Files"
+            echo ""
+            for file in ${PREFIX}[0-9]*.json; do
+              if [ -f "$file" ]; then
+                echo "- **$file** - Size: $(ls -lh "$file" | awk '{print $5}'), Companies: $(jq length "$file")"
+              fi
+            done
+
+            echo ""
+            echo "## 🤖 Automation Info"
+            echo "- **GitHub Action:** [$GITHUB_WORKFLOW]($RUN_URL)"
+            echo "- **Commit SHA:** $GITHUB_SHA"
+            echo "- **Repository:** $GITHUB_REPOSITORY"
+          } > "$REPORT"
 
       - name: 🔧 Configure Git
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: 💾 Commit and push changes
         run: |
-          MARKET="${{ github.event.inputs.market }}"
           if [ "$MARKET" = "US" ]; then
-            git add stock_list/us_stocks_*.json
-            git add stock_list/us_stock_list_update_report.md
+            # pathspec をクォートして git 側で展開（削除された古い分割ファイルもステージされる）
+            git add -A -- 'stock_list/us_stocks_*.json' stock_list/us_stock_list_update_report.md
             LABEL="米国株式"
           else
-            git add stock_list/stocks_*.json
-            git add stock_list/stock_list_update_report.md
+            git add -A -- 'stock_list/stocks_*.json' stock_list/stock_list_update_report.md
             LABEL="日本株式"
           fi
 
           if git diff --staged --quiet; then
             echo "ℹ️ No changes to commit"
-          else
-            CURRENT_DATE=$(date '+%Y年%m月%d日')
-            git commit -m "📋 ${LABEL}のリストを更新($CURRENT_DATE)
-
-            - 市場: $MARKET
-            - 更新理由: ${{ github.event.inputs.reason }}
-            - 実行日時: $(date)
-            - ワークフロー: ${{ github.workflow }}
-
-            🤖 Generated by GitHub Action"
-
-            git push
-            echo "✅ Changes committed and pushed successfully"
+            exit 0
           fi
 
+          CURRENT_DATE=$(date '+%Y年%m月%d日')
+          git commit -F - <<EOF
+          📋 ${LABEL}のリストを更新($CURRENT_DATE)
+
+          - 市場: $MARKET
+          - 更新理由: $REASON
+          - 実行日時: $(date)
+          - ワークフロー: $GITHUB_WORKFLOW
+
+          🤖 Generated by GitHub Action
+          EOF
+
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push
+          echo "✅ Changes committed and pushed successfully"
+
       - name: 📈 Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: stock-list-update-${{ github.event.inputs.market }}-$(date +%Y%m%d-%H%M%S)
+          name: stock-list-update-${{ inputs.market }}-${{ github.run_id }}
           path: |
             stock_list/stocks_*.json
             stock_list/stock_list_update_report.md
             stock_list/us_stocks_*.json
             stock_list/us_stock_list_update_report.md
+          if-no-files-found: ignore
           retention-days: 30

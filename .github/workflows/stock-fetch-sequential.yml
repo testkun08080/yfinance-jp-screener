@@ -3,8 +3,7 @@
 name: 📊 Sequential Stock Fetch
 
 permissions:
-  contents: write
-  actions: read
+  contents: read
 
 on:
   workflow_dispatch:
@@ -23,56 +22,69 @@ on:
         default: "Sequential stock data collection"
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   discover:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       files: ${{ steps.outputs.outputs.files }}
       market: ${{ steps.outputs.outputs.market }}
     steps:
       - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: 📂 Discover stock files
         id: outputs
+        env:
+          MARKET: ${{ inputs.market }}
         run: |
-          MARKET="${{ github.event.inputs.market }}"
           if [ "$MARKET" = "US" ]; then
             PREFIX=us_stocks_
           else
+            MARKET=JP
             PREFIX=stocks_
           fi
 
           # ソート済みでファイル一覧を取得し JSON 配列で出力
           FILES=$(ls stock_list/${PREFIX}[0-9]*.json 2>/dev/null | sort -V)
-          TOTAL=$(echo "$FILES" | grep -c . || echo "0")
+          TOTAL=$(echo "$FILES" | grep -c . || true)
           if [ "$TOTAL" = "0" ]; then
-            echo "::error::No files found: stock_list/${PREFIX}[0-9]*.json"
+            echo "::error::No files found: stock_list/${PREFIX}[0-9]*.json（先に Stock List Update を実行してください）"
             exit 1
           fi
 
           # basename のみの JSON 配列 (e.g. ["stocks_1.json","stocks_2.json"])
           LIST=$(echo "$FILES" | xargs -I {} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "files=$LIST" >> $GITHUB_OUTPUT
-          echo "market=$MARKET" >> $GITHUB_OUTPUT
+          echo "files=$LIST" >> "$GITHUB_OUTPUT"
+          echo "market=$MARKET" >> "$GITHUB_OUTPUT"
           echo "Discovered $TOTAL parts (market=$MARKET): $LIST"
 
   fetch:
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         stock_file: ${{ fromJson(needs.discover.outputs.files) }}
-    permissions:
-      contents: read
+    env:
+      STOCK_FILE: ${{ matrix.stock_file }}
+      MARKET: ${{ needs.discover.outputs.market }}
+      REASON: ${{ inputs.reason }}
     steps:
       - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -84,8 +96,8 @@ jobs:
 
       - name: 📋 Show process info
         run: |
-          echo "🚀 Stock Fetch - ${{ matrix.stock_file }} (market=${{ needs.discover.outputs.market }})"
-          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo "🚀 Stock Fetch - $STOCK_FILE (market=$MARKET)"
+          echo "Reason: $REASON"
           echo "Timestamp: $(date)"
           ls -la stock_list/
 
@@ -93,14 +105,14 @@ jobs:
         id: process
         working-directory: ./stock_list
         run: |
-          echo "🚀 Starting stock data collection for ${{ matrix.stock_file }}..."
+          echo "🚀 Starting stock data collection for $STOCK_FILE..."
           echo "Timestamp: $(date)"
-          python sumalize.py "${{ matrix.stock_file }}"
-          echo "✅ ${{ matrix.stock_file }} completed successfully"
+          python sumalize.py "$STOCK_FILE"
+          echo "✅ $STOCK_FILE completed successfully"
           ls -la Export/ 2>/dev/null || echo "No files in Export directory"
 
       - name: 📤 Upload Export artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: export-${{ matrix.stock_file }}
           path: stock_list/Export/
@@ -108,15 +120,19 @@ jobs:
 
   combine-and-commit:
     needs: [discover, fetch]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: write
+    env:
+      MARKET: ${{ needs.discover.outputs.market }}
     steps:
-      - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+      # 後続ステップで push するため認証情報を保持（.git は artifact に含めない）
+      - name: 🔄 Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📥 Download all Export artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: export-*
           merge-multiple: true
@@ -129,20 +145,19 @@ jobs:
           find stock_list/Export -name "*.csv" -type f 2>/dev/null | head -20
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
           cache: "pip"
 
-      - name: 📦 Install pandas for combine
+      - name: 📦 Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas
+          pip install -r stock_list/requirements.txt
 
       - name: 🔗 Combine latest CSV files
         working-directory: ./stock_list
         run: |
-          MARKET="${{ needs.discover.outputs.market }}"
           python combine_latest_csv.py --market-type "$MARKET"
           echo "Combined CSV files:"
           ls -la Export/*combined*.csv 2>/dev/null || true
@@ -151,10 +166,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase || true
+          git pull origin "$GITHUB_REF_NAME" --rebase || true
 
       - name: 💾 Commit and push
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
           commit_message: "📊 Stock Fetch (matrix) - ${{ needs.discover.outputs.market }} 全 Part 完了"
-          push_options: --force

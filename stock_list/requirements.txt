@@ -1,5 +1,8 @@
-requests
-pandas
-xlrd
-openpyxl
-yfinance
+# 下限バージョンは既知脆弱性の修正版（pip-audit で確認）
+requests>=2.33.0
+urllib3>=2.8.0
+curl_cffi>=0.15.0
+pandas>=2.2.0
+xlrd>=2.0.1
+openpyxl>=3.1.5
+yfinance>=0.2.65

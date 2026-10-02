@@ -7,6 +7,17 @@ import { DATE_FORMAT, FILE_SIZE } from "../constants/formatting";
  */
 
 /**
+ * CSV数式インジェクション対策（OWASP推奨）
+ * Excel等で数式として解釈される文字列（= + - @ タブ CR 始まり）に ' を前置する。
+ * ただし純粋な数値文字列（"-12.5"）と欠損値の "-" はそのまま残す。
+ */
+export const neutralizeFormula = (value: string): string => {
+  if (value === "-" || /^-?\d*\.?\d+$/.test(value)) return value;
+  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
+  return value;
+};
+
+/**
  * データをCSV形式の文字列に変換
  */
 export const convertToCSV = (data: StockData[], columns: ColumnConfig[]): string => {
@@ -34,8 +45,8 @@ export const convertToCSV = (data: StockData[], columns: ColumnConfig[]): string
         return value.toString();
       }
 
-      // 文字列の処理（ダブルクォートをエスケープ）
-      const stringValue = String(value);
+      // 文字列の処理（数式インジェクション対策 + ダブルクォートをエスケープ）
+      const stringValue = neutralizeFormula(String(value));
       const escapedValue = stringValue.replace(/"/g, '""');
       return `"${escapedValue}"`;
     });

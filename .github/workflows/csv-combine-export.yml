@@ -1,8 +1,7 @@
 name: 📋 CSV Combine & Export
 
 permissions:
-  contents: write
-  actions: read
+  contents: read
 
 on:
   workflow_dispatch:
@@ -27,19 +26,29 @@ on:
           - "US"
           - "both"
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   combine-csv:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write
+    # 入力値は run: に直接展開せず環境変数経由で参照する（スクリプトインジェクション対策）
+    env:
+      DATE_INPUT: ${{ inputs.custom_date }}
+      REASON: ${{ inputs.reason }}
+      MT: ${{ inputs.market_type || 'JP' }}
 
     steps:
-      - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+      # 後続ステップで push するため認証情報を保持（.git は artifact に含めない）
+      - name: 🔄 Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -47,13 +56,13 @@ jobs:
       - name: 📦 Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas
+          pip install -r stock_list/requirements.txt
 
       - name: 📋 Show input parameters
         run: |
-          echo "Target date: ${{ github.event.inputs.custom_date || 'today' }}"
-          echo "Reason: ${{ github.event.inputs.reason || 'Auto-triggered after deployment' }}"
-          echo "Market type: ${{ github.event.inputs.market_type || 'JP' }}"
+          echo "Target date: ${DATE_INPUT:-today}"
+          echo "Reason: $REASON"
+          echo "Market type: $MT"
           echo "Working directory: $(pwd)"
           echo "Current CSV files in Export directory:"
           ls -la stock_list/Export/ 2>/dev/null || echo "No files in Export directory"
@@ -75,10 +84,6 @@ jobs:
       - name: 🔗 Combine latest CSV files
         working-directory: ./stock_list
         run: |
-          # Security: read inputs once into variables; validate before use to prevent injection
-          DATE_INPUT="${{ github.event.inputs.custom_date }}"
-          MT="${{ github.event.inputs.market_type || 'JP' }}"
-
           echo "🚀 Starting CSV combination (market_type=$MT)..."
           echo "Timestamp: $(date)"
 
@@ -139,11 +144,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase || true
+          git pull origin "$GITHUB_REF_NAME" --rebase || true
 
       - name: 💾 Commit and push combined CSV
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
-          commit_message: "📊 CSV結合ファイル生成 market=${{ github.event.inputs.market_type || 'JP' }}"
+          commit_message: "📊 CSV結合ファイル生成 market=${{ inputs.market_type || 'JP' }}"
 
 

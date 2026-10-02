@@ -37,6 +37,7 @@ SECの公開データから米国上場企業リストを取得し、JSON形式�
 import json
 import logging
 import os
+import sys
 import time
 import requests
 import yfinance as yf
@@ -187,7 +188,7 @@ def main():
 
     if not tickers:
         logger.error("❌ SECからのティッカーリスト取得に失敗しました")
-        return
+        return 1
 
     logger.info(f"取得対象: {len(tickers)}社")
     logger.info("⚠️  注意: 大量のデータを取得するため、実行に時間がかかります")
@@ -221,6 +222,10 @@ def main():
     logger.info(f"取得成功: {success_count}社")
     logger.info(f"取得失敗: {fail_count}社")
 
+    if not stock_list:
+        logger.error("❌ 銘柄情報を1件も取得できませんでした")
+        return 1
+
     # JSONファイルに保存
     output_file = "us_stocks_all.json"
     with open(output_file, "w", encoding="utf-8") as f:
@@ -230,7 +235,8 @@ def main():
     logger.info(f"✅ JSONファイルに保存しました: {output_file}")
     logger.info(f"   総企業数: {len(stock_list)}社")
     logger.info("=" * 60)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,8 +1,7 @@
 name: 📊 Stock Data Fetch
 
 permissions:
-  contents: write
-  actions: read
+  contents: read
 
 on:
   workflow_dispatch:
@@ -31,19 +30,27 @@ on:
           - "us_stocks_3.json"
           - "us_stocks_4.json"
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   fetch-stock-data:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: write
+    env:
+      MARKET: ${{ inputs.market }}
+      STOCK_FILE: ${{ inputs.stock_file }}
 
     steps:
-      - name: 🔄 Checkout repository
-        uses: actions/checkout@v4
+      # 後続ステップで push するため認証情報を保持（.git は artifact に含めない）
+      - name: 🔄 Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -55,8 +62,8 @@ jobs:
 
       - name: 📋 Show input parameters
         run: |
-          echo "Market: ${{ github.event.inputs.market }}"
-          echo "Processing file: ${{ github.event.inputs.stock_file }}"
+          echo "Market: $MARKET"
+          echo "Processing file: $STOCK_FILE"
           echo "Working directory: $(pwd)"
           ls -la stock_list/
 
@@ -64,10 +71,10 @@ jobs:
         working-directory: ./stock_list
         run: |
           echo "🚀 Starting stock data collection..."
-          echo "File: ${{ github.event.inputs.stock_file }}"
+          echo "File: $STOCK_FILE"
           echo "Timestamp: $(date)"
 
-          python sumalize.py "${{ github.event.inputs.stock_file }}"
+          python sumalize.py "$STOCK_FILE"
 
           echo "✅ Stock data collection completed"
           echo "📄 Generated files in Export directory:"
@@ -77,10 +84,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase || true
+          git pull origin "$GITHUB_REF_NAME" --rebase || true
 
       - name: 💾 Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
-          commit_message: "ファイル更新！"
-          push_options: --force
+          commit_message: "📊 Stock Data Fetch - ${{ inputs.market }} ${{ inputs.stock_file }}"

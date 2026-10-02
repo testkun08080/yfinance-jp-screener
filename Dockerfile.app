@@ -1,7 +1,7 @@
 # React Frontend Service Dockerfile
 # フロントエンドビルド・本番サービス用Dockerfile
 
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # 作業ディレクトリ設定
 WORKDIR /app
@@ -20,17 +20,18 @@ COPY stock_search/ .
 # TypeScriptコンパイルとViteビルド
 RUN npm run build --loglevel=info
 
-# 本番環境ステージ（nginx使用）
-FROM nginx:alpine AS runner
+# 本番環境ステージ（非root で動作する nginx-unprivileged を使用）
+FROM nginxinc/nginx-unprivileged:alpine AS runner
 
 # nginxの設定ファイルをコピー
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 
 # ビルド成果物のみをコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# ポート公開（nginx は 80 で待受）
-EXPOSE 80
+# ポート公開（nginx-unprivileged は 8080 で待受）
+EXPOSE 8080
 
 # nginx起動
 CMD ["nginx", "-g", "daemon off;"]

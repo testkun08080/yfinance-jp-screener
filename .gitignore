@@ -8,3 +8,7 @@ node_modules
 __pycache__
 .env
 .DS_Store
+
+# データ収集の実行ログ（ワークフローの自動コミット対象から除外）
+stock_list/Export/stock_data_log.txt
+stock_list/combine_csv.log

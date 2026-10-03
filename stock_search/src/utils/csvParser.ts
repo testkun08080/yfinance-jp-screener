@@ -74,7 +74,7 @@ export const parseCSVFile = (file: File): Promise<StockData[]> => {
           });
 
           resolve(processedData.filter((row) => row.会社名 && (row.銘柄コード || row.コード)));
-        } catch (error) {
+        } catch {
           reject(new Error("データの変換中にエラーが発生しました"));
         }
       },

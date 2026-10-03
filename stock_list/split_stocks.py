@@ -5,6 +5,8 @@ stocks_all.jsonを1000社ずつのファイルに分割するスクリプト
 import json
 import math
 import argparse
+import os
+import re
 import sys
 import logging
 
@@ -24,7 +26,11 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
     Args:
         input_file (str): 入力JSONファイル名（stocks_all.json または us_stocks_all.json）
         chunk_size (int): 1ファイルあたりの企業数
+
+    Returns:
+        bool: 成功した場合True
     """
+    prefix = "us_stocks_" if "us_stocks" in input_file.lower() else "stocks_"
     try:
         # 元のJSONファイルを読み込み
         with open(input_file, "r", encoding="utf-8") as f:
@@ -44,11 +50,7 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
             end_idx = min((i + 1) * chunk_size, total_companies)
             chunk_data = stock_data[start_idx:end_idx]
 
-            # ファイル名を生成（市場タイプに応じて変更）
-            if "us_stocks" in input_file.lower():
-                output_filename = f"us_stocks_{i + 1}.json"
-            else:
-                output_filename = f"stocks_{i + 1}.json"
+            output_filename = f"{prefix}{i + 1}.json"
 
             # JSON形式で保存
             with open(output_filename, "w", encoding="utf-8") as f:
@@ -58,16 +60,18 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
                 f"✅ {output_filename}: {len(chunk_data)}社 (#{start_idx + 1}-#{end_idx})"
             )
 
+        # 銘柄数が減って分割数が少なくなった場合、古い分割ファイルを削除
+        # （残っていると fetch ワークフローが古いリストを処理してしまう）
+        pattern = re.compile(rf"^{prefix}(\d+)\.json$")
+        for filename in os.listdir("."):
+            match = pattern.match(filename)
+            if match and int(match.group(1)) > total_files:
+                os.remove(filename)
+                logger.info(f"🗑️  古い分割ファイルを削除: {filename}")
+
         logger.info("-" * 50)
         logger.info(f"分割完了: {total_files}個のファイルを作成しました")
-
-        # 各ファイルの情報を表示
-        logger.info("\n作成されたファイル:")
-        for i in range(total_files):
-            filename = f"stocks_{i + 1}.json"
-            with open(filename, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            logger.info(f"  {filename}: {len(data)}社")
+        return True
 
     except FileNotFoundError:
         logger.error(f"❌ エラー: {input_file}が見つかりません")
@@ -75,6 +79,7 @@ def split_stocks_json(input_file="stocks_all.json", chunk_size=1000):
         logger.error(f"❌ エラー: {input_file}の形式が正しくありません")
     except Exception as e:
         logger.error(f"❌ エラー: {e}")
+    return False
 
 
 if __name__ == "__main__":
@@ -123,4 +128,5 @@ if __name__ == "__main__":
         logger.info("詳細モード: ON")
     logger.info("=" * 60)
 
-    split_stocks_json(input_file=args.input, chunk_size=args.size)
+    if not split_stocks_json(input_file=args.input, chunk_size=args.size):
+        sys.exit(1)

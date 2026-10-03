@@ -6,16 +6,10 @@ FROM python:3.11-slim
 # 作業ディレクトリ設定
 WORKDIR /app
 
-# システムパッケージ更新と必要なツールをインストール
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # Pythonの依存関係をコピーしてインストール
+# （全依存がバイナリwheelで提供されるためコンパイラ不要。--only-binary で sdist ビルドを禁止）
 COPY stock_list/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
 # 株式データ処理スクリプトをコピー
 COPY stock_list/*.py ./

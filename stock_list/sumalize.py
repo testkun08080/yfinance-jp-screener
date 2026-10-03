@@ -815,9 +815,10 @@ def main(json_filename="stocks_sample.json"):
         # CSVファイルに保存（Export フォルダに直接保存）
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = (
-            json_filename.replace(".json", "")
-            .replace("stocks_", "")
+            os.path.basename(json_filename)
+            .replace(".json", "")
             .replace("us_stocks_", "")
+            .replace("stocks_", "")
         )
 
         # ファイル名を市場タイプに応じて変更
@@ -827,6 +828,7 @@ def main(json_filename="stocks_sample.json"):
             filename = f"Export/us_stocks_data_{base_name}_{timestamp}.csv"
         else:
             filename = f"Export/japanese_stocks_data_{base_name}_{timestamp}.csv"
+        os.makedirs("Export", exist_ok=True)
         df.to_csv(filename, index=False, encoding="utf-8-sig")
         logger.info(f"\nデータをCSVファイルに保存しました: {filename}")
 
@@ -938,3 +940,7 @@ if __name__ == "__main__":
     logger.info("\n" + "=" * 60)
     logger.info("処理完了")
     logger.info("=" * 60)
+
+    # ファイル読込失敗・全件取得失敗時はCIで検知できるよう非ゼロ終了
+    if df_result is None:
+        sys.exit(1)

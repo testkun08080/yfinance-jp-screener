@@ -188,7 +188,7 @@ python combine_latest_csv.py --date 20251006
 - **Styling**: Tailwind CSS 4.1.13 + DaisyUI 5.1.9
 - **CSV Processing**: PapaParse 5.5.3 (完全クライアントサイド処理)
 - **State Management**: Custom Hooks (useState, useEffect)
-- **Deployment**: Docker with nginx:alpine
+- **Deployment**: Docker with nginxinc/nginx-unprivileged:alpine (非 root)
 
 ---
 
@@ -632,7 +632,7 @@ sh -c "python get_jp_stocklist.py && \
 ##### **Stage 1: base** - ベース環境
 
 ```dockerfile
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 ```
 
@@ -666,15 +666,16 @@ RUN npm run build --loglevel=info
 ##### **Stage 4: runner** - 本番環境
 
 ```dockerfile
-FROM nginx:alpine AS runner
+FROM nginxinc/nginx-unprivileged:alpine AS runner
 
-# nginx設定コピー
+# nginx設定コピー（セキュリティヘッダは各 location から include）
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 
 # ビルド成果物のみコピー（最小限）
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
@@ -682,8 +683,9 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ```nginx
 server {
-    listen 80;
+    listen 8080;  # 非 root のため 8080
     root /usr/share/nginx/html;
+    server_tokens off;
 
     # Gzip圧縮 (テキストベースアセット)
     gzip on;
@@ -693,20 +695,20 @@ server {
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
     }
 
     # SPA routing (全てのルートを index.html にフォールバック)
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
+        include /etc/nginx/snippets/security-headers.conf;
     }
-
-    # セキュリティヘッダー
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
 }
 ```
+
+- セキュリティヘッダ（`stock_search/nginx-security-headers.conf`）: X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy / CSP / X-XSS-Protection: 0。
+  nginx は location 内で `add_header` を使うと server レベルの `add_header` を継承しないため、各 location から include する。Vercel 用は `vercel.json` の `headers` に同じ値を定義。
 
 - 備考: 現状は CSV のサーバー配信を行っていないため、`/csv/` ロケーションや CORS の追加設定は行っていません。将来的にサーバー経由で CSV を配信する場合は、別途 `/csv/` ブロックを追加してください。
 
@@ -755,7 +757,7 @@ services:
     container_name: stock-frontend
     env_file: .env
     ports:
-      - "${PORT:-8080}:80"
+      - "${PORT:-8080}:8080"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-8080}
@@ -1053,7 +1055,7 @@ Client-side processing and display
 
 **Master Data Source**: JPX (Japan Exchange Group) official data
 
-- **Source**: `https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls`
+- **Source**: `https://www.jpx.co.jp/markets/statistics-equities/misc/01.html` から `data_j.xlsx` を自動検出（2026 年に `.xls` → `.xlsx` へ移行）
 - **Format**: Excel → JSON conversion with Japanese character support
 - **Markets**: プライム (Prime), スタンダード (Standard), グロース (Growth)
 - **Data Fields**: コード (Stock Code), 銘柄名 (Company Name), 市場・商品区分 (Market Classification), 33 業種区分 (Industry Classification)
@@ -1515,7 +1517,7 @@ ls -lh stocks_*.json
      - Purpose: データ収集・CSV 生成
      - Volume: `stock-data:/app/Export:rw`
   2. **Frontend Service** (Dockerfile.app)
-     - Base: `nginx:alpine` (multi-stage build)
+     - Base: `nginxinc/nginx-unprivileged:alpine` (multi-stage build, 非 root)
      - Purpose: 静的ファイル配信
      - Volume: なし（完全クライアントサイド）
 - **Data Flow**:
